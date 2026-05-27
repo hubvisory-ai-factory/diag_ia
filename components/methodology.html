@@ -1,0 +1,149 @@
+<!--
+  COMPONENT: Methodology Guide — Tabbed Typologies + Complexity
+  SECTION: Charte view > Guide methodologique
+  DATA NEEDED:
+    - CLIENT_DATA.methodologie.typologiesExplications — array of { id, nom, icon, couleur, definition, exemple }
+    - CLIENT_DATA.methodologie.complexiteCriteres — array of { id, niveau, description, caracteristiques[], exemples[], delaiMoyen, investissement }
+    - THEME.primary, THEME.accent, THEME.heat[], THEME.muted
+  CUSTOMIZATION:
+    - Add more tabs by creating new .meth-tab buttons and .meth-panel divs
+    - Change complexity level colors in the levelColors map
+    - Add more typology cards by extending the typologiesExplications array
+  DEPENDENCIES: icon() function, hexToSoft() utility
+-->
+
+<!-- METHODOLOGY GUIDE -->
+<section class="mb-8">
+  <h2 class="font-display text-2xl mb-5" style="color: var(--ink);">Guide methodologique</h2>
+  <div class="rounded-2xl border p-6" style="background: var(--surface); border-color: var(--border);">
+
+    <!-- Tab buttons -->
+    <div class="flex gap-2 mb-6">
+      <button class="meth-tab px-4 py-2 rounded-lg text-sm font-medium" data-tab="typologies"
+              style="background: var(--primary-soft); color: var(--primary);">
+        Typologies
+      </button>
+      <button class="meth-tab px-4 py-2 rounded-lg text-sm font-medium" data-tab="complexite"
+              style="color: var(--muted);">
+        Complexite &amp; ROI
+      </button>
+    </div>
+
+    <!-- Tab panel: Typologies -->
+    <div id="tab-typologies" class="meth-panel">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4" id="typologies-grid">
+        <!-- JS generates typology cards -->
+      </div>
+    </div>
+
+    <!-- Tab panel: Complexite -->
+    <div id="tab-complexite" class="meth-panel" style="display: none;">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4" id="complexite-grid">
+        <!-- JS generates complexity cards -->
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<script>
+// ---- METHODOLOGY TABS ----
+function initMethodologyTabs() {
+  document.querySelectorAll('.meth-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      // Reset all tabs to inactive
+      document.querySelectorAll('.meth-tab').forEach(t => {
+        t.style.background = 'transparent';
+        t.style.color = 'var(--muted)';
+      });
+      // Activate clicked tab
+      tab.style.background = 'var(--primary-soft)';
+      tab.style.color = 'var(--primary)';
+
+      // Show the matching panel, hide others
+      document.querySelectorAll('.meth-panel').forEach(p => p.style.display = 'none');
+      const target = document.getElementById('tab-' + tab.dataset.tab);
+      if (target) target.style.display = 'block';
+    });
+  });
+}
+
+// ---- METHODOLOGY CONTENT BUILDER ----
+function buildMethodology(theme) {
+
+  // --- Typologies grid ---
+  const typoGrid = document.getElementById('typologies-grid');
+  if (typoGrid) {
+    typoGrid.innerHTML = CLIENT_DATA.methodologie.typologiesExplications.map(t => {
+      const color = t.couleur === 'accent' ? theme.accent : theme.primary;
+      return `
+        <div class="rounded-xl border p-5" style="border-color: var(--border);">
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center mb-3"
+               style="background: ${hexToSoft(color, 0.1)};">
+            ${icon(t.icon, 20, color)}
+          </div>
+          <h4 class="text-sm font-semibold mb-2" style="color: var(--ink);">${t.nom}</h4>
+          <p class="text-xs mb-3" style="color: var(--muted);">${t.definition}</p>
+          <div class="pt-3 border-t" style="border-color: var(--border);">
+            <p class="text-xs" style="color: var(--muted-soft);">
+              <strong style="color: var(--muted);">Exemple :</strong> ${t.exemple}
+            </p>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // --- Complexity grid ---
+  const compGrid = document.getElementById('complexite-grid');
+  if (compGrid) {
+    const levelColors = {
+      'Faible': theme.heat[4],   // Green
+      'Moyenne': '#d97706',      // Amber
+      'Forte': theme.heat[0]     // Red
+    };
+
+    compGrid.innerHTML = CLIENT_DATA.methodologie.complexiteCriteres.map(c => {
+      const color = levelColors[c.niveau] || theme.muted;
+      return `
+        <div class="rounded-xl border p-5" style="border-color: var(--border);">
+          <!-- Level indicator -->
+          <div class="flex items-center gap-2 mb-3">
+            <span class="w-3 h-3 rounded-full" style="background: ${color};"></span>
+            <h4 class="text-sm font-semibold" style="color: var(--ink);">${c.niveau}</h4>
+          </div>
+          <p class="text-xs mb-3" style="color: var(--muted);">${c.description}</p>
+
+          <!-- Characteristics checklist -->
+          <div class="space-y-1.5 mb-3">
+            ${c.caracteristiques.map(ch => `
+              <div class="flex items-center gap-1.5">
+                ${icon('check', 12, color)}
+                <span class="text-xs" style="color: var(--muted);">${ch}</span>
+              </div>
+            `).join('')}
+          </div>
+
+          <!-- Examples -->
+          <div class="space-y-1 mb-3">
+            <p class="text-xs font-medium" style="color: var(--muted);">Exemples :</p>
+            ${c.exemples.map(ex => `
+              <p class="text-xs" style="color: var(--muted-soft);">- ${ex}</p>
+            `).join('')}
+          </div>
+
+          <!-- Timeline + Investment footer -->
+          <div class="flex items-center justify-between pt-3 border-t" style="border-color: var(--border);">
+            <span class="text-xs" style="color: var(--muted);">
+              ${icon('clock', 12, 'var(--muted-soft)')} ${c.delaiMoyen}
+            </span>
+            <span class="text-xs font-medium" style="color: ${color};">${c.investissement}</span>
+          </div>
+        </div>`;
+    }).join('');
+  }
+}
+
+// ---- USAGE ----
+// buildMethodology(THEME);
+// initMethodologyTabs();
+</script>

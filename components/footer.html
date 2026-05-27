@@ -1,0 +1,57 @@
+<!--
+  COMPONENT: Hubvisory Footer
+  SECTION: Global (bottom of every page)
+  DATA NEEDED:
+    - CLIENT_DATA.branding.missionCode — mission identifier (e.g. "CLI-IA-2026")
+    - CLIENT_DATA.branding.period — audit period (e.g. "T1 2026")
+  CUSTOMIZATION:
+    - Replace the SVG logo with a real Hubvisory logo image
+    - Change the firm name text
+    - Add links (privacy policy, terms, etc.)
+    - Change copyright year logic
+  DEPENDENCIES: None (pure HTML + minimal JS for dynamic text)
+-->
+
+<!-- FOOTER -->
+<footer class="border-t py-6 mt-8" style="background: var(--surface); border-color: var(--border);">
+  <div class="max-w-7xl mx-auto px-4 flex flex-col lg:flex-row items-center justify-between gap-3">
+
+    <!-- Left: Hubvisory brand mark -->
+    <div class="flex items-center gap-2">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path d="M12 2L2 7l10 5 10-5-10-5z" fill="var(--primary)" opacity="0.8"/>
+        <path d="M2 17l10 5 10-5" stroke="var(--primary)" stroke-width="2" fill="none"/>
+        <path d="M2 12l10 5 10-5" stroke="var(--primary)" stroke-width="2" fill="none"/>
+      </svg>
+      <span class="text-sm font-semibold" style="color: var(--primary);">hubvisory</span>
+    </div>
+
+    <!-- Center: Mission code + period -->
+    <p class="text-xs" style="color: var(--muted);" id="footer-mission">
+      CLI-IA-2026 — T1 2026
+    </p>
+
+    <!-- Right: Copyright -->
+    <p class="text-xs" style="color: var(--muted-soft);" id="footer-copyright">
+      &copy; 2026 Hubvisory — Confidentiel
+    </p>
+
+  </div>
+</footer>
+
+<script>
+// ---- FOOTER BUILDER ----
+function buildFooter() {
+  const mission = document.getElementById('footer-mission');
+  const copy = document.getElementById('footer-copyright');
+  if (mission) {
+    mission.textContent = `${CLIENT_DATA.branding.missionCode} — ${CLIENT_DATA.branding.period}`;
+  }
+  if (copy) {
+    copy.textContent = `© ${new Date().getFullYear()} Hubvisory — Confidentiel`;
+  }
+}
+
+// ---- USAGE ----
+// buildFooter();
+</script>

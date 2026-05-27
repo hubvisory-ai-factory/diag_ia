@@ -1,0 +1,93 @@
+<!--
+  COMPONENT: Metier View Header Card
+  SECTION: Metier view > Header (top of each department page)
+  DATA NEEDED:
+    - dept.nom — department name
+    - dept.effectif — headcount
+    - dept.icon — Lucide icon name
+    - dept.id — department identifier
+    - CLIENT_DATA.perimetre — full list (to build "switch to other" nav)
+  CUSTOMIZATION:
+    - Change the gradient background: linear-gradient(135deg, var(--primary-soft), var(--bg-alt))
+    - Adjust icon badge size (w-14 h-14) for larger/smaller icons
+    - Add more metadata (e.g. maturity score) next to the headcount
+  DEPENDENCIES: icon() function, navigateTo() for switch buttons
+-->
+
+<!-- Back to dashboard -->
+<button class="btn-back flex items-center gap-1.5 text-sm font-medium mb-6" style="color: var(--primary);">
+  <!-- icon('arrow-left', 16, 'var(--primary)') -->
+  Retour au Dashboard Global
+</button>
+
+<!-- METIER HEADER CARD -->
+<section class="mb-8">
+  <div class="rounded-2xl p-6 border"
+       style="background: linear-gradient(135deg, var(--primary-soft), var(--bg-alt)); border-color: var(--primary-border);">
+    <div class="flex items-center gap-4 mb-4">
+      <!-- Large icon badge -->
+      <div class="w-14 h-14 rounded-2xl flex items-center justify-center" style="background: var(--primary-soft);">
+        <!-- icon(dept.icon, 28, 'var(--primary)') -->
+      </div>
+      <div>
+        <h2 class="font-display text-2xl" style="color: var(--ink);">Departement A</h2>
+        <p class="text-sm" style="color: var(--muted);">5 personnes auditees</p>
+      </div>
+    </div>
+
+    <!-- Switch to other metiers (nav pills) -->
+    <div class="flex flex-wrap gap-2">
+      <button class="metier-switch-btn px-3 py-1.5 rounded-full text-xs font-medium border"
+              style="border-color: var(--border); color: var(--muted); background: var(--surface);"
+              data-switch-to="view-metier-departement_b">
+        Departement B
+      </button>
+      <button class="metier-switch-btn px-3 py-1.5 rounded-full text-xs font-medium border"
+              style="border-color: var(--border); color: var(--muted); background: var(--surface);"
+              data-switch-to="view-metier-departement_c">
+        Departement C
+      </button>
+      <!-- One button per OTHER department -->
+    </div>
+  </div>
+</section>
+
+<script>
+// ---- METIER HEADER (part of buildMetierViews) ----
+// This snippet is generated inside the metier view builder loop.
+// The key template fragment:
+
+/*
+const otherDepts = CLIENT_DATA.perimetre.filter(p => p.id !== dept.id);
+
+const headerHtml = `
+  <section class="mb-8">
+    <div class="rounded-2xl p-6 border"
+         style="background: linear-gradient(135deg, var(--primary-soft), var(--bg-alt)); border-color: var(--primary-border);">
+      <div class="flex items-center gap-4 mb-4">
+        <div class="w-14 h-14 rounded-2xl flex items-center justify-center" style="background: var(--primary-soft);">
+          ${icon(dept.icon, 28, 'var(--primary)')}
+        </div>
+        <div>
+          <h2 class="font-display text-2xl" style="color: var(--ink);">${dept.nom}</h2>
+          <p class="text-sm" style="color: var(--muted);">${dept.effectif} personnes auditees</p>
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        ${otherDepts.map(od => `
+          <button class="metier-switch-btn px-3 py-1.5 rounded-full text-xs font-medium border"
+                  style="border-color: var(--border); color: var(--muted); background: var(--surface);"
+                  data-switch-to="view-metier-${od.id}">
+            ${od.nom}
+          </button>
+        `).join('')}
+      </div>
+    </div>
+  </section>`;
+*/
+
+// Wire up switch buttons after injecting HTML:
+// container.querySelectorAll('.metier-switch-btn').forEach(btn => {
+//   btn.addEventListener('click', () => navigateTo(btn.dataset.switchTo));
+// });
+</script>

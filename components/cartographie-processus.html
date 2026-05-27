@@ -1,0 +1,94 @@
+<!--
+  COMPONENT: Cartographie des Processus — Avant / Après IA
+  SECTION: Dashboard global ou Charte — Transformation
+  DATA NEEDED:
+    - CLIENT_DATA.cartographieProcessus.avant:
+        { label, sousTitre, etapes[{ libelle, outil, icon }], irritants[] }
+    - CLIENT_DATA.cartographieProcessus.apres:
+        { label, sousTitre, etapes[{ libelle, outil, icon }], benefices[] }
+  CUSTOMIZATION:
+    - AVANT column: neutral styling (bg-alt, muted colors)
+    - APRÈS column: primary-tinted styling (primary-soft, primary border)
+    - Central IA arrow: accent red background
+  DEPENDENCIES: Tailwind CSS, icon() function, hexToSoft() function
+-->
+
+<!-- ─── ENHANCED PROCESS MAPPING (AVANT / APRÈS) ─── -->
+<div class="rounded-2xl border p-6" style="background: var(--surface); border-color: var(--border);">
+  <!-- Section header -->
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <div class="flex items-center gap-2 mb-1">
+        <!-- icon('git-merge', 16, 'var(--accent)') -->
+        <p class="text-[11px] font-semibold uppercase tracking-[0.18em]" style="color: var(--accent);">Transformation</p>
+      </div>
+      <h3 class="font-display text-xl" style="color: var(--ink);">Cartographie des processus</h3>
+      <p class="text-sm mt-1" style="color: var(--muted);">De l'existant siloté vers un parcours IA intégré</p>
+    </div>
+    <button class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium" style="color: var(--accent); background: var(--accent-soft);">
+      <!-- icon('trending-up', 14, 'var(--accent)') -->
+      Trajectoire cible
+    </button>
+  </div>
+
+  <!-- Two columns with central IA arrow -->
+  <div class="grid grid-cols-1 lg:grid-cols-11 gap-4 items-start">
+
+    <!-- AVANT column -->
+    <div class="lg:col-span-5 rounded-2xl border p-5" style="border-color: var(--border);">
+      <div class="flex items-center gap-2 mb-3">
+        <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded" style="background: var(--bg-alt); color: var(--muted);">Avant</span>
+        <!-- icon('alert-circle', 14, 'var(--muted-soft)') -->
+      </div>
+      <h4 class="text-base font-semibold mb-1" style="color: var(--ink);">Processus actuel</h4>
+      <p class="text-xs mb-4" style="color: var(--muted);">Siloté · manuel · saisie libre</p>
+      <!-- Steps (JS-rendered): each step has a round icon + label + tool name -->
+      <div class="space-y-3" id="avant-steps"></div>
+      <!-- Irritants -->
+      <div class="mt-5 pt-4 border-t" style="border-color: var(--border);">
+        <p class="text-[10px] font-semibold uppercase tracking-wider mb-2" style="color: var(--muted-soft);">Irritants</p>
+        <!-- Pills: neutral grey, dot + text -->
+        <div class="flex flex-wrap gap-2" id="irritants">
+          <!--
+          <span class="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full" style="background: var(--bg-alt); color: var(--muted);">
+            <span class="w-1.5 h-1.5 rounded-full" style="background: var(--muted-soft);"></span> Saisie manuelle
+          </span>
+          -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Central IA arrow -->
+    <div class="lg:col-span-1 flex flex-col items-center justify-center py-8">
+      <div class="w-10 h-10 rounded-full flex items-center justify-center" style="background: var(--accent);">
+        <!-- icon('zap', 20, 'white') -->
+      </div>
+      <span class="text-[10px] font-bold mt-1" style="color: var(--accent);">IA</span>
+    </div>
+
+    <!-- APRÈS column -->
+    <div class="lg:col-span-5 rounded-2xl border-2 p-5" style="border-color: var(--primary-border); background: linear-gradient(180deg, var(--primary-soft) 0%, var(--surface) 100%);">
+      <div class="flex items-center gap-2 mb-3">
+        <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded" style="background: var(--accent); color: white;">Après</span>
+        <!-- icon('rocket', 14, 'var(--primary)') -->
+      </div>
+      <h4 class="text-base font-semibold mb-1" style="color: var(--ink);">Processus cible IA</h4>
+      <p class="text-xs mb-4" style="color: var(--muted);">Intégré · automatisé · gouverné</p>
+      <!-- Steps (JS-rendered) -->
+      <div class="space-y-3" id="apres-steps"></div>
+      <!-- Bénéfices -->
+      <div class="mt-5 pt-4 border-t" style="border-color: var(--primary-border);">
+        <p class="text-[10px] font-semibold uppercase tracking-wider mb-2" style="color: var(--accent);">Bénéfices</p>
+        <!-- Pills: green-tinted, "+" prefix -->
+        <div class="flex flex-wrap gap-2" id="benefices">
+          <!--
+          <span class="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full" style="background: rgba(16,185,129,0.12); color: #10b981;">
+            + Automatisation complète
+          </span>
+          -->
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

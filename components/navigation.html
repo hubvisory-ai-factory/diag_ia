@@ -1,0 +1,133 @@
+<!--
+  COMPONENT: Sticky Header + Nav Pills + Navigation Logic
+  SECTION: Global (persistent header across all views)
+  DATA NEEDED:
+    - CLIENT_DATA.branding.clientName — displayed in header
+    - CLIENT_DATA.perimetre — department list for dynamic nav pills
+  CUSTOMIZATION:
+    - Add more static tabs (e.g. "Analytics") by adding nav-pill buttons
+    - Change the logo initial letter and accent dot colors
+    - Adjust header height (default 64px)
+    - Modify the backdrop blur intensity: backdrop-blur-md
+  DEPENDENCIES: icon() function, CSS custom properties
+-->
+
+<!-- STICKY HEADER -->
+<header data-print="hide" class="sticky top-0 z-50 backdrop-blur-md bg-white/95 border-b"
+        style="border-color: var(--border); height: 64px;">
+  <div class="max-w-7xl mx-auto px-4 h-full flex items-center justify-between">
+
+    <!-- Left: Logo + Client Name -->
+    <div class="flex items-center gap-3">
+      <div class="relative w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm"
+           style="background: var(--primary);">
+        N
+        <span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full"
+              style="background: var(--accent);"></span>
+      </div>
+      <div class="leading-tight">
+        <div class="font-semibold text-sm" style="color: var(--ink);">Nom du Client</div>
+        <div class="text-xs" style="color: var(--muted);">Audit IA</div>
+      </div>
+    </div>
+
+    <!-- Center: Nav pills (Dashboard + Charte + dynamic metier pills) -->
+    <nav id="main-nav" class="hidden lg:flex items-center gap-1 bg-gray-50 rounded-full px-1.5 py-1">
+      <button class="nav-pill px-3.5 py-1.5 rounded-full text-xs font-medium transition-all"
+              data-target="view-dashboard"
+              style="background: var(--primary-soft); color: var(--primary);">
+        Dashboard
+      </button>
+      <button class="nav-pill px-3.5 py-1.5 rounded-full text-xs font-medium transition-all"
+              data-target="view-charte"
+              style="color: var(--muted);">
+        Charte
+      </button>
+      <!-- Metier pills injected dynamically by initNavigation() -->
+    </nav>
+
+    <!-- Right: Print button -->
+    <button id="btn-print" class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium border"
+            style="border-color: var(--border); color: var(--muted);">
+      <!-- icon('printer', 14, 'var(--muted)') -->
+      Imprimer
+    </button>
+
+  </div>
+</header>
+
+<!-- Required CSS for nav pills: -->
+<!--
+  .nav-pill { transition: background 0.15s, color 0.15s; }
+  .nav-pill:hover { background: var(--primary-soft); }
+-->
+
+<script>
+// ---- VIEW NAVIGATION ----
+let currentView = 'view-dashboard';
+
+function navigateTo(viewId) {
+  // Hide all views
+  document.querySelectorAll('[data-view]').forEach(el => el.style.display = 'none');
+
+  // Show target view
+  const target = document.querySelector(`[data-view="${viewId}"]`) || document.getElementById(viewId);
+  if (target) {
+    target.style.display = 'block';
+    currentView = viewId;
+  }
+
+  // Update nav pill active states
+  document.querySelectorAll('.nav-pill').forEach(pill => {
+    if (pill.dataset.target === viewId) {
+      pill.style.background = 'var(--primary-soft)';
+      pill.style.color = 'var(--primary)';
+    } else {
+      pill.style.background = 'transparent';
+      pill.style.color = 'var(--muted)';
+    }
+  });
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ---- NAV INIT ----
+function initNavigation(theme) {
+  const nav = document.getElementById('main-nav');
+
+  // Dynamically add one pill per department
+  if (nav) {
+    CLIENT_DATA.perimetre.forEach(dept => {
+      const btn = document.createElement('button');
+      btn.className = 'nav-pill px-3.5 py-1.5 rounded-full text-xs font-medium transition-all';
+      btn.dataset.target = 'view-metier-' + dept.id;
+      btn.style.color = 'var(--muted)';
+      btn.textContent = dept.nom;
+      nav.appendChild(btn);
+    });
+  }
+
+  // Wire click events on all nav pills
+  document.querySelectorAll('.nav-pill').forEach(pill => {
+    pill.addEventListener('click', () => navigateTo(pill.dataset.target));
+  });
+
+  // Wire back buttons throughout the page
+  document.querySelectorAll('.btn-back').forEach(btn => {
+    btn.addEventListener('click', () => navigateTo('view-dashboard'));
+  });
+
+  // Start on dashboard
+  navigateTo('view-dashboard');
+}
+
+// ---- PRINT ----
+function initPrint() {
+  const btn = document.getElementById('btn-print');
+  if (btn) btn.addEventListener('click', () => window.print());
+}
+
+// ---- USAGE ----
+// initNavigation(THEME);
+// initPrint();
+</script>

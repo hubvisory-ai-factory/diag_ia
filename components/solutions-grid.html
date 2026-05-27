@@ -1,0 +1,91 @@
+<!--
+  COMPONENT: Solutions Grid with Filter Pills
+  SECTION: Dashboard global — Solutions transverses
+  DATA NEEDED:
+    - CLIENT_DATA.solutionsTransverses[] — array of solutions with:
+        { id, titre, icon, minutesGagnees, typologies[], complexite, description }
+    - CLIENT_DATA.methodologie.typologiesExplications[] — for color mapping
+  CUSTOMIZATION:
+    - typoColors map: assign a color per typology name
+    - complexite values: 'quickwin' | 'projet_metier'
+  DEPENDENCIES: Tailwind CSS, icon() function, hexToSoft() function
+-->
+
+<!-- ─── SOLUTIONS GRID WITH FILTER PILLS ─── -->
+<div class="rounded-2xl border p-6" style="background: var(--surface); border-color: var(--border);">
+  <!-- Section header -->
+  <div class="flex items-center justify-between mb-2">
+    <div>
+      <div class="flex items-center gap-2 mb-1">
+        <!-- icon('layers', 16, 'var(--accent)') -->
+        <p class="text-[11px] font-semibold uppercase tracking-[0.18em]" style="color: var(--accent);">Solutions transverses</p>
+      </div>
+      <h3 class="font-display text-xl" style="color: var(--ink);">Catalogue des solutions identifiées</h3>
+      <p class="text-sm mt-1" style="color: var(--muted);">Solutions immédiatement activables, toutes équipes confondues</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <span class="text-xs font-medium px-2.5 py-1 rounded-full" style="background: var(--primary-soft); color: var(--primary);" id="solutions-count">
+        <!-- JS: `${filtered.length} cas` -->
+      </span>
+      <span class="text-xs" style="color: var(--muted);">~7 h/sem · panel complet</span>
+    </div>
+  </div>
+
+  <!-- Legend -->
+  <div class="flex items-center gap-4 mt-3 mb-4">
+    <div class="flex items-center gap-1.5">
+      <span class="w-2 h-2 rounded-full" style="background: var(--primary);"></span>
+      <span class="text-xs" style="color: var(--muted-soft);">TYPOLOGIE — nature de la valeur</span>
+    </div>
+    <div class="flex items-center gap-1.5">
+      <span class="text-xs font-semibold" style="color: var(--muted-soft);">COMPLEXITÉ</span>
+      <span class="w-3 h-2 rounded" style="background: #10b981;"></span>
+      <span class="w-3 h-2 rounded" style="background: #f59e0b;"></span>
+      <span class="w-3 h-2 rounded" style="background: #dc2626;"></span>
+      <span class="text-xs" style="color: var(--muted-soft);">— effort d'implémentation</span>
+    </div>
+  </div>
+
+  <!-- Filter pills (JS-rendered) -->
+  <!--
+    Each pill: <button class="sol-filter px-3.5 py-1.5 rounded-full text-xs font-semibold border">
+    Active state: background: var(--ink); color: white; border-color: var(--ink);
+    Inactive state: background: var(--surface); color: var(--muted); border-color: var(--border);
+    First pill is "Toutes {total}" — always present
+    Subsequent pills: one per unique typology with count
+  -->
+  <div class="flex flex-wrap gap-2 mb-6" id="solutions-filters"></div>
+
+  <!-- Card grid (JS-rendered) -->
+  <!--
+    Each card:
+    - Left-colored border (border-left-color matches first typology color)
+    - Icon + title + minutes gained
+    - Typology pills (dot + label, colored per typology)
+    - Complexity pill (zap icon for quickwin, git-merge for projet_metier)
+  -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="solutions-grid"></div>
+</div>
+
+<!-- ─── SINGLE CARD EXAMPLE (static reference) ─── -->
+<!--
+<div class="rounded-xl border-l-4 border p-4" style="border-color: var(--border); border-left-color: #dc2626; background: var(--surface);">
+  <div class="flex items-start gap-3 mb-3">
+    <div class="w-9 h-9 rounded-lg flex-shrink-0 flex items-center justify-center" style="background: var(--bg-alt);">
+      icon('mail', 18, 'var(--muted)')
+    </div>
+    <div class="flex-1 min-w-0">
+      <h4 class="text-sm font-semibold mb-0.5" style="color: var(--ink);">Solution transverse n°1</h4>
+      <p class="text-xs" style="color: var(--accent);">+25 min · gain estimé</p>
+    </div>
+  </div>
+  <div class="flex flex-wrap gap-1.5">
+    <span class="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full" style="background: rgba(220,38,38,0.1); color: #dc2626;">
+      <span class="w-1.5 h-1.5 rounded-full" style="background: #dc2626;"></span> Rédaction
+    </span>
+    <span class="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full" style="background: rgba(16,185,129,0.1); color: #10b981;">
+      icon('zap', 10, '#10b981') Quick Win
+    </span>
+  </div>
+</div>
+-->

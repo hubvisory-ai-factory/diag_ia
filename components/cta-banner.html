@@ -1,0 +1,57 @@
+<!--
+  COMPONENT: CTA Banner (gradient call-to-action)
+  SECTION: Dashboard > CTA Banner (between charts and risks)
+  DATA NEEDED:
+    - CLIENT_DATA.globalMetrics.casUsageRecenses — total use case count
+    - CLIENT_DATA.globalMetrics.quickWinsCount — quick wins count
+    - CLIENT_DATA.perimetre[0] — first department (for navigation target)
+    - CSS vars --primary, --accent
+  CUSTOMIZATION:
+    - Change the gradient direction: linear-gradient(135deg, ...) to any angle
+    - Swap the colors in the gradient stops
+    - Edit CTA button text and destination
+    - Replace the large number with any other metric
+  DEPENDENCIES: navigateTo() function, CSS custom properties --primary and --accent
+-->
+
+<!-- CTA BANNER -->
+<section class="mb-8">
+  <div class="rounded-2xl p-8 lg:p-10 flex flex-col lg:flex-row items-center justify-between gap-6"
+       style="background: linear-gradient(135deg, var(--primary), var(--accent));">
+    <div class="flex items-center gap-6">
+      <!-- Large metric number -->
+      <span class="text-white font-bold" style="font-size: 64px; line-height: 1;" id="cta-count">12</span>
+      <div>
+        <h3 class="text-white font-semibold text-lg" id="cta-title">Cas d'usage identifies</h3>
+        <p class="text-white/70 text-sm" id="cta-desc">Dont 5 quick wins identifies — prets a etre deployes.</p>
+      </div>
+    </div>
+    <button id="btn-cta-explore"
+            class="flex items-center gap-2 px-5 py-2.5 bg-white rounded-lg font-semibold text-sm whitespace-nowrap"
+            style="color: var(--primary);">
+      Explorer les espaces metier
+      <!-- icon('arrow-right', 16, 'var(--primary)') -->
+    </button>
+  </div>
+</section>
+
+<script>
+// ---- CTA BUILDER ----
+function buildCTA(theme) {
+  const count = document.getElementById('cta-count');
+  const desc = document.getElementById('cta-desc');
+  if (count) count.textContent = CLIENT_DATA.globalMetrics.casUsageRecenses;
+  if (desc) desc.textContent = `Dont ${CLIENT_DATA.globalMetrics.quickWinsCount} quick wins identifies — prets a etre deployes.`;
+
+  const btnExplore = document.getElementById('btn-cta-explore');
+  if (btnExplore) {
+    btnExplore.addEventListener('click', () => {
+      const first = CLIENT_DATA.perimetre[0];
+      if (first) navigateTo('view-metier-' + first.id);
+    });
+  }
+}
+
+// ---- USAGE ----
+// buildCTA(THEME);
+</script>

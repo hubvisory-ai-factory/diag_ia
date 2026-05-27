@@ -1,0 +1,2072 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <base href="/clients/clovis/">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <title>Audit de maturité IA — Clovis</title>
+
+  <!-- CDN Dependencies -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind Config -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            body: ['Inter', 'system-ui', 'sans-serif'],
+            display: ['DM Serif Display', 'serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    :root {
+      --primary: #003366;
+      --accent: #E30613;
+      --primary-soft: rgba(0, 51, 102, 0.08);
+      --accent-soft: rgba(227, 6, 19, 0.08);
+      --primary-border: rgba(0, 51, 102, 0.22);
+      --accent-border: rgba(227, 6, 19, 0.22);
+      --ink: #0f172a;
+      --muted: #475569;
+      --muted-soft: #94a3b8;
+      --border: #e2e8f0;
+      --surface: #ffffff;
+      --bg: #f6f8fb;
+      --bg-alt: #eef2f8;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    /* Anti-FOUC */
+    body { opacity: 0; transition: opacity 0.2s; }
+    body.loaded { opacity: 1; }
+
+    /* Print */
+    @media print {
+      [data-view] { display: block !important; }
+      [data-print="hide"] { display: none !important; }
+      header { position: static !important; }
+      [data-view] { page-break-before: always; }
+      [data-view]:first-child { page-break-before: auto; }
+      section { page-break-inside: avoid; }
+      body { background: white !important; }
+      canvas { max-width: 100% !important; }
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* Hide scrollbar on nav */
+    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+
+    /* Nav pill transitions */
+    .nav-pill { transition: background 0.15s, color 0.15s; }
+    .nav-pill:hover { background: var(--primary-soft); }
+
+    /* Card hover */
+    .card-hover { transition: box-shadow 0.2s, transform 0.15s; }
+    .card-hover:hover { box-shadow: 0 4px 24px rgba(0,0,0,0.06); transform: translateY(-1px); }
+
+    /* Glossary accordion */
+    .glossary-def { max-height: 0; overflow: hidden; transition: max-height 0.25s ease-out; }
+    .glossary-def.open { max-height: 200px; }
+
+    /* Heatmap cell */
+    .heat-cell { transition: transform 0.15s; border-radius: 6px; }
+    .heat-cell:hover { transform: scale(1.08); }
+  </style>
+</head>
+<body>
+
+<!-- ===================== CLIENT_DATA ===================== -->
+<script>
+const CLIENT_DATA = {
+  branding: {
+    clientName: "Clovis",
+    clientFullName: "Clovis",
+    sector: "Location & gestion de flottes Poids Lourds / VUL",
+    missionCode: "CLV-IA-2026",
+    missionTitle: "Audit de maturité IA",
+    missionSubtitle: "Cap flotte connectée 2027",
+    auditor: "Cabinet Conseil IA",
+    period: "T2 2026",
+    primaryColor: "#003366",
+    secondaryColor: "#E30613",
+    logoUrl: "",
+    font: "'Inter', system-ui, -apple-system, sans-serif"
+  },
+  methodologie: {
+    introTitle: "Guide méthodologique",
+    introSubtitle: "Comment lire l'audit : typologies de cas d'usage & échelle de complexité",
+    typologiesExplications: [
+      { id: "analyse_doc", nom: "Analyse documentaire", icon: "file-search", couleur: "primary", definition: "Lecture, extraction et croisement d'informations à partir de documents (contrats, rapports, factures, PDF scannés).", exemple: "Extraire automatiquement les clauses de pénalité dans 200 contrats de location longue durée chez Clovis." },
+      { id: "synthese", nom: "Synthèse", icon: "layers", couleur: "primary", definition: "Condenser des données ou textes longs en informations clés actionnables (bullet points, tableau, brief).", exemple: "Générer un briefing client 5 lignes à partir de l'historique CRM, sinistres et facturation avant un RDV commercial." },
+      { id: "redaction", nom: "Rédaction", icon: "edit-3", couleur: "primary", definition: "Production de contenu écrit personnalisé (emails, comptes-rendus, devis, supports CODIR) à partir d'instructions.", exemple: "Drafter un mail commercial personnalisé pour chaque chargé client en s'appuyant sur l'historique du compte." },
+      { id: "nettoyage_data", nom: "Nettoyage de données", icon: "filter", couleur: "accent", definition: "Normaliser, dédupliquer et structurer des données issues de saisies libres ou multi-sources.", exemple: "Harmoniser les motifs de panne saisis librement dans Zadig en référentiel contrôlé (15 catégories)." },
+      { id: "recherche", nom: "Recherche", icon: "search", couleur: "primary", definition: "Trouver une information précise dans une base documentaire interne ou une masse de données métier (RAG).", exemple: "Interroger en langage naturel le catalogue fournisseurs pour identifier la pièce compatible avec un modèle de poids lourd." },
+      { id: "automatisation", nom: "Automatisation", icon: "zap", couleur: "accent", definition: "Enchaîner plusieurs actions de bout en bout sans intervention humaine (agent IA), entre plusieurs systèmes.", exemple: "Agent qui détecte un RDV atelier non confirmé, envoie une relance, attend la réponse puis met à jour l'ERP." }
+    ],
+    complexiteCriteres: [
+      { id: "faible", niveau: "Faible complexité", sousTitre: "Quick Win — déployable en < 6 mois", couleur: "green", icon: "zap", characteristiques: ["IA sur étagère (ChatGPT, Copilot, Claude)", "Aucun développement requis", "Pas de sujet RGPD critique", "Gain de temps immédiat et mesurable"], exemples: ["Synthèse de réunion", "Aide à la rédaction d'emails", "Reformulation"], delai: "0 - 3 mois", investissement: "Faible" },
+      { id: "moyenne", niveau: "Complexité moyenne", sousTitre: "Projet métier — configuration & no-code", couleur: "amber", icon: "settings", characteristiques: ["Configuration / outils no-code (Make, Zapier, n8n)", "Assistants personnalisés (GPTs, prompts métier)", "Données internes non critiques", "Implication du métier dans le paramétrage"], exemples: ["Synthèse historique client (CRM)", "Génération de devis paramétrique", "Assistants GPTs métier"], delai: "3 - 9 mois", investissement: "Modéré" },
+      { id: "forte", niveau: "Forte valeur ajoutée", sousTitre: "Projet stratégique — sur-mesure", couleur: "red", icon: "trending-up", characteristiques: ["Développement sur-mesure", "Intégration d'API & architecture RAG", "Sécurité des données pilotée par la DSI", "Gouvernance et MLOps en production"], exemples: ["Maintenance prédictive flotte", "Jumeau numérique véhicules", "Plateforme RAG interne"], delai: "9 - 24 mois", investissement: "Élevé" }
+    ]
+  },
+  hubvisoryContext: {
+    tagline: "Cabinet de conseil expert en stratégie, produit et industrialisation de l'IA.",
+    description: "Nous accompagnons les organisations de la vision stratégique au déploiement opérationnel de leurs solutions IA, en garantissant l'adoption par les équipes et la maîtrise des risques.",
+    expertises: [
+      { titre: "Gouvernance IA", description: "Cadre, charte, comité, conformité." },
+      { titre: "Acculturation", description: "Formation et conduite du changement." },
+      { titre: "MVP IA & RAG", description: "Prototypage et industrialisation." }
+    ],
+    contact: { email: "contact@hubvisory.com", website: "https://hubvisory.com", linkedin: "https://www.linkedin.com/company/hubvisory" },
+    ctaText: "Discuter de votre feuille de route IA",
+    ctaSubject: "Contact Audit IA"
+  },
+  hubvisoryTeam: {
+    title: "Votre Équipe Projet Hubvisory",
+    description: "Nous restons à votre entière disposition pour débriefer ces résultats et lancer les ateliers de cadrage de la Phase 2 (Feuille de route & Spécifications).",
+    members: [
+      { name: "Pierre-Alban KEMPF", role: "Consultant IA / Product Manager", email: "pierre-alban.kempf@hubvisory.com", initials: "PA" },
+      { name: "Benoit ROSIER", role: "Consultant IA / Product Manager", email: "benoit.rosier@hubvisory.com", initials: "BR" }
+    ],
+    ctaText: "Contacter l'équipe projet",
+    ctaSubject: "Audit IA Clovis - Suite de la mission"
+  },
+  quickWinsGeneriques: [
+    { id: "qwg-01", titre: "Aide à la rédaction d'e-mails", typologie: "Génération de Contenu & Rédaction", complexite: "Faible complexité (Quick Win)", gainMin: 25, icon: "mail", impact: "fort" },
+    { id: "qwg-02", titre: "Synthèse de rapports & documents", typologie: "Synthèse & Prise de Décision", complexite: "Faible complexité (Quick Win)", gainMin: 35, icon: "file-text", impact: "fort" },
+    { id: "qwg-03", titre: "Reformulation & correction de textes", typologie: "Génération de Contenu & Rédaction", complexite: "Faible complexité (Quick Win)", gainMin: 10, icon: "check-circle", impact: "moyen" },
+    { id: "qwg-04", titre: "Synthèse de réunions & CR", typologie: "Synthèse & Prise de Décision", complexite: "Faible complexité (Quick Win)", gainMin: 30, icon: "users", impact: "fort" },
+    { id: "qwg-05", titre: "Brainstorming & idéation", typologie: "Génération de Contenu & Rédaction", complexite: "Faible complexité (Quick Win)", gainMin: 20, icon: "lightbulb", impact: "moyen" },
+    { id: "qwg-06", titre: "Traduction multilingue", typologie: "Génération de Contenu & Rédaction", complexite: "Faible complexité (Quick Win)", gainMin: 15, icon: "shuffle", impact: "moyen" },
+    { id: "qwg-07", titre: "Synthèse de rapports d'anomalies", typologie: "Synthèse & Prise de Décision", complexite: "Complexité Moyenne (Projet Métier)", gainMin: 40, icon: "alert-circle", impact: "fort" },
+    { id: "qwg-08", titre: "Recherche documentaire interne", typologie: "Recherche & Base de Connaissances", complexite: "Complexité Moyenne (Projet Métier)", gainMin: 25, icon: "search", impact: "fort" },
+    { id: "qwg-09", titre: "Génération de slides / supports", typologie: "Génération de Contenu & Rédaction", complexite: "Faible complexité (Quick Win)", gainMin: 45, icon: "layers", impact: "fort" },
+    { id: "qwg-10", titre: "Extraction de données (OCR / PDF)", typologie: "Analyse & Extraction Documentaire", complexite: "Complexité Moyenne (Projet Métier)", gainMin: 30, icon: "database", impact: "fort" },
+    { id: "qwg-11", titre: "Préparation d'entretiens / RDV", typologie: "Synthèse & Prise de Décision", complexite: "Faible complexité (Quick Win)", gainMin: 20, icon: "calendar", impact: "moyen" },
+    { id: "qwg-12", titre: "Veille sectorielle automatisée", typologie: "Recherche & Base de Connaissances", complexite: "Complexité Moyenne (Projet Métier)", gainMin: 30, icon: "trending-up", impact: "moyen" },
+    { id: "qwg-13", titre: "Génération de tableaux & matrices", typologie: "Nettoyage & Structuration de Données", complexite: "Faible complexité (Quick Win)", gainMin: 20, icon: "bar-chart-3", impact: "moyen" },
+    { id: "qwg-14", titre: "Assistant Excel / formules", typologie: "Nettoyage & Structuration de Données", complexite: "Faible complexité (Quick Win)", gainMin: 15, icon: "tool", impact: "moyen" },
+    { id: "qwg-15", titre: "Note de cadrage / brief projet", typologie: "Génération de Contenu & Rédaction", complexite: "Complexité Moyenne (Projet Métier)", gainMin: 35, icon: "clipboard", impact: "moyen" },
+    { id: "qwg-16", titre: "Onboarding & FAQ collaborateurs", typologie: "Recherche & Base de Connaissances", complexite: "Complexité Moyenne (Projet Métier)", gainMin: 25, icon: "graduation-cap", impact: "moyen" }
+  ],
+  dataGovernance: {
+    sources: [
+      { nom: "Télématique véhicules", type: "Capteurs IoT", volume: "élevé", qualite: 4, icon: "truck" },
+      { nom: "CRM", type: "Base relationnelle", volume: "moyen", qualite: 3, icon: "headset" },
+      { nom: "ERP", type: "Base relationnelle", volume: "élevé", qualite: 4, icon: "database" },
+      { nom: "Saisie libre Zadig", type: "Champs libres", volume: "moyen", qualite: 2, icon: "file-text" },
+      { nom: "Documents fournisseurs", type: "PDF / scans", volume: "moyen", qualite: 2, icon: "clipboard" }
+    ],
+    scoreExploitation: 2.6,
+    scoreLabel: "Données disponibles mais sous-exploitées",
+    axesAmelioration: [
+      { titre: "Standardisation des saisies", description: "Harmoniser les champs libres Zadig en référentiels contrôlés (catégories, statuts, motifs).", effort: "moyen" },
+      { titre: "Centralisation des sources", description: "Lac de données unique (CRM + ERP + télématique) pour autoriser les croisements et le scoring.", effort: "fort" },
+      { titre: "Contrats de qualité (data contracts)", description: "Règles de complétude et de fraîcheur par flux, avec alerting en cas de dérive.", effort: "moyen" }
+    ]
+  },
+  gouvernanceApprofondie: {
+    risquesOperationnels: [
+      { titre: "Fuite de données vers LLM publics", impact: "Critique", description: "Données contractuelles ou personnelles soumises à des chats publics." },
+      { titre: "Shadow IT (outils non référencés)", impact: "Élevé", description: "8/23 outils détectés hors du référentiel DSI." },
+      { titre: "Hallucinations sur réponses clients", impact: "Élevé", description: "Pas de relecture systématique des sorties IA." },
+      { titre: "Perte de traçabilité décisionnelle", impact: "Moyen", description: "Aucun log d'usage centralisé sur les prompts métier." }
+    ],
+    enjeuxOrganisationnels: [
+      { titre: "Conduite du changement", impact: "Élevé", description: "Forte hétérogénéité de maturité IA entre pôles." },
+      { titre: "Restructuration des rôles", impact: "Moyen", description: "Tâches de saisie progressivement automatisées : repositionnement à anticiper." },
+      { titre: "Nouvelle fonction : Référent IA métier", impact: "Moyen", description: "À créer dans chaque pôle pour porter charte + cas d'usage." },
+      { titre: "Pilotage du comité IA", impact: "Élevé", description: "Comité IA en préfiguration, gouvernance à formaliser." }
+    ],
+    besoinsFormation: [
+      { titre: "Acculturation IA générative", niveau: "Tous", duree: "1/2 j", description: "Bases, vocabulaire, risques, opportunités." },
+      { titre: "Prompt engineering métier", niveau: "Référents", duree: "1 j", description: "Maîtrise des patterns de prompts par cas d'usage." },
+      { titre: "RGPD & IA", niveau: "Managers", duree: "1/2 j", description: "Données sensibles, conformité, registre des traitements." },
+      { titre: "Outils & catalogue interne", niveau: "Tous", duree: "2 h", description: "Tour d'horizon des outils IA validés DSI." },
+      { titre: "MLOps & RAG", niveau: "Tech", duree: "2 j", description: "Mise en production de pipelines IA internes." }
+    ]
+  },
+  processMapping: {
+    actuel: {
+      titre: "Processus actuel",
+      sousTitre: "Siloté · manuel · saisie libre",
+      etapes: [
+        { libelle: "Saisie manuelle Zadig", outil: "Zadig", type: "saisie" },
+        { libelle: "Export Excel hebdomadaire", outil: "Excel", type: "saisie" },
+        { libelle: "Consolidation manuelle", outil: "Excel · Mail", type: "manuel" },
+        { libelle: "Analyse au cas par cas", outil: "Gestionnaire Parc", type: "manuel" },
+        { libelle: "Décision sans contexte global", outil: "Mail · Téléphone", type: "decision" }
+      ],
+      irritants: ["Données non croisées", "Délai 24-72 h", "Erreurs de saisie", "Pas de mémoire"]
+    },
+    cible: {
+      titre: "Processus cible IA",
+      sousTitre: "Intégré · automatisé · gouverné",
+      etapes: [
+        { libelle: "Ingestion temps réel multi-sources", outil: "API · Connecteurs", type: "api" },
+        { libelle: "Couche Data normalisée", outil: "Lac de données", type: "data" },
+        { libelle: "Enrichissement IA (RAG, scoring)", outil: "LLM interne", type: "ia" },
+        { libelle: "Recommandations contextualisées", outil: "Copilote métier", type: "ia" },
+        { libelle: "Décision assistée + traçabilité", outil: "Workflow gouverné", type: "decision" }
+      ],
+      benefices: ["Décision < 1 h", "Traçabilité 100 %", "Croisement multi-sources", "Apprentissage continu"]
+    }
+  },
+  perimetre: [
+    { id: "gestionnaire_parc", nom: "Gestionnaire de Parc", effectif: 2, icon: "truck", frequenceUsage: { quotidien: 40, hebdomadaire: 35, occasionnel: 20, jamais: 5 }, dureeAdoption: { moinsDe3Mois: 35, de3a12Mois: 50, plusDe12Mois: 15 } },
+    { id: "assistant_gestionnaire", nom: "Assistant Gestionnaire de Parc", effectif: 2, icon: "clipboard", frequenceUsage: { quotidien: 30, hebdomadaire: 40, occasionnel: 25, jamais: 5 }, dureeAdoption: { moinsDe3Mois: 50, de3a12Mois: 40, plusDe12Mois: 10 } },
+    { id: "charge_client", nom: "Chargé Client", effectif: 2, icon: "headset", frequenceUsage: { quotidien: 55, hebdomadaire: 30, occasionnel: 10, jamais: 5 }, dureeAdoption: { moinsDe3Mois: 20, de3a12Mois: 55, plusDe12Mois: 25 } },
+    { id: "architecte_solution", nom: "Architecte Solution", effectif: 1, icon: "git-merge", frequenceUsage: { quotidien: 70, hebdomadaire: 20, occasionnel: 10, jamais: 0 }, dureeAdoption: { moinsDe3Mois: 10, de3a12Mois: 40, plusDe12Mois: 50 } },
+    { id: "resp_plateforme", nom: "Resp. Plateforme de Gestion de Parc", effectif: 1, icon: "server", frequenceUsage: { quotidien: 65, hebdomadaire: 25, occasionnel: 10, jamais: 0 }, dureeAdoption: { moinsDe3Mois: 15, de3a12Mois: 35, plusDe12Mois: 50 } },
+    { id: "direction", nom: "Direction Générale / Opérationnelle", effectif: 2, icon: "briefcase", frequenceUsage: { quotidien: 25, hebdomadaire: 35, occasionnel: 25, jamais: 15 }, dureeAdoption: { moinsDe3Mois: 45, de3a12Mois: 45, plusDe12Mois: 10 } }
+  ],
+  globalMetrics: {
+    maturiteGlobale: 2.4,
+    confianceGlobale: 3.1,
+    shadowIaOffRoad: 6,
+    totalRepondants: 10,
+    casUsageRecenses: 16,
+    quickWinsCount: 9,
+    benchmarkDelta: "+0.4 vs benchmark transport",
+    scoreBenchmarkHubvisory: 2.7,
+    weightingParams: { usageThreshold: 4, quickWinRatioMin: 0.6, penaltyPerMetier: 0.15, penaltyMax: 0.5 }
+  },
+  axesRadar: [
+    { axe: "Shadow IA", scoreActuel: 1.8, scoreCible: 4, description: "Maîtrise des usages non gouvernés" },
+    { axe: "Gouvernance", scoreActuel: 1.6, scoreCible: 4, description: "Cadre, comité IA, validation" },
+    { axe: "Stack", scoreActuel: 2.4, scoreCible: 4, description: "Outillage référencé et intégré" },
+    { axe: "Formation", scoreActuel: 2, scoreCible: 3.5, description: "Montée en compétence des équipes" },
+    { axe: "Adoption", scoreActuel: 2.8, scoreCible: 4, description: "Diffusion réelle dans les métiers" },
+    { axe: "Cas d'usage", scoreActuel: 3.2, scoreCible: 4.5, description: "Identification et priorisation" }
+  ],
+  heatmapMatrix: [
+    { idMetier: "gestionnaire_parc", usage: 3, confiance: 4 },
+    { idMetier: "assistant_gestionnaire", usage: 4, confiance: 3 },
+    { idMetier: "charge_client", usage: 4, confiance: 4 },
+    { idMetier: "architecte_solution", usage: 5, confiance: 4 },
+    { idMetier: "resp_plateforme", usage: 4, confiance: 5 },
+    { idMetier: "direction", usage: 3, confiance: 3 }
+  ],
+  frequencyUsage: [
+    { bucket: "Plusieurs/jour", pct: 20 },
+    { bucket: "1x/jour", pct: 30 },
+    { bucket: "1x/semaine", pct: 20 },
+    { bucket: "Mensuel", pct: 20 },
+    { bucket: "Jamais", pct: 10 }
+  ],
+  adoptionDuree: [
+    { bucket: "< 3 mois", pct: 30 },
+    { bucket: "3-12 mois", pct: 50 },
+    { bucket: "> 12 mois", pct: 20 }
+  ],
+  stackByMetier: [
+    { idMetier: "gestionnaire_parc", outils: 3, confiance: 70 },
+    { idMetier: "assistant_gestionnaire", outils: 2, confiance: 60 },
+    { idMetier: "charge_client", outils: 5, confiance: 75 },
+    { idMetier: "architecte_solution", outils: 8, confiance: 80 },
+    { idMetier: "resp_plateforme", outils: 9, confiance: 85 },
+    { idMetier: "direction", outils: 4, confiance: 55 }
+  ],
+  useCasesList: [
+    { id: "uc-01", idMetier: "gestionnaire_parc", nomTache: "Analyse rapports carburant & consommation", outilsActuels: ["Excel", "PDF fournisseurs"], irritantCategorie: "Tâches répétitives", descriptionCasIA: "Extraction automatisée des rapports mensuels et détection d'écarts par véhicule.", minutesGagnees: 45, typeTache: "Synthese", gains: ["Productivite", "Qualite"], isQuickWin: true },
+    { id: "uc-02", idMetier: "gestionnaire_parc", nomTache: "Détection anomalies maintenance", outilsActuels: ["GMAO", "Tableurs"], irritantCategorie: "Données dispersées", descriptionCasIA: "Signalement proactif d'usures atypiques à partir des codes erreur télématique.", minutesGagnees: 60, typeTache: "Data", gains: ["Qualite"], isQuickWin: false },
+    { id: "uc-03", idMetier: "gestionnaire_parc", nomTache: "Rédaction CR comités flotte", outilsActuels: ["Word", "PowerPoint"], irritantCategorie: "Temps de rédaction", descriptionCasIA: "Génération de comptes-rendus structurés depuis notes vocales et data export.", minutesGagnees: 30, typeTache: "Redaction", gains: ["Productivite", "Confort"], isQuickWin: true },
+    { id: "uc-04", idMetier: "assistant_gestionnaire", nomTache: "Suivi RDV ateliers", outilsActuels: ["Outlook", "Excel"], irritantCategorie: "Coordination", descriptionCasIA: "Agent IA qui relance et confirme les RDV via mail/SMS.", minutesGagnees: 25, typeTache: "Synthese", gains: ["Productivite"], isQuickWin: true },
+    { id: "uc-05", idMetier: "assistant_gestionnaire", nomTache: "Génération bons de commande", outilsActuels: ["ERP", "Word"], irritantCategorie: "Saisie manuelle", descriptionCasIA: "Pré-remplissage des bons depuis devis fournisseur scanné (OCR + LLM).", minutesGagnees: 20, typeTache: "Redaction", gains: ["Productivite"], isQuickWin: true },
+    { id: "uc-06", idMetier: "assistant_gestionnaire", nomTache: "Recherche pièces référencées", outilsActuels: ["Catalogue PDF", "Google"], irritantCategorie: "Recherche dispersée", descriptionCasIA: "Moteur RAG sur catalogues fournisseurs internes.", minutesGagnees: 15, typeTache: "Recherche", gains: ["Confort", "Qualite"], isQuickWin: false },
+    { id: "uc-07", idMetier: "charge_client", nomTache: "Rédaction emails commerciaux personnalisés", outilsActuels: ["Outlook", "CRM"], irritantCategorie: "Personnalisation chronophage", descriptionCasIA: "Drafts personnalisés à partir de l'historique CRM client.", minutesGagnees: 35, typeTache: "Redaction", gains: ["Productivite", "Qualite"], isQuickWin: true },
+    { id: "uc-08", idMetier: "charge_client", nomTache: "Synthèse historique client avant RDV", outilsActuels: ["CRM", "Tickets SAV"], irritantCategorie: "Données silotées", descriptionCasIA: "Briefing IA agrégeant CRM, contrats, sinistres et facturation.", minutesGagnees: 20, typeTache: "Synthese", gains: ["Qualite", "Confort"], isQuickWin: true },
+    { id: "uc-09", idMetier: "charge_client", nomTache: "Génération devis types", outilsActuels: ["Excel", "ERP"], irritantCategorie: "Calculs récurrents", descriptionCasIA: "Assistant de devis paramétrique conforme à la grille tarifaire.", minutesGagnees: 40, typeTache: "Data", gains: ["Productivite"], isQuickWin: false },
+    { id: "uc-10", idMetier: "architecte_solution", nomTache: "Cartographie process AS-IS", outilsActuels: ["Visio", "Confluence"], irritantCategorie: "Documentation", descriptionCasIA: "Génération de diagrammes process à partir d'entretiens transcrits.", minutesGagnees: 90, typeTache: "Synthese", gains: ["Productivite"], isQuickWin: false },
+    { id: "uc-11", idMetier: "architecte_solution", nomTache: "Documentation technique", outilsActuels: ["Confluence", "Word"], irritantCategorie: "Rédaction technique", descriptionCasIA: "Génération de specs structurées à partir de bullet points.", minutesGagnees: 60, typeTache: "Redaction", gains: ["Qualite"], isQuickWin: true },
+    { id: "uc-12", idMetier: "resp_plateforme", nomTache: "Analyse logs et incidents", outilsActuels: ["Kibana", "Datadog"], irritantCategorie: "Volume de logs", descriptionCasIA: "Clustering automatique des incidents et résumé hebdomadaire.", minutesGagnees: 50, typeTache: "Data", gains: ["Qualite", "Productivite"], isQuickWin: true },
+    { id: "uc-13", idMetier: "resp_plateforme", nomTache: "Génération scripts SQL ad-hoc", outilsActuels: ["DBeaver", "SSMS"], irritantCategorie: "Requêtes répétitives", descriptionCasIA: "Copilote SQL contextualisé sur le schéma de la plateforme.", minutesGagnees: 35, typeTache: "Data", gains: ["Productivite"], isQuickWin: false },
+    { id: "uc-14", idMetier: "direction", nomTache: "Synthèse hebdo indicateurs", outilsActuels: ["PowerBI", "Excel"], irritantCategorie: "Lecture de dashboards", descriptionCasIA: "Bullet-points executive depuis exports PowerBI.", minutesGagnees: 45, typeTache: "Synthese", gains: ["Productivite", "Confort"], isQuickWin: true },
+    { id: "uc-15", idMetier: "direction", nomTache: "Préparation supports CODIR", outilsActuels: ["PowerPoint"], irritantCategorie: "Mise en forme", descriptionCasIA: "Génération de slides à partir d'une trame et de données chiffrées.", minutesGagnees: 75, typeTache: "Redaction", gains: ["Confort"], isQuickWin: false },
+    { id: "uc-16", idMetier: "direction", nomTache: "Veille concurrence", outilsActuels: ["Google", "Newsletters"], irritantCategorie: "Information éparse", descriptionCasIA: "Agent de veille hebdo filtré et résumé.", minutesGagnees: 30, typeTache: "Recherche", gains: ["Qualite"], isQuickWin: true }
+  ],
+  risques: [
+    { libelle: "Données sensibles partagées avec LLM publics", niveau: "Rouge", note: "Contrats, RH, données clients" },
+    { libelle: "Outils non conformes RGPD", niveau: "Rouge", note: "8/23 outils détectés" },
+    { libelle: "Over-trust sur sorties IA non vérifiées", niveau: "Orange", note: "Aucun process de relecture" },
+    { libelle: "Absence de validation humaine systématique", niveau: "Orange", note: "Surtout sur emails clients" },
+    { libelle: "Pas de référentiel d'usages partagé", niveau: "Orange", note: "Pratiques individuelles" },
+    { libelle: "Gouvernance IA émergente", niveau: "Vert", note: "Comité en préfiguration" }
+  ],
+  roadmap: [
+    { horizon: "0-6 mois", titre: "Fondations & Quick-wins", items: ["Référentiel d'outils IA validés", "Charte IA v1", "6 quick-wins déployés"], impact: "Moyen", complexite: "Faible", type: "Quick-wins" },
+    { horizon: "6-12 mois", titre: "Industrialisation", items: ["Plateforme RAG interne", "Plan de formation par métier", "MLOps fondations"], impact: "Fort", complexite: "Moyenne", type: "Structurel" },
+    { horizon: "12-24 mois", titre: "Flotte intelligente", items: ["Maintenance prédictive en prod", "Jumeau numérique flotte", "Charte IA v2"], impact: "Très fort", complexite: "Élevée", type: "Vision" }
+  ],
+  glossaire: [
+    { terme: "LLM", definition: "Large Language Model — modèle de langage capable de comprendre et générer du texte (GPT, Claude, Mistral)." },
+    { terme: "Prompt", definition: "Instruction donnée à un modèle IA pour obtenir une réponse. Qualité du prompt = qualité du résultat." },
+    { terme: "Agent", definition: "Système IA capable d'enchaîner des actions de façon autonome pour accomplir une tâche complexe." },
+    { terme: "RAG", definition: "Retrieval-Augmented Generation — un LLM connecté à une base documentaire interne pour répondre sur ses données." },
+    { terme: "Hallucination", definition: "Réponse IA factuellement incorrecte présentée comme vraie. Risque principal du LLM." },
+    { terme: "Shadow IA", definition: "Usage d'outils IA hors du contrôle de la DSI, source de risques data et conformité." },
+    { terme: "Quick-win", definition: "Cas d'usage à fort ROI et faible complexité, livrable en moins de 6 mois." },
+    { terme: "MLOps", definition: "Industrialisation du cycle de vie des modèles IA (build, deploy, monitor)." },
+    { terme: "Jumeau numérique", definition: "Réplique virtuelle d'un actif physique alimentée en temps réel par ses capteurs." },
+    { terme: "Fine-tuning", definition: "Spécialisation d'un modèle pré-entraîné sur un domaine ou une entreprise." },
+    { terme: "Token", definition: "Unité élémentaire (fragment de mot) traitée par un LLM. La facturation se fait au token." },
+    { terme: "Embedding", definition: "Représentation vectorielle d'un texte, utilisée pour la recherche sémantique." }
+  ],
+  ui: {
+    sections: { dashboard: "Dashboard global", metiers: "Espaces métier", charte: "Charte & Risques", roadmap: "Feuille de route", glossaire: "Glossaire IA" },
+    blocks: {
+      perimetreTitle: "Périmètre de la mission",
+      radarTitle: "Positionnement organisationnel",
+      radarSubtitle: "Score actuel vs cible 2027 — 6 axes",
+      heatmapTitle: "Maturité par métier",
+      heatmapSubtitle: "Usage & Confiance par rôle audité",
+      radarLegendActuel: "Score actuel — audit",
+      radarLegendCible: "Cible sur les 6 prochains mois avec Hubvisory",
+      radarTooltipActuel: "Aujourd'hui",
+      radarTooltipCible: "Cible 6 mois · Hubvisory",
+      metricsTitle: "Métriques quantitatives & usage",
+      shadowTitle: "Shadow IA global",
+      maturityTitle: "Maturité IA — auto-déclarée",
+      confidenceTitle: "Confiance × Diversité de la stack",
+      frequenceTitle: "Fréquence d'utilisation",
+      adoptionTitle: "Durée d'adoption",
+      metricsUsageEyebrow: "Métriques d'utilisation",
+      metricsUsageTitle: "Fréquence & adoption — vue granulaire",
+      metricsUsageSubtitle: "Bascule global ↔ métier pour comparer les pratiques",
+      metricsTabGlobal: "Au global",
+      freqBuckets: { quotidien: "Quotidien", hebdomadaire: "Hebdomadaire", occasionnel: "Occasionnel", jamais: "Jamais" },
+      adoptionBuckets: { moinsDe3Mois: "< 3 mois", de3a12Mois: "3-12 mois", plusDe12Mois: "> 12 mois" },
+      risquesTitle: "Principes directeurs — Charte IA",
+      roadmapTitle: "Feuille de route IA (12-24 mois)",
+      glossaireTitle: "Glossaire IA",
+      casUsageTitle: "Cas d'usage recensés",
+      casUsageCta: "Explorer les espaces métier",
+      ucTableTitle: "Tous les cas d'usage du métier",
+      ucTableSubtitle: "Triés par priorité (ROI × complexité) — cliquer pour voir le détail",
+      ucColTask: "Cas d'usage",
+      ucColTypo: "Typologie",
+      ucColComplex: "Complexité",
+      ucColROI: "ROI / Gain",
+      ucColAction: "",
+      ucModalEyebrow: "Détail du cas d'usage",
+      ucModalDescLabel: "Opportunité IA",
+      ucModalIrritant: "Irritant identifié",
+      ucModalTools: "Outils actuels",
+      ucModalGains: "Gains attendus",
+      ucModalMinutes: "Temps gagné estimé",
+      ucModalClose: "Fermer",
+      quickWinsTitle: "Quick Wins",
+      topUseCasesTitle: "Top 3 cas d'usage à plus fort ROI",
+      quickWinsGeneriquesTitle: "Quick wins transverses",
+      quickWinsGeneriquesSubtitle: "16 cas d'usage immédiatement activables, toutes équipes confondues",
+      gouvernanceTitle: "Gouvernance IA globale",
+      gouvernanceSubtitle: "Risques, organisation, formation — vision 360°",
+      dataHealthTitle: "Loupe sur la Data",
+      dataHealthSubtitle: "Sources et qualité des données mobilisables",
+      processMappingTitle: "Cartographie des processus",
+      processMappingSubtitle: "De l'existant siloté vers un parcours IA intégré",
+      methodoTitle: "Guide méthodologique : Typologies & Complexité",
+      methodoSubtitle: "Comprendre les critères d'évaluation de l'audit IA",
+      methodoTabTypo: "Décoder les typologies",
+      methodoTabComplex: "Comprendre la complexité & ROI",
+      scoreMethodoNote: "Le score prend en compte la complexité des solutions IA adoptées, et non pas uniquement le volume d'utilisation.",
+      scoreBenchmarkLabel: "Moyenne marché (Hubvisory)",
+      scoreClientLabel: "Score pondéré client",
+      scoreImbalanceWarn: "Usage élevé mais complexité basse",
+      scoreImbalanceHint: "Métiers à recentrer sur des cas d'usage à plus forte valeur",
+      backToDashboard: "← Retour au Dashboard Global"
+    }
+  },
+  computedColors: {
+    heat: ["#dc2626", "#f97316", "#f59e0b", "#84cc16", "#10b981"],
+    riskMap: { Rouge: "#dc2626", Orange: "#f59e0b", Vert: "#10b981" }
+  }
+};
+</script>
+
+<!-- ===================== HEADER ===================== -->
+<header data-print="hide" class="sticky top-0 z-50 backdrop-blur-md bg-white/95 border-b" style="border-color: var(--border); height: 64px;">
+  <div class="max-w-7xl mx-auto px-4 h-full flex items-center justify-between">
+    <!-- Left: Logo + Name -->
+    <div class="flex items-center gap-3 flex-shrink-0 mr-4">
+      <img src="assets/clovis_logo_white_backround.svg" alt="Clovis" class="h-9 w-auto" />
+      <div class="leading-tight">
+        <div class="font-semibold text-sm" style="color: var(--ink);" id="header-client-name">Clovis</div>
+        <div class="text-xs" style="color: var(--muted);">Audit IA</div>
+      </div>
+    </div>
+
+    <!-- Center: Nav pills -->
+    <div class="hidden lg:block min-w-0 relative" id="nav-wrapper">
+      <div class="nav-fade nav-fade-left absolute left-0 top-0 bottom-0 w-6 z-10 rounded-l-full pointer-events-none opacity-0 transition-opacity" style="background: linear-gradient(to right, #f9fafb, transparent);"></div>
+      <nav id="main-nav" class="flex items-center gap-1 bg-gray-50 rounded-full px-1.5 py-1 overflow-x-auto scrollbar-hide">
+        <button class="nav-pill px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap" data-target="view-dashboard" style="background: var(--primary-soft); color: var(--primary);">
+          Dashboard
+        </button>
+        <button class="nav-pill px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap" data-target="view-charte" style="color: var(--muted);">
+          Charte
+        </button>
+        <!-- Métier pills injected by JS -->
+      </nav>
+      <div class="nav-fade nav-fade-right absolute right-0 top-0 bottom-0 w-6 z-10 rounded-r-full pointer-events-none opacity-100 transition-opacity" style="background: linear-gradient(to left, #f9fafb, transparent);"></div>
+    </div>
+
+    <!-- Right: Print -->
+    <button id="btn-print" class="flex items-center justify-center w-9 h-9 rounded-lg border flex-shrink-0 ml-4" style="border-color: var(--border); color: var(--muted);">
+      <span id="icon-print"></span>
+    </button>
+  </div>
+</header>
+
+<!-- ===================== VIEWS ===================== -->
+<main class="max-w-7xl mx-auto px-4 py-8 space-y-0">
+
+  <!-- ==================== DASHBOARD VIEW ==================== -->
+  <div data-view="view-dashboard" id="view-dashboard">
+
+    <!-- HERO SECTION -->
+    <section class="grid grid-cols-12 gap-6 mb-8">
+      <!-- Left: Mission info -->
+      <div class="col-span-12 lg:col-span-7">
+        <div class="w-10 h-1 rounded-full mb-4" style="background: var(--accent);"></div>
+        <p class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--accent);" id="hero-perimetre-title">Périmètre de la mission</p>
+        <h1 class="font-display text-3xl lg:text-4xl mb-1" style="color: var(--ink);" id="hero-mission-title">Audit de maturité IA</h1>
+        <p class="font-display text-xl lg:text-2xl mb-4" style="color: var(--primary);" id="hero-mission-subtitle">Cap flotte connectée 2027</p>
+        <p class="text-sm leading-relaxed mb-5" style="color: var(--muted); max-width: 540px;">
+          Ce rapport présente les résultats de l'audit de maturité IA mené auprès de 10 collaborateurs Clovis.
+          Il identifie 16 cas d'usage prioritaires, évalue la maturité actuelle et propose une feuille de route opérationnelle sur 24 mois.
+        </p>
+        <div class="flex flex-wrap gap-2" id="hero-pills">
+          <!-- Injected by JS -->
+        </div>
+      </div>
+
+      <!-- Right: Métiers audités -->
+      <div class="col-span-12 lg:col-span-5">
+        <div class="rounded-2xl border p-6 card-hover" style="background: var(--surface); border-color: var(--border);">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-semibold text-sm" style="color: var(--ink);">Métiers audités</h3>
+            <span class="text-xs font-medium px-2.5 py-1 rounded-full" style="background: var(--primary-soft); color: var(--primary);" id="metier-count-pill"></span>
+          </div>
+          <div class="space-y-3" id="metier-list">
+            <!-- Injected by JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCORE & SHADOW IA -->
+    <section class="grid grid-cols-12 gap-6 mb-8">
+      <!-- Left: Gauge -->
+      <div class="col-span-12 lg:col-span-5">
+        <div class="rounded-2xl border p-6" style="background: var(--surface); border-color: var(--border);">
+          <div class="flex items-center gap-2 mb-4">
+            <span id="icon-gauge-title"></span>
+            <h3 class="font-semibold text-sm" style="color: var(--ink);" id="gauge-title">Maturité IA — auto-déclarée</h3>
+          </div>
+          <div class="flex justify-center" id="gauge-container">
+            <!-- SVG gauge injected by JS -->
+          </div>
+          <div class="flex flex-wrap justify-center gap-3 mt-3" id="gauge-legend">
+            <!-- Injected by JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Shadow IA + Stats -->
+      <div class="col-span-12 lg:col-span-7">
+        <div class="rounded-2xl border overflow-hidden" style="background: var(--surface); border-color: var(--border);">
+          <div class="grid grid-cols-12 h-full">
+            <!-- Left panel: Shadow IA -->
+            <div class="col-span-5 p-6 flex flex-col justify-center" style="background: var(--accent-soft);">
+              <p class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--accent);" id="shadow-title">Shadow IA global</p>
+              <p class="font-bold mb-3" style="color: var(--accent); font-size: 56px; line-height: 1;" id="shadow-pct"></p>
+              <div class="flex flex-wrap gap-1.5">
+                <span class="text-xs px-2 py-0.5 rounded-full font-medium" style="background: var(--accent-border); color: var(--accent);">RGPD</span>
+                <span class="text-xs px-2 py-0.5 rounded-full font-medium" style="background: var(--accent-border); color: var(--accent);">Shadow IT</span>
+              </div>
+            </div>
+            <!-- Right panel: Stats grid -->
+            <div class="col-span-7 p-6">
+              <div class="grid grid-cols-2 gap-4 h-full" id="stats-grid">
+                <!-- Injected by JS -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RADAR + HEATMAP -->
+    <section class="grid grid-cols-12 gap-6 mb-8">
+      <!-- Radar -->
+      <div class="col-span-12 lg:col-span-6">
+        <div class="rounded-2xl border p-6" style="background: var(--surface); border-color: var(--border);">
+          <div class="flex items-center justify-between mb-1">
+            <h3 class="font-semibold text-sm" style="color: var(--ink);" id="radar-title">Positionnement organisationnel</h3>
+          </div>
+          <p class="text-xs mb-4" style="color: var(--muted);" id="radar-subtitle">Score actuel vs cible 2027 — 6 axes</p>
+          <div class="relative" style="height: 300px;">
+            <canvas id="radar-chart"></canvas>
+          </div>
+          <div class="flex items-center justify-center gap-6 mt-3">
+            <div class="flex items-center gap-1.5">
+              <span class="w-3 h-3 rounded-full" style="background: var(--primary);"></span>
+              <span class="text-xs" style="color: var(--muted);" id="radar-legend-actuel">Score actuel — audit</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="w-3 h-3 rounded-full border-2 border-dashed" style="border-color: var(--accent); background: transparent;"></span>
+              <span class="text-xs" style="color: var(--muted);" id="radar-legend-cible">Cible sur les 6 prochains mois avec Hubvisory</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Heatmap -->
+      <div class="col-span-12 lg:col-span-6">
+        <div class="rounded-2xl border p-6" style="background: var(--surface); border-color: var(--border);">
+          <div class="flex items-center justify-between mb-1">
+            <h3 class="font-semibold text-sm" style="color: var(--ink);" id="heatmap-title">Maturité par métier</h3>
+          </div>
+          <p class="text-xs mb-4" style="color: var(--muted);" id="heatmap-subtitle">Usage & Confiance par rôle audité</p>
+          <div class="overflow-x-auto">
+            <table class="w-full" id="heatmap-table">
+              <thead>
+                <tr>
+                  <th class="text-left text-xs font-medium py-2 px-3" style="color: var(--muted);">Métier</th>
+                  <th class="text-center text-xs font-medium py-2 px-3" style="color: var(--muted);">Usage</th>
+                  <th class="text-center text-xs font-medium py-2 px-3" style="color: var(--muted);">Confiance</th>
+                </tr>
+              </thead>
+              <tbody id="heatmap-body">
+                <!-- Injected by JS -->
+              </tbody>
+            </table>
+          </div>
+          <div class="flex items-center justify-center gap-1.5 mt-4">
+            <span class="text-xs" style="color: var(--muted);">1</span>
+            <div class="flex gap-0.5" id="heat-legend">
+              <!-- Injected by JS -->
+            </div>
+            <span class="text-xs" style="color: var(--muted);">5</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FREQUENCY + ADOPTION -->
+    <section class="grid grid-cols-12 gap-6 mb-8">
+      <!-- Frequency -->
+      <div class="col-span-12 lg:col-span-6">
+        <div class="rounded-2xl border p-6" style="background: var(--surface); border-color: var(--border);">
+          <h3 class="font-semibold text-sm mb-4" style="color: var(--ink);" id="freq-title">Fréquence d'utilisation</h3>
+          <div style="height: 240px;">
+            <canvas id="frequency-chart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Adoption -->
+      <div class="col-span-12 lg:col-span-6">
+        <div class="rounded-2xl border p-6" style="background: var(--surface); border-color: var(--border);">
+          <h3 class="font-semibold text-sm mb-4" style="color: var(--ink);" id="adoption-title">Durée d'adoption</h3>
+          <div style="height: 240px;">
+            <canvas id="adoption-chart"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCATTER CHART: Tools vs Confidence -->
+    <section class="mb-8">
+      <div class="rounded-2xl border p-6" style="background: var(--surface); border-color: var(--border);">
+        <h3 class="font-semibold text-sm mb-1" style="color: var(--ink);">Outils IA vs Confiance par métier</h3>
+        <p class="text-xs mb-4" style="color: var(--muted);">Positionnement des métiers selon leur outillage et leur niveau de confiance</p>
+        <div style="height: 300px;">
+          <canvas id="scatter-chart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA BANNER -->
+    <section class="mb-8">
+      <div class="rounded-2xl p-8 lg:p-10 flex flex-col lg:flex-row items-center justify-between gap-6" style="background: linear-gradient(135deg, var(--primary), var(--accent));">
+        <div class="flex items-center gap-6">
+          <span class="text-white font-bold" style="font-size: 64px; line-height: 1;" id="cta-count">16</span>
+          <div>
+            <h3 class="text-white font-semibold text-lg" id="cta-title">Cas d'usage recensés</h3>
+            <p class="text-white/70 text-sm" id="cta-desc"></p>
+          </div>
+        </div>
+        <button id="btn-cta-explore" class="flex items-center gap-2 px-5 py-2.5 bg-white rounded-lg font-semibold text-sm whitespace-nowrap" style="color: var(--primary);">
+          Explorer les espaces métier
+          <span id="icon-cta-arrow"></span>
+        </button>
+      </div>
+    </section>
+
+    <!-- RISKS TABLE -->
+    <section class="mb-8">
+      <div class="rounded-2xl border p-6" style="background: var(--surface); border-color: var(--border);">
+        <div class="flex items-center gap-2 mb-5">
+          <span id="icon-risks-title"></span>
+          <h3 class="font-semibold text-sm" style="color: var(--ink);" id="risks-title">Principes directeurs — Charte IA</h3>
+        </div>
+        <div class="space-y-3" id="risks-list">
+          <!-- Injected by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ROADMAP -->
+    <section class="mb-8">
+      <div class="rounded-2xl border p-6" style="background: var(--surface); border-color: var(--border);">
+        <div class="flex items-center gap-2 mb-5">
+          <span id="icon-roadmap-title"></span>
+          <h3 class="font-semibold text-sm" style="color: var(--ink);" id="roadmap-title">Feuille de route IA (12-24 mois)</h3>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4" id="roadmap-grid">
+          <!-- Injected by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- GLOSSARY -->
+    <section class="mb-8">
+      <div class="rounded-2xl border p-6" style="background: var(--surface); border-color: var(--border);">
+        <div class="flex items-center gap-2 mb-4">
+          <span id="icon-glossary-title"></span>
+          <h3 class="font-semibold text-sm" style="color: var(--ink);" id="glossary-title">Glossaire IA</h3>
+        </div>
+        <div class="relative mb-4">
+          <span class="absolute left-3 top-1/2 -translate-y-1/2" id="icon-glossary-search"></span>
+          <input id="glossary-search" type="text" placeholder="Rechercher un terme..."
+            class="w-full pl-9 pr-4 py-2 text-sm rounded-lg border outline-none focus:ring-2"
+            style="border-color: var(--border); background: var(--bg); color: var(--ink);">
+        </div>
+        <div class="divide-y" style="border-color: var(--border);" id="glossary-list">
+          <!-- Injected by JS -->
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ==================== CHARTE VIEW ==================== -->
+  <div data-view="view-charte" id="view-charte" style="display: none;">
+
+    <!-- Back button -->
+    <button class="btn-back flex items-center gap-1.5 text-sm font-medium mb-6" style="color: var(--primary);">
+      <span class="icon-back"></span>
+      Retour au Dashboard Global
+    </button>
+
+    <!-- Gouvernance deep-dive -->
+    <section class="mb-8">
+      <h2 class="font-display text-2xl mb-5" style="color: var(--ink);">Gouvernance IA globale</h2>
+      <p class="text-sm mb-5" style="color: var(--muted);">Risques, organisation, formation — vision 360°</p>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4" id="gouvernance-grid">
+        <!-- Risques opérationnels -->
+        <div class="rounded-2xl border p-5" style="background: var(--surface); border-color: var(--border);">
+          <div class="flex items-center gap-2 mb-4">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background: var(--accent-soft);">
+              <span id="icon-gouv-risk"></span>
+            </div>
+            <h4 class="font-semibold text-sm" style="color: var(--ink);">Risques opérationnels</h4>
+          </div>
+          <div class="space-y-3" id="gouv-risks">
+            <!-- Injected by JS -->
+          </div>
+        </div>
+
+        <!-- Enjeux organisationnels -->
+        <div class="rounded-2xl border p-5" style="background: var(--surface); border-color: var(--border);">
+          <div class="flex items-center gap-2 mb-4">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background: var(--primary-soft);">
+              <span id="icon-gouv-defis"></span>
+            </div>
+            <h4 class="font-semibold text-sm" style="color: var(--ink);">Enjeux organisationnels</h4>
+          </div>
+          <div class="space-y-3" id="gouv-defis">
+            <!-- Injected by JS -->
+          </div>
+        </div>
+
+        <!-- Besoins formation -->
+        <div class="rounded-2xl border p-5" style="background: var(--surface); border-color: var(--border);">
+          <div class="flex items-center gap-2 mb-4">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background: var(--primary-soft);">
+              <span id="icon-gouv-formation"></span>
+            </div>
+            <h4 class="font-semibold text-sm" style="color: var(--ink);">Besoins de formation</h4>
+          </div>
+          <div class="space-y-3" id="gouv-formation">
+            <!-- Injected by JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Data Health Panel -->
+    <section class="mb-8">
+      <h2 class="font-display text-2xl mb-5" style="color: var(--ink);">Loupe sur la Data</h2>
+      <p class="text-sm mb-5" style="color: var(--muted);">Sources et qualité des données mobilisables</p>
+      <div class="rounded-2xl border p-6" style="background: var(--surface); border-color: var(--border);">
+        <div class="grid grid-cols-12 gap-6">
+          <!-- Sources table -->
+          <div class="col-span-12 lg:col-span-7">
+            <h4 class="font-semibold text-sm mb-4" style="color: var(--ink);">Sources de données</h4>
+            <div class="space-y-3" id="data-sources-list">
+              <!-- Injected by JS -->
+            </div>
+          </div>
+          <!-- Quality ring -->
+          <div class="col-span-12 lg:col-span-5 flex flex-col items-center justify-center">
+            <div class="relative" id="quality-ring-container">
+              <!-- SVG ring injected by JS -->
+            </div>
+            <p class="text-xs mt-2" style="color: var(--muted);">Score d'exploitation des données</p>
+            <p class="text-xs mt-1" style="color: var(--muted-soft);">Données disponibles mais sous-exploitées</p>
+          </div>
+        </div>
+        <!-- Improvement axes -->
+        <div class="mt-6 pt-5 border-t" style="border-color: var(--border);">
+          <h4 class="font-semibold text-sm mb-3" style="color: var(--ink);">Axes d'amélioration</h4>
+          <div class="space-y-2" id="improvement-axes">
+            <!-- Injected by JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Process Mapping -->
+    <section class="mb-8">
+      <h2 class="font-display text-2xl mb-5" style="color: var(--ink);">Cartographie des processus</h2>
+      <p class="text-sm mb-5" style="color: var(--muted);">De l'existant siloté vers un parcours IA intégré</p>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6" id="process-map">
+        <!-- Current process -->
+        <div class="rounded-2xl border p-6" style="background: var(--surface); border-color: var(--border);">
+          <h4 class="font-semibold text-sm mb-1" style="color: var(--muted);" id="process-current-title">Processus actuel</h4>
+          <p class="text-xs mb-4" style="color: var(--muted-soft);">Siloté · manuel · saisie libre</p>
+          <div class="space-y-0" id="process-current-steps">
+            <!-- Injected by JS -->
+          </div>
+          <div class="mt-4 pt-3 border-t" style="border-color: var(--border);">
+            <p class="text-xs font-medium mb-2" style="color: var(--accent);">Irritants identifiés</p>
+            <div class="flex flex-wrap gap-1.5">
+              <span class="text-xs px-2 py-0.5 rounded-full" style="background: var(--accent-soft); color: var(--accent);">Données non croisées</span>
+              <span class="text-xs px-2 py-0.5 rounded-full" style="background: var(--accent-soft); color: var(--accent);">Délai 24-72 h</span>
+              <span class="text-xs px-2 py-0.5 rounded-full" style="background: var(--accent-soft); color: var(--accent);">Erreurs de saisie</span>
+              <span class="text-xs px-2 py-0.5 rounded-full" style="background: var(--accent-soft); color: var(--accent);">Pas de mémoire</span>
+            </div>
+          </div>
+        </div>
+        <!-- Target process -->
+        <div class="rounded-2xl border p-6" style="background: var(--surface); border-color: var(--border);">
+          <h4 class="font-semibold text-sm mb-1" style="color: var(--primary);" id="process-target-title">Processus cible IA</h4>
+          <p class="text-xs mb-4" style="color: var(--muted-soft);">Intégré · automatisé · gouverné</p>
+          <div class="space-y-0" id="process-target-steps">
+            <!-- Injected by JS -->
+          </div>
+          <div class="mt-4 pt-3 border-t" style="border-color: var(--border);">
+            <p class="text-xs font-medium mb-2" style="color: var(--primary);">Bénéfices attendus</p>
+            <div class="flex flex-wrap gap-1.5">
+              <span class="text-xs px-2 py-0.5 rounded-full" style="background: var(--primary-soft); color: var(--primary);">Décision &lt; 1 h</span>
+              <span class="text-xs px-2 py-0.5 rounded-full" style="background: var(--primary-soft); color: var(--primary);">Traçabilité 100 %</span>
+              <span class="text-xs px-2 py-0.5 rounded-full" style="background: var(--primary-soft); color: var(--primary);">Croisement multi-sources</span>
+              <span class="text-xs px-2 py-0.5 rounded-full" style="background: var(--primary-soft); color: var(--primary);">Apprentissage continu</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Methodology Guide -->
+    <section class="mb-8">
+      <h2 class="font-display text-2xl mb-5" style="color: var(--ink);">Guide méthodologique : Typologies & Complexité</h2>
+      <p class="text-sm mb-5" style="color: var(--muted);">Comprendre les critères d'évaluation de l'audit IA</p>
+      <div class="rounded-2xl border p-6" style="background: var(--surface); border-color: var(--border);">
+        <!-- Tabs -->
+        <div class="flex gap-2 mb-6">
+          <button class="meth-tab px-4 py-2 rounded-lg text-sm font-medium" data-tab="typologies" style="background: var(--primary-soft); color: var(--primary);">Décoder les typologies</button>
+          <button class="meth-tab px-4 py-2 rounded-lg text-sm font-medium" data-tab="complexite" style="color: var(--muted);">Comprendre la complexité &amp; ROI</button>
+        </div>
+        <!-- Tab: Typologies -->
+        <div id="tab-typologies" class="meth-panel">
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-4" id="typologies-grid">
+            <!-- Injected by JS -->
+          </div>
+        </div>
+        <!-- Tab: Complexité -->
+        <div id="tab-complexite" class="meth-panel" style="display: none;">
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-4" id="complexite-grid">
+            <!-- Injected by JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ==================== METIER VIEWS ==================== -->
+  <!-- Injected by JS as data-view="view-metier-{id}" -->
+  <div id="metier-views-container"></div>
+
+</main>
+
+<!-- ===================== FOOTER ===================== -->
+<footer class="border-t py-6 mt-8" style="background: var(--surface); border-color: var(--border);">
+  <div class="max-w-7xl mx-auto px-4 flex flex-col lg:flex-row items-center justify-between gap-3">
+    <!-- Left: Hubvisory mark -->
+    <div class="flex items-center gap-2">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path d="M12 2L2 7l10 5 10-5-10-5z" fill="var(--primary)" opacity="0.8"/>
+        <path d="M2 17l10 5 10-5" stroke="var(--primary)" stroke-width="2" fill="none"/>
+        <path d="M2 12l10 5 10-5" stroke="var(--primary)" stroke-width="2" fill="none"/>
+      </svg>
+      <span class="text-sm font-semibold" style="color: var(--primary);">hubvisory</span>
+    </div>
+    <!-- Center: Mission info -->
+    <p class="text-xs" style="color: var(--muted);" id="footer-mission"></p>
+    <!-- Right: Copyright -->
+    <p class="text-xs" style="color: var(--muted-soft);" id="footer-copyright"></p>
+  </div>
+</footer>
+
+<!-- ===================== SCRIPT ===================== -->
+<script>
+// ===============================================
+// ICON REGISTRY -- Lucide SVG paths
+// ===============================================
+const ICONS = {
+  'briefcase': '<rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>',
+  'users': '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  'settings': '<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>',
+  'calendar': '<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
+  'chevron-right': '<polyline points="9 18 15 12 9 6"/>',
+  'chevron-down': '<polyline points="6 9 12 15 18 9"/>',
+  'chevron-up': '<polyline points="18 15 12 9 6 15"/>',
+  'arrow-left': '<line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>',
+  'arrow-right': '<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>',
+  'printer': '<polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>',
+  'search': '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
+  'zap': '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
+  'clock': '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+  'check-circle': '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>',
+  'check': '<polyline points="20 6 9 17 4 12"/>',
+  'alert-triangle': '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+  'shield-alert': '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',
+  'shield': '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+  'shield-check': '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/>',
+  'lightbulb': '<path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/>',
+  'alert-circle': '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',
+  'file-search': '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><circle cx="11.5" cy="14.5" r="2.5"/><line x1="13.25" y1="16.25" x2="15" y2="18"/>',
+  'layers': '<polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>',
+  'edit-3': '<path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>',
+  'filter': '<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>',
+  'bar-chart-3': '<path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/>',
+  'gauge': '<path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+  'radar': '<path d="M19.07 4.93A10 10 0 0 0 6.99 3.34"/><path d="M4 6h.01"/><path d="M2.29 9.62A10 10 0 1 0 21.31 8.35"/><path d="M16.24 7.76A6 6 0 1 0 8.23 16.67"/><path d="M12 18H12.01"/><path d="M17.99 11.66A6 6 0 0 1 15.77 16.67"/>',
+  'grid-3x3': '<rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/>',
+  'book-open': '<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>',
+  'map': '<polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/>',
+  'rocket': '<path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>',
+  'database': '<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>',
+  'file-text': '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>',
+  'clipboard': '<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>',
+  'terminal': '<polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>',
+  'trending-up': '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>',
+  'truck': '<rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>',
+  'headset': '<path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>',
+  'git-merge': '<circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/>',
+  'server': '<rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/>',
+  'mail': '<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>',
+  'tool': '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>',
+  'graduation-cap': '<path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c0 1 4 3 6 3s6-2 6-3v-5"/>',
+  'shuffle': '<polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/>'
+};
+
+function icon(name, size = 16, color = 'currentColor') {
+  const path = ICONS[name];
+  if (!path) return '';
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${path}</svg>`;
+}
+
+// ===============================================
+// THEME BUILDER
+// ===============================================
+function hexToSoft(hex, alpha = 0.08) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function buildTheme(branding, colors) {
+  const t = {
+    primary: branding.primaryColor,
+    accent: branding.secondaryColor,
+    primarySoft: hexToSoft(branding.primaryColor, 0.08),
+    accentSoft: hexToSoft(branding.secondaryColor, 0.08),
+    primaryBorder: hexToSoft(branding.primaryColor, 0.22),
+    accentBorder: hexToSoft(branding.secondaryColor, 0.22),
+    ink: '#0f172a', muted: '#475569', mutedSoft: '#94a3b8',
+    border: '#e2e8f0', surface: '#ffffff',
+    bg: '#f6f8fb', bgAlt: '#eef2f8',
+    heat: colors.heat,
+    risk: colors.riskMap
+  };
+  const root = document.documentElement.style;
+  Object.entries({
+    '--primary': t.primary, '--accent': t.accent,
+    '--primary-soft': t.primarySoft, '--accent-soft': t.accentSoft,
+    '--primary-border': t.primaryBorder, '--accent-border': t.accentBorder,
+    '--ink': t.ink, '--muted': t.muted, '--muted-soft': t.mutedSoft,
+    '--border': t.border, '--surface': t.surface, '--bg': t.bg, '--bg-alt': t.bgAlt
+  }).forEach(([k, v]) => root.setProperty(k, v));
+  return t;
+}
+
+// ===============================================
+// GAUGE RENDERER
+// ===============================================
+function renderGauge(containerId, value, max, levels, theme) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  const W = 320, H = 190;
+  const cx = 160, cy = 170, R = 110;
+  const startAngle = Math.PI;
+  const endAngle = 2 * Math.PI;
+  const totalArc = endAngle - startAngle;
+
+  function polarToXY(angle, r) {
+    return { x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle) };
+  }
+
+  function arcPath(r, a1, a2) {
+    const s = polarToXY(a1, r);
+    const e = polarToXY(a2, r);
+    const large = (a2 - a1) > Math.PI ? 1 : 0;
+    return `M${s.x},${s.y} A${r},${r} 0 ${large},1 ${e.x},${e.y}`;
+  }
+
+  const bands = [
+    { from: 0, to: 1.5, color: theme.heat[0] },
+    { from: 1.5, to: 3, color: theme.heat[2] },
+    { from: 3, to: 4, color: theme.heat[3] },
+    { from: 4, to: 5, color: theme.heat[4] }
+  ];
+
+  let svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`;
+
+  bands.forEach(b => {
+    const a1 = startAngle + (b.from / max) * totalArc;
+    const a2 = startAngle + (b.to / max) * totalArc;
+    svg += `<path d="${arcPath(R, a1, a2)}" stroke="${b.color}" stroke-width="18" fill="none" opacity="0.18" stroke-linecap="butt"/>`;
+  });
+
+  const valueAngle = startAngle + (value / max) * totalArc;
+  svg += `<path d="${arcPath(R, startAngle, valueAngle)}" stroke="${theme.primary}" stroke-width="18" fill="none" stroke-linecap="round"/>`;
+
+  for (let i = 0; i <= max; i++) {
+    const angle = startAngle + (i / max) * totalArc;
+    const outerR = R + 14;
+    const inner = polarToXY(angle, R + 4);
+    const outer = polarToXY(angle, outerR);
+    const label = polarToXY(angle, R + 26);
+    svg += `<line x1="${inner.x}" y1="${inner.y}" x2="${outer.x}" y2="${outer.y}" stroke="${theme.border}" stroke-width="1.5"/>`;
+    svg += `<text x="${label.x}" y="${label.y}" text-anchor="middle" dominant-baseline="middle" fill="${theme.muted}" font-size="11" font-family="Inter, sans-serif">${i}</text>`;
+  }
+
+  const needleAngle = startAngle + (value / max) * totalArc;
+  const needleTip = polarToXY(needleAngle, R - 16);
+  const needleBase1 = polarToXY(needleAngle + Math.PI / 2, 4);
+  const needleBase2 = polarToXY(needleAngle - Math.PI / 2, 4);
+  svg += `<polygon points="${needleTip.x},${needleTip.y} ${needleBase1.x},${needleBase1.y} ${needleBase2.x},${needleBase2.y}" fill="${theme.accent}"/>`;
+
+  svg += `<circle cx="${cx}" cy="${cy}" r="8" fill="${theme.ink}"/>`;
+  svg += `<circle cx="${cx}" cy="${cy}" r="4" fill="${theme.accent}"/>`;
+
+  svg += `<text x="${cx}" y="${cy - 30}" text-anchor="middle" fill="${theme.ink}" font-size="36" font-weight="700" font-family="Inter, sans-serif">${value.toFixed(1)}</text>`;
+  svg += `<text x="${cx}" y="${cy - 14}" text-anchor="middle" fill="${theme.muted}" font-size="12" font-family="Inter, sans-serif">/ ${max}</text>`;
+
+  svg += '</svg>';
+  container.innerHTML = svg;
+}
+
+// ===============================================
+// CHART.JS INITIALIZATION
+// ===============================================
+Chart.register(ChartDataLabels);
+Chart.defaults.plugins.datalabels = { display: false };
+
+function initRadarChart(theme) {
+  const ctx = document.getElementById('radar-chart');
+  if (!ctx) return;
+
+  const labels = CLIENT_DATA.axesRadar.map(a => a.axe);
+  const actuel = CLIENT_DATA.axesRadar.map(a => a.scoreActuel);
+  const cible = CLIENT_DATA.axesRadar.map(a => a.scoreCible);
+
+  new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: CLIENT_DATA.ui.blocks.radarLegendActuel,
+          data: actuel,
+          borderColor: theme.primary,
+          backgroundColor: hexToSoft(theme.primary, 0.25),
+          borderWidth: 2,
+          pointRadius: 4,
+          pointBackgroundColor: theme.primary,
+          fill: true
+        },
+        {
+          label: CLIENT_DATA.ui.blocks.radarLegendCible,
+          data: cible,
+          borderColor: theme.accent,
+          backgroundColor: hexToSoft(theme.accent, 0.08),
+          borderWidth: 2,
+          borderDash: [6, 4],
+          pointRadius: 4,
+          pointBackgroundColor: theme.accent,
+          fill: true
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false }, datalabels: { display: false } },
+      scales: {
+        r: {
+          min: 0, max: 5,
+          ticks: { stepSize: 1, font: { size: 10 }, backdropColor: 'transparent', color: theme.muted },
+          pointLabels: { font: { size: 11, family: 'Inter' }, color: theme.ink },
+          grid: { color: theme.border },
+          angleLines: { color: theme.border }
+        }
+      }
+    }
+  });
+}
+
+function initFrequencyBars(theme) {
+  const ctx = document.getElementById('frequency-chart');
+  if (!ctx) return;
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: CLIENT_DATA.frequencyUsage.map(f => f.bucket),
+      datasets: [{
+        data: CLIENT_DATA.frequencyUsage.map(f => f.pct),
+        backgroundColor: theme.primary,
+        borderRadius: 6,
+        maxBarThickness: 48
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        datalabels: {
+          display: true,
+          anchor: 'end',
+          align: 'top',
+          color: theme.ink,
+          font: { weight: '600', size: 12 },
+          formatter: v => v + '%'
+        }
+      },
+      scales: {
+        y: { display: false, max: 45 },
+        x: {
+          grid: { display: false },
+          ticks: { font: { size: 11, family: 'Inter' }, color: theme.muted }
+        }
+      }
+    }
+  });
+}
+
+function initAdoptionBars(theme) {
+  const ctx = document.getElementById('adoption-chart');
+  if (!ctx) return;
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: CLIENT_DATA.adoptionDuree.map(a => a.bucket),
+      datasets: [{
+        data: CLIENT_DATA.adoptionDuree.map(a => a.pct),
+        backgroundColor: theme.accent,
+        borderRadius: 6,
+        maxBarThickness: 48
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        datalabels: {
+          display: true,
+          anchor: 'end',
+          align: 'top',
+          color: theme.ink,
+          font: { weight: '600', size: 12 },
+          formatter: v => v + '%'
+        }
+      },
+      scales: {
+        y: { display: false, max: 65 },
+        x: {
+          grid: { display: false },
+          ticks: { font: { size: 11, family: 'Inter' }, color: theme.muted }
+        }
+      }
+    }
+  });
+}
+
+function initScatterChart(theme) {
+  const ctx = document.getElementById('scatter-chart');
+  if (!ctx) return;
+
+  const metierMap = {};
+  CLIENT_DATA.perimetre.forEach(p => { metierMap[p.id] = p; });
+
+  const data = CLIENT_DATA.stackByMetier.map(s => {
+    const m = metierMap[s.idMetier];
+    const risky = s.outils > 6 || s.confiance < 60;
+    return {
+      x: s.outils,
+      y: s.confiance,
+      r: m ? Math.max(m.effectif * 2.5, 8) : 10,
+      label: m ? m.nom : s.idMetier,
+      risky
+    };
+  });
+
+  const safePoints = data.filter(d => !d.risky);
+  const riskyPoints = data.filter(d => d.risky);
+
+  new Chart(ctx, {
+    type: 'bubble',
+    data: {
+      datasets: [
+        {
+          label: 'OK',
+          data: safePoints,
+          backgroundColor: hexToSoft(theme.primary, 0.5),
+          borderColor: theme.primary,
+          borderWidth: 1.5
+        },
+        {
+          label: 'Attention',
+          data: riskyPoints,
+          backgroundColor: hexToSoft(theme.accent, 0.5),
+          borderColor: theme.accent,
+          borderWidth: 1.5
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        datalabels: {
+          display: true,
+          color: theme.ink,
+          font: { size: 10, weight: '600' },
+          formatter: (v, ctx) => ctx.raw && ctx.raw.label ? ctx.raw.label : ''
+        },
+        annotation: {
+          annotations: {
+            vLine: {
+              type: 'line',
+              xMin: 6, xMax: 6,
+              borderColor: theme.accent,
+              borderWidth: 1,
+              borderDash: [4, 4],
+              label: { display: true, content: '6 outils', position: 'start', font: { size: 10 }, color: theme.accent }
+            },
+            hLine: {
+              type: 'line',
+              yMin: 70, yMax: 70,
+              borderColor: theme.primary,
+              borderWidth: 1,
+              borderDash: [4, 4],
+              label: { display: true, content: '70% confiance', position: 'end', font: { size: 10 }, color: theme.primary }
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          min: 0, max: 12,
+          title: { display: true, text: 'Nombre d\'outils IA', font: { size: 11, family: 'Inter' }, color: theme.muted },
+          grid: { color: theme.border },
+          ticks: { color: theme.muted, font: { size: 10 } }
+        },
+        y: {
+          min: 0, max: 100,
+          title: { display: true, text: 'Confiance (%)', font: { size: 11, family: 'Inter' }, color: theme.muted },
+          grid: { color: theme.border },
+          ticks: { color: theme.muted, font: { size: 10 } }
+        }
+      }
+    }
+  });
+}
+
+// ===============================================
+// HEATMAP
+// ===============================================
+function initHeatmap(theme) {
+  const tbody = document.getElementById('heatmap-body');
+  if (!tbody) return;
+
+  // Build metier name lookup
+  const metierMap = {};
+  CLIENT_DATA.perimetre.forEach(p => { metierMap[p.id] = p.nom; });
+
+  function heatColor(val) {
+    const idx = Math.max(0, Math.min(4, Math.round(val) - 1));
+    return theme.heat[idx];
+  }
+
+  let html = '';
+  CLIENT_DATA.heatmapMatrix.forEach(row => {
+    const metierName = metierMap[row.idMetier] || row.idMetier;
+    html += `<tr class="cursor-pointer hover:bg-gray-50" data-metier-nav="${row.idMetier}">
+      <td class="py-2.5 px-3 text-sm font-medium" style="color: var(--ink);">${metierName}</td>
+      <td class="py-2.5 px-3 text-center">
+        <span class="heat-cell inline-flex items-center justify-center w-10 h-10 rounded-lg text-white text-sm font-bold" data-value="${row.usage}" style="background: ${heatColor(row.usage)}">${row.usage}</span>
+      </td>
+      <td class="py-2.5 px-3 text-center">
+        <span class="heat-cell inline-flex items-center justify-center w-10 h-10 rounded-lg text-white text-sm font-bold" data-value="${row.confiance}" style="background: ${heatColor(row.confiance)}">${row.confiance}</span>
+      </td>
+    </tr>`;
+  });
+  tbody.innerHTML = html;
+
+  const legendEl = document.getElementById('heat-legend');
+  if (legendEl) {
+    legendEl.innerHTML = theme.heat.map(c => `<span class="w-5 h-3 rounded" style="background: ${c};"></span>`).join('');
+  }
+
+  tbody.querySelectorAll('[data-metier-nav]').forEach(tr => {
+    tr.addEventListener('click', () => {
+      navigateTo('view-metier-' + tr.dataset.metierNav);
+    });
+  });
+}
+
+// ===============================================
+// NAVIGATION
+// ===============================================
+let currentView = 'view-dashboard';
+
+function navigateTo(viewId) {
+  document.querySelectorAll('[data-view]').forEach(el => el.style.display = 'none');
+  const target = document.querySelector(`[data-view="${viewId}"]`) || document.getElementById(viewId);
+  if (target) {
+    target.style.display = 'block';
+    currentView = viewId;
+  }
+
+  document.querySelectorAll('.nav-pill').forEach(pill => {
+    if (pill.dataset.target === viewId) {
+      pill.style.background = 'var(--primary-soft)';
+      pill.style.color = 'var(--primary)';
+    } else {
+      pill.style.background = 'transparent';
+      pill.style.color = 'var(--muted)';
+    }
+  });
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function initNavigation(theme) {
+  const nav = document.getElementById('main-nav');
+  if (nav) {
+    CLIENT_DATA.perimetre.forEach(dept => {
+      const btn = document.createElement('button');
+      btn.className = 'nav-pill px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap';
+      btn.dataset.target = 'view-metier-' + dept.id;
+      btn.style.color = 'var(--muted)';
+      btn.textContent = dept.nom;
+      nav.appendChild(btn);
+    });
+  }
+
+  document.querySelectorAll('.nav-pill').forEach(pill => {
+    pill.addEventListener('click', () => navigateTo(pill.dataset.target));
+  });
+
+  document.querySelectorAll('.btn-back').forEach(btn => {
+    btn.addEventListener('click', () => navigateTo('view-dashboard'));
+  });
+
+  navigateTo('view-dashboard');
+
+  // Scroll fade indicators
+  if (nav) {
+    const wrapper = document.getElementById('nav-wrapper');
+    const fadeL = wrapper.querySelector('.nav-fade-left');
+    const fadeR = wrapper.querySelector('.nav-fade-right');
+    function updateFades() {
+      const sl = nav.scrollLeft;
+      const maxSl = nav.scrollWidth - nav.clientWidth;
+      fadeL.style.opacity = sl > 4 ? '1' : '0';
+      fadeR.style.opacity = (maxSl - sl) > 4 ? '1' : '0';
+    }
+    nav.addEventListener('scroll', updateFades, { passive: true });
+    setTimeout(updateFades, 100);
+  }
+}
+
+// ===============================================
+// GLOSSARY
+// ===============================================
+function initGlossary() {
+  const list = document.getElementById('glossary-list');
+  const searchInput = document.getElementById('glossary-search');
+  if (!list) return;
+
+  function renderGlossary(filter = '') {
+    const filtered = CLIENT_DATA.glossaire.filter(g =>
+      g.terme.toLowerCase().includes(filter.toLowerCase()) ||
+      g.definition.toLowerCase().includes(filter.toLowerCase())
+    );
+
+    list.innerHTML = filtered.map(g => `
+      <div class="glossary-item border-b" style="border-color: var(--border);">
+        <button class="glossary-toggle w-full flex items-center justify-between py-3 text-left">
+          <span class="font-medium text-sm" style="color: var(--ink);">${g.terme}</span>
+          <span class="glossary-chevron transition-transform" style="color: var(--muted);">${icon('chevron-down', 16)}</span>
+        </button>
+        <div class="glossary-def">
+          <p class="text-sm pb-3" style="color: var(--muted);">${g.definition}</p>
+        </div>
+      </div>
+    `).join('');
+
+    list.querySelectorAll('.glossary-toggle').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const def = btn.nextElementSibling;
+        const chevron = btn.querySelector('.glossary-chevron');
+        const isOpen = def.classList.contains('open');
+        list.querySelectorAll('.glossary-def').forEach(d => d.classList.remove('open'));
+        list.querySelectorAll('.glossary-chevron').forEach(c => c.style.transform = 'rotate(0deg)');
+        if (!isOpen) {
+          def.classList.add('open');
+          chevron.style.transform = 'rotate(180deg)';
+        }
+      });
+    });
+  }
+
+  renderGlossary();
+
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => renderGlossary(e.target.value));
+  }
+}
+
+// ===============================================
+// METHODOLOGY TABS
+// ===============================================
+function initMethodologyTabs() {
+  document.querySelectorAll('.meth-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.meth-tab').forEach(t => {
+        t.style.background = 'transparent';
+        t.style.color = 'var(--muted)';
+      });
+      tab.style.background = 'var(--primary-soft)';
+      tab.style.color = 'var(--primary)';
+
+      document.querySelectorAll('.meth-panel').forEach(p => p.style.display = 'none');
+      const target = document.getElementById('tab-' + tab.dataset.tab);
+      if (target) target.style.display = 'block';
+    });
+  });
+}
+
+// ===============================================
+// PRINT
+// ===============================================
+function initPrint() {
+  const btn = document.getElementById('btn-print');
+  if (btn) btn.addEventListener('click', () => window.print());
+}
+
+// ===============================================
+// CONTENT BUILDERS
+// ===============================================
+
+function buildHeroPills(theme) {
+  const pills = document.getElementById('hero-pills');
+  if (!pills) return;
+
+  const data = [
+    { label: CLIENT_DATA.branding.sector, icon: 'briefcase' },
+    { label: CLIENT_DATA.globalMetrics.totalRepondants + ' répondants', icon: 'users' },
+    { label: CLIENT_DATA.branding.period, icon: 'calendar' }
+  ];
+
+  pills.innerHTML = data.map(p => `
+    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium" style="background: var(--bg-alt); color: var(--muted);">
+      ${icon(p.icon, 14, 'var(--muted)')} ${p.label}
+    </span>
+  `).join('');
+}
+
+function buildMetierList(theme) {
+  const list = document.getElementById('metier-list');
+  const countPill = document.getElementById('metier-count-pill');
+  if (!list) return;
+
+  if (countPill) countPill.textContent = CLIENT_DATA.perimetre.length + ' métiers';
+
+  list.innerHTML = CLIENT_DATA.perimetre.map(dept => `
+    <div class="flex items-center justify-between p-3 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors" data-metier-goto="${dept.id}">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg flex items-center justify-center" style="background: var(--primary-soft);">
+          ${icon(dept.icon, 18, 'var(--primary)')}
+        </div>
+        <div>
+          <p class="text-sm font-medium" style="color: var(--ink);">${dept.nom}</p>
+          <p class="text-xs" style="color: var(--muted);">${dept.effectif} personnes</p>
+        </div>
+      </div>
+      <span style="color: var(--muted-soft);">${icon('chevron-right', 16)}</span>
+    </div>
+  `).join('');
+
+  list.querySelectorAll('[data-metier-goto]').forEach(el => {
+    el.addEventListener('click', () => navigateTo('view-metier-' + el.dataset.metierGoto));
+  });
+}
+
+function buildShadowStats(theme) {
+  const shadowPct = document.getElementById('shadow-pct');
+  if (shadowPct) shadowPct.textContent = CLIENT_DATA.globalMetrics.shadowIaOffRoad + '%';
+
+  const grid = document.getElementById('stats-grid');
+  if (!grid) return;
+
+  const stats = [
+    { label: 'Répondants', value: CLIENT_DATA.globalMetrics.totalRepondants, icon: 'users' },
+    { label: 'Confiance', value: CLIENT_DATA.globalMetrics.confianceGlobale + '/5', icon: 'shield-check' },
+    { label: 'Cas d\'usage', value: CLIENT_DATA.globalMetrics.casUsageRecenses, icon: 'lightbulb' },
+    { label: 'Hors cadre', value: CLIENT_DATA.globalMetrics.shadowIaOffRoad + '%', icon: 'alert-triangle' }
+  ];
+
+  grid.innerHTML = stats.map(s => `
+    <div class="flex flex-col">
+      <div class="flex items-center gap-1.5 mb-1">
+        ${icon(s.icon, 14, 'var(--muted-soft)')}
+        <span class="text-xs" style="color: var(--muted);">${s.label}</span>
+      </div>
+      <span class="text-xl font-bold" style="color: var(--ink);">${s.value}</span>
+    </div>
+  `).join('');
+}
+
+function buildGaugeLegend(theme) {
+  const legend = document.getElementById('gauge-legend');
+  if (!legend) return;
+
+  const levels = [
+    { label: 'Débutant', color: theme.heat[0] },
+    { label: 'Émergent', color: theme.heat[2] },
+    { label: 'Opérationnel', color: theme.heat[3] },
+    { label: 'Avancé', color: theme.heat[4] }
+  ];
+
+  legend.innerHTML = levels.map(l => `
+    <div class="flex items-center gap-1">
+      <span class="w-2.5 h-2.5 rounded-full" style="background: ${l.color};"></span>
+      <span class="text-xs" style="color: var(--muted);">${l.label}</span>
+    </div>
+  `).join('');
+}
+
+function buildRisksList(theme) {
+  const list = document.getElementById('risks-list');
+  if (!list) return;
+
+  list.innerHTML = CLIENT_DATA.risques.map(r => `
+    <div class="flex items-start gap-3 p-3 rounded-xl" style="background: var(--bg);">
+      <div class="w-1.5 h-12 rounded-full flex-shrink-0 mt-0.5" style="background: ${theme.risk[r.niveau]};"></div>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2 mb-0.5">
+          <h4 class="text-sm font-semibold" style="color: var(--ink);">${r.libelle}</h4>
+          <span class="text-xs px-2 py-0.5 rounded-full font-medium" style="background: ${hexToSoft(theme.risk[r.niveau], 0.15)}; color: ${theme.risk[r.niveau]};">${r.niveau}</span>
+        </div>
+        <p class="text-xs" style="color: var(--muted);">${r.note}</p>
+      </div>
+    </div>
+  `).join('');
+}
+
+function buildRoadmap(theme) {
+  const grid = document.getElementById('roadmap-grid');
+  if (!grid) return;
+
+  const bgColors = {
+    'Quick-wins': theme.primarySoft,
+    'Structurel': '#fef3c7',
+    'Strategique': theme.accentSoft,
+    'Vision': theme.accentSoft
+  };
+  const iconMap = {
+    'Quick-wins': 'zap',
+    'Structurel': 'git-merge',
+    'Strategique': 'rocket',
+    'Vision': 'rocket'
+  };
+  const iconColorMap = {
+    'Quick-wins': theme.primary,
+    'Structurel': '#d97706',
+    'Strategique': theme.accent,
+    'Vision': theme.accent
+  };
+
+  grid.innerHTML = CLIENT_DATA.roadmap.map(phase => `
+    <div class="rounded-xl p-5" style="background: ${bgColors[phase.type] || theme.bgAlt};">
+      <div class="flex items-center gap-2 mb-3">
+        <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background: ${hexToSoft(iconColorMap[phase.type] || theme.muted, 0.15)};">
+          ${icon(iconMap[phase.type] || 'rocket', 16, iconColorMap[phase.type] || theme.muted)}
+        </div>
+        <div>
+          <p class="text-xs font-medium" style="color: ${iconColorMap[phase.type] || theme.muted};">${phase.horizon}</p>
+        </div>
+      </div>
+      <h4 class="text-sm font-semibold mb-3" style="color: var(--ink);">${phase.titre}</h4>
+      <ul class="space-y-2 mb-4">
+        ${phase.items.map(item => `
+          <li class="flex items-start gap-2">
+            ${icon('check', 14, iconColorMap[phase.type] || theme.muted)}
+            <span class="text-xs" style="color: var(--muted);">${item}</span>
+          </li>
+        `).join('')}
+      </ul>
+      <div class="flex items-center justify-between pt-3 border-t" style="border-color: rgba(0,0,0,0.06);">
+        <span class="text-xs" style="color: var(--muted);">Impact: <strong style="color: var(--ink);">${phase.impact}</strong></span>
+        <span class="text-xs" style="color: var(--muted);">Complexité: <strong style="color: var(--ink);">${phase.complexite}</strong></span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function buildCTA(theme) {
+  const count = document.getElementById('cta-count');
+  const desc = document.getElementById('cta-desc');
+  if (count) count.textContent = CLIENT_DATA.globalMetrics.casUsageRecenses;
+  if (desc) desc.textContent = `Dont ${CLIENT_DATA.globalMetrics.quickWinsCount} quick wins identifiés — prêts à être déployés.`;
+
+  const btnExplore = document.getElementById('btn-cta-explore');
+  if (btnExplore) {
+    btnExplore.addEventListener('click', () => {
+      const first = CLIENT_DATA.perimetre[0];
+      if (first) navigateTo('view-metier-' + first.id);
+    });
+  }
+}
+
+// ===============================================
+// CHARTE VIEW BUILDERS
+// ===============================================
+
+function buildGouvernance(theme) {
+  // Risques operationnels
+  const risksEl = document.getElementById('gouv-risks');
+  if (risksEl) {
+    risksEl.innerHTML = CLIENT_DATA.gouvernanceApprofondie.risquesOperationnels.map(r => {
+      const impactColor = r.impact === 'Élevé' ? theme.accent : r.impact === 'Critique' ? theme.heat[0] : '#d97706';
+      return `
+        <div class="p-3 rounded-lg" style="background: var(--bg);">
+          <div class="flex items-center justify-between mb-1">
+            <h5 class="text-sm font-medium" style="color: var(--ink);">${r.titre}</h5>
+            <span class="text-xs px-2 py-0.5 rounded-full" style="background: ${hexToSoft(impactColor, 0.12)}; color: ${impactColor};">${r.impact}</span>
+          </div>
+          <p class="text-xs" style="color: var(--muted);">${r.description}</p>
+        </div>`;
+    }).join('');
+  }
+
+  // Enjeux organisationnels (Clovis uses enjeuxOrganisationnels instead of defisOrganisationnels)
+  const defisEl = document.getElementById('gouv-defis');
+  if (defisEl) {
+    const enjeux = CLIENT_DATA.gouvernanceApprofondie.enjeuxOrganisationnels || CLIENT_DATA.gouvernanceApprofondie.defisOrganisationnels || [];
+    defisEl.innerHTML = enjeux.map(d => {
+      const impactColor = d.impact === 'Critique' ? theme.heat[0] : d.impact === 'Élevé' ? theme.accent : '#d97706';
+      return `
+        <div class="p-3 rounded-lg" style="background: var(--bg);">
+          <div class="flex items-center justify-between mb-1">
+            <h5 class="text-sm font-medium" style="color: var(--ink);">${d.titre}</h5>
+            <span class="text-xs px-2 py-0.5 rounded-full" style="background: ${hexToSoft(impactColor, 0.12)}; color: ${impactColor};">${d.impact}</span>
+          </div>
+          <p class="text-xs" style="color: var(--muted);">${d.description}</p>
+        </div>`;
+    }).join('');
+  }
+
+  // Besoins formation (Clovis uses "niveau" instead of "cible")
+  const formEl = document.getElementById('gouv-formation');
+  if (formEl) {
+    formEl.innerHTML = CLIENT_DATA.gouvernanceApprofondie.besoinsFormation.map(b => `
+      <div class="p-3 rounded-lg" style="background: var(--bg);">
+        <div class="flex items-center justify-between mb-1">
+          <h5 class="text-sm font-medium" style="color: var(--ink);">${b.titre}</h5>
+          <span class="text-xs px-2 py-0.5 rounded-full" style="background: var(--primary-soft); color: var(--primary);">${b.niveau || b.cible}</span>
+        </div>
+        <p class="text-xs" style="color: var(--muted);">${b.description}</p>
+        ${b.duree ? `<p class="text-xs mt-1" style="color: var(--muted-soft);">Durée : ${b.duree}</p>` : ''}
+      </div>
+    `).join('');
+  }
+}
+
+function buildDataHealth(theme) {
+  const sourcesEl = document.getElementById('data-sources-list');
+  if (sourcesEl) {
+    sourcesEl.innerHTML = CLIENT_DATA.dataGovernance.sources.map(s => {
+      const pct = (s.qualite / 5) * 100;
+      const barColor = s.qualite >= 4 ? theme.heat[4] : s.qualite >= 3 ? theme.heat[3] : s.qualite >= 2 ? theme.heat[2] : theme.heat[0];
+      return `
+        <div class="flex items-center gap-4 p-3 rounded-lg" style="background: var(--bg);">
+          <div class="flex-shrink-0">
+            ${icon(s.icon || 'database', 18, barColor)}
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between mb-1">
+              <h5 class="text-sm font-medium" style="color: var(--ink);">${s.nom}</h5>
+              <span class="text-xs px-2 py-0.5 rounded-full" style="background: var(--bg-alt); color: var(--muted);">${s.type}</span>
+            </div>
+            <div class="h-1.5 rounded-full" style="background: var(--border);">
+              <div class="h-full rounded-full transition-all" style="width: ${pct}%; background: ${barColor};"></div>
+            </div>
+          </div>
+          <span class="text-lg font-bold" style="color: ${barColor};">${s.qualite}/5</span>
+        </div>`;
+    }).join('');
+  }
+
+  const ringContainer = document.getElementById('quality-ring-container');
+  if (ringContainer) {
+    const score = CLIENT_DATA.dataGovernance.scoreExploitation;
+    const pct = (score / 5) * 100;
+    const circumference = 2 * Math.PI * 50;
+    const offset = circumference - (pct / 100) * circumference;
+    const ringColor = score >= 4 ? theme.heat[4] : score >= 3 ? theme.heat[3] : score >= 2 ? theme.heat[2] : theme.heat[0];
+
+    ringContainer.innerHTML = `
+      <svg width="140" height="140" viewBox="0 0 120 120">
+        <circle cx="60" cy="60" r="50" fill="none" stroke="${theme.border}" stroke-width="8"/>
+        <circle cx="60" cy="60" r="50" fill="none" stroke="${ringColor}" stroke-width="8"
+          stroke-dasharray="${circumference}" stroke-dashoffset="${offset}"
+          stroke-linecap="round" transform="rotate(-90 60 60)"/>
+        <text x="60" y="55" text-anchor="middle" fill="${theme.ink}" font-size="24" font-weight="700" font-family="Inter, sans-serif">${score}</text>
+        <text x="60" y="72" text-anchor="middle" fill="${theme.muted}" font-size="12" font-family="Inter, sans-serif">/ 5</text>
+      </svg>`;
+  }
+
+  // Improvement axes (Clovis uses "effort" instead of "priorite")
+  const axesEl = document.getElementById('improvement-axes');
+  if (axesEl) {
+    axesEl.innerHTML = CLIENT_DATA.dataGovernance.axesAmelioration.map(a => {
+      const effortLabel = a.priorite || a.effort || 'moyen';
+      const prioColor = (effortLabel === 'Haute' || effortLabel === 'fort') ? theme.accent : '#d97706';
+      return `
+        <div class="flex items-center justify-between p-3 rounded-lg" style="background: var(--bg);">
+          <div>
+            <h5 class="text-sm font-medium" style="color: var(--ink);">${a.titre}</h5>
+            <p class="text-xs" style="color: var(--muted);">${a.description}</p>
+          </div>
+          <span class="text-xs px-2 py-0.5 rounded-full whitespace-nowrap" style="background: ${hexToSoft(prioColor, 0.12)}; color: ${prioColor};">Effort ${effortLabel}</span>
+        </div>`;
+    }).join('');
+  }
+}
+
+function buildProcessMapping(theme) {
+  // Clovis processMapping uses actuel/cible with etapes[].libelle/outil instead of current/target with steps[].label/description/icon
+  const processData = CLIENT_DATA.processMapping;
+
+  // Map Clovis step types to icons
+  const typeIconMap = {
+    'saisie': 'file-text',
+    'manuel': 'clipboard',
+    'decision': 'check-circle',
+    'api': 'database',
+    'data': 'layers',
+    'ia': 'zap'
+  };
+
+  function renderSteps(containerId, etapes, isTarget) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    container.innerHTML = etapes.map((step, i) => {
+      const stepIcon = typeIconMap[step.type] || (isTarget ? 'zap' : 'clipboard');
+      return `
+      <div class="flex items-start gap-3">
+        <div class="flex flex-col items-center">
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background: ${isTarget ? 'var(--primary-soft)' : 'var(--bg-alt)'};">
+            ${icon(stepIcon, 18, isTarget ? 'var(--primary)' : 'var(--muted)')}
+          </div>
+          ${i < etapes.length - 1 ? `<div class="w-0.5 h-6 my-1" style="background: var(--border);"></div>` : ''}
+        </div>
+        <div class="pt-2">
+          <p class="text-sm font-medium" style="color: var(--ink);">${step.libelle}</p>
+          <p class="text-xs" style="color: ${isTarget ? 'var(--primary)' : 'var(--muted)'};">${step.outil}</p>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  renderSteps('process-current-steps', processData.actuel.etapes, false);
+  renderSteps('process-target-steps', processData.cible.etapes, true);
+}
+
+function buildMethodology(theme) {
+  // Typologies
+  const typoGrid = document.getElementById('typologies-grid');
+  if (typoGrid) {
+    typoGrid.innerHTML = CLIENT_DATA.methodologie.typologiesExplications.map(t => {
+      const color = t.couleur === 'accent' ? theme.accent : theme.primary;
+      return `
+        <div class="rounded-xl border p-5" style="border-color: var(--border);">
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center mb-3" style="background: ${hexToSoft(color, 0.1)};">
+            ${icon(t.icon, 20, color)}
+          </div>
+          <h4 class="text-sm font-semibold mb-2" style="color: var(--ink);">${t.nom}</h4>
+          <p class="text-xs mb-3" style="color: var(--muted);">${t.definition}</p>
+          <div class="pt-3 border-t" style="border-color: var(--border);">
+            <p class="text-xs" style="color: var(--muted-soft);"><strong style="color: var(--muted);">Exemple :</strong> ${t.exemple}</p>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // Complexite (Clovis uses characteristiques instead of caracteristiques, and has different fields)
+  const compGrid = document.getElementById('complexite-grid');
+  if (compGrid) {
+    const levelColors = {
+      'Faible': theme.heat[4], 'Faible complexité': theme.heat[4],
+      'Moyenne': '#d97706', 'Complexité moyenne': '#d97706',
+      'Forte': theme.heat[0], 'Forte valeur ajoutée': theme.heat[0]
+    };
+    const levelIconColors = {
+      'green': theme.heat[4],
+      'amber': '#d97706',
+      'red': theme.heat[0]
+    };
+    compGrid.innerHTML = CLIENT_DATA.methodologie.complexiteCriteres.map(c => {
+      const color = levelColors[c.niveau] || levelIconColors[c.couleur] || theme.muted;
+      const chars = c.characteristiques || c.caracteristiques || [];
+      const delai = c.delai || c.delaiMoyen || '';
+      return `
+        <div class="rounded-xl border p-5" style="border-color: var(--border);">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="w-3 h-3 rounded-full" style="background: ${color};"></span>
+            <h4 class="text-sm font-semibold" style="color: var(--ink);">${c.niveau}</h4>
+          </div>
+          ${c.sousTitre ? `<p class="text-xs mb-3" style="color: var(--muted);">${c.sousTitre}</p>` : `<p class="text-xs mb-3" style="color: var(--muted);">${c.description || ''}</p>`}
+          <div class="space-y-1.5 mb-3">
+            ${chars.map(ch => `
+              <div class="flex items-center gap-1.5">
+                ${icon('check', 12, color)}
+                <span class="text-xs" style="color: var(--muted);">${ch}</span>
+              </div>
+            `).join('')}
+          </div>
+          <div class="space-y-1 mb-3">
+            <p class="text-xs font-medium" style="color: var(--muted);">Exemples :</p>
+            ${c.exemples.map(ex => `<p class="text-xs" style="color: var(--muted-soft);">- ${ex}</p>`).join('')}
+          </div>
+          <div class="flex items-center justify-between pt-3 border-t" style="border-color: var(--border);">
+            <span class="text-xs" style="color: var(--muted);">${icon('clock', 12, 'var(--muted-soft)')} ${delai}</span>
+            <span class="text-xs font-medium" style="color: ${color};">${c.investissement}</span>
+          </div>
+        </div>`;
+    }).join('');
+  }
+}
+
+// ===============================================
+// METIER VIEWS BUILDER
+// ===============================================
+function buildMetierViews(theme) {
+  const container = document.getElementById('metier-views-container');
+  if (!container) return;
+
+  // Clovis use cases use typeTache (string) rather than typologies (array of IDs)
+  // Map typeTache to display labels
+  const typeTacheLabels = {
+    'Synthese': { label: 'Synthèse', color: theme.primary },
+    'Redaction': { label: 'Rédaction', color: theme.primary },
+    'Data': { label: 'Data / Nettoyage', color: theme.accent },
+    'Recherche': { label: 'Recherche', color: theme.primary }
+  };
+
+  const gainColorMap = {
+    'Productivite': theme.primary,
+    'Qualite': '#d97706',
+    'Confort': '#0891b2'
+  };
+
+  CLIENT_DATA.perimetre.forEach(dept => {
+    const useCases = CLIENT_DATA.useCasesList.filter(uc => uc.idMetier === dept.id);
+    const quickWins = useCases.filter(uc => uc.isQuickWin);
+    const top3 = [...useCases].sort((a, b) => b.minutesGagnees - a.minutesGagnees).slice(0, 3);
+    const rankColors = [theme.accent, theme.primary, '#64748b'];
+
+    const otherDepts = CLIENT_DATA.perimetre.filter(p => p.id !== dept.id);
+
+    const html = `
+    <div data-view="view-metier-${dept.id}" id="view-metier-${dept.id}" style="display: none;">
+      <!-- Back button -->
+      <button class="btn-back flex items-center gap-1.5 text-sm font-medium mb-6" style="color: var(--primary);">
+        ${icon('arrow-left', 16, 'var(--primary)')}
+        Retour au Dashboard Global
+      </button>
+
+      <!-- Metier header -->
+      <section class="mb-8">
+        <div class="rounded-2xl p-6 border" style="background: linear-gradient(135deg, var(--primary-soft), var(--bg-alt)); border-color: var(--primary-border);">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-4">
+              <div class="w-14 h-14 rounded-2xl flex items-center justify-center" style="background: var(--primary-soft);">
+                ${icon(dept.icon, 28, 'var(--primary)')}
+              </div>
+              <div>
+                <h2 class="font-display text-2xl" style="color: var(--ink);">${dept.nom}</h2>
+                <p class="text-sm" style="color: var(--muted);">${dept.effectif} personne${dept.effectif > 1 ? 's' : ''} auditée${dept.effectif > 1 ? 's' : ''}</p>
+              </div>
+            </div>
+            <div class="w-32 flex items-center justify-center">
+              <img src="assets/clovis_logo_white_backround.svg" alt="Clovis" class="max-h-20 max-w-32 object-contain">
+            </div>
+          </div>
+          <!-- Switch to other metiers -->
+          <div class="flex flex-wrap gap-2">
+            ${otherDepts.map(od => `
+              <button class="metier-switch-btn px-3 py-1.5 rounded-full text-xs font-medium border" style="border-color: var(--border); color: var(--muted); background: var(--surface);" data-switch-to="view-metier-${od.id}">
+                ${od.nom}
+              </button>
+            `).join('')}
+          </div>
+        </div>
+      </section>
+
+      <!-- Top 3 use cases -->
+      ${top3.length > 0 ? `
+      <section class="mb-8">
+        <h3 class="font-semibold text-sm mb-4" style="color: var(--ink);">Top 3 cas d'usage — temps gagné</h3>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          ${top3.map((uc, i) => `
+            <div class="rounded-xl border p-5 card-hover" style="border-color: var(--border); background: var(--surface);">
+              <div class="flex items-center justify-between mb-3">
+                <span class="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold" style="background: ${rankColors[i]};">${i + 1}</span>
+                <span class="text-xs font-medium px-2 py-0.5 rounded-full" style="background: ${hexToSoft(rankColors[i], 0.12)}; color: ${rankColors[i]};">${uc.minutesGagnees} min/jour</span>
+              </div>
+              <h4 class="text-sm font-semibold mb-1" style="color: var(--ink);">${uc.nomTache}</h4>
+              <p class="text-xs" style="color: var(--muted);">${uc.descriptionCasIA}</p>
+            </div>
+          `).join('')}
+        </div>
+      </section>` : ''}
+
+      <!-- Quick wins -->
+      ${quickWins.length > 0 ? `
+      <section class="mb-8">
+        <h3 class="font-semibold text-sm mb-4" style="color: var(--ink);">Quick wins</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          ${quickWins.map(qw => `
+            <div class="rounded-xl p-5" style="background: var(--primary-soft);">
+              <div class="flex items-center gap-2 mb-2">
+                ${icon('zap', 16, 'var(--primary)')}
+                <h4 class="text-sm font-semibold" style="color: var(--primary);">${qw.nomTache}</h4>
+              </div>
+              <p class="text-xs mb-2" style="color: var(--muted);">${qw.descriptionCasIA}</p>
+              <div class="flex items-center gap-1">
+                ${icon('clock', 12, 'var(--muted-soft)')}
+                <span class="text-xs" style="color: var(--muted);">${qw.minutesGagnees} min/jour</span>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </section>` : ''}
+
+      <!-- All use cases -->
+      <section class="mb-8">
+        <h3 class="font-semibold text-sm mb-4" style="color: var(--ink);">Tous les cas d'usage (${useCases.length})</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          ${useCases.map(uc => {
+            const typeInfo = typeTacheLabels[uc.typeTache] || { label: uc.typeTache, color: theme.muted };
+
+            return `
+            <div class="rounded-xl border p-5" style="border-color: var(--border); background: var(--surface);">
+              <div class="flex items-center justify-between mb-2">
+                <h4 class="text-sm font-semibold" style="color: var(--ink);">${uc.nomTache}</h4>
+                ${uc.isQuickWin ? `<span class="text-xs px-2 py-0.5 rounded-full font-medium" style="background: var(--primary-soft); color: var(--primary);">Quick win</span>` : ''}
+              </div>
+              <p class="text-xs mb-3" style="color: var(--muted);">${uc.descriptionCasIA}</p>
+
+              <!-- Typologie + Irritant -->
+              <div class="flex flex-wrap gap-1.5 mb-3">
+                <span class="text-xs px-2 py-0.5 rounded-full" style="background: ${hexToSoft(typeInfo.color, 0.1)}; color: ${typeInfo.color};">${typeInfo.label}</span>
+                <span class="text-xs px-2 py-0.5 rounded-full" style="background: var(--bg-alt); color: var(--muted);">${uc.irritantCategorie}</span>
+              </div>
+
+              <!-- Tools -->
+              <div class="flex flex-wrap gap-1 mb-3">
+                ${uc.outilsActuels.map(tool => `<span class="text-xs px-2 py-0.5 rounded-full border" style="border-color: var(--border); color: var(--muted-soft);">${tool}</span>`).join('')}
+              </div>
+
+              <!-- Time saved + gains -->
+              <div class="flex items-center justify-between pt-3 border-t" style="border-color: var(--border);">
+                <div class="flex items-center gap-1">
+                  ${icon('clock', 14, 'var(--muted-soft)')}
+                  <span class="text-xs font-medium" style="color: var(--ink);">${uc.minutesGagnees} min/jour</span>
+                </div>
+                <div class="flex gap-1">
+                  ${uc.gains.map(g => {
+                    const gc = gainColorMap[g] || theme.muted;
+                    return `<span class="text-xs px-2 py-0.5 rounded-full" style="background: ${hexToSoft(gc, 0.1)}; color: ${gc};">${g}</span>`;
+                  }).join('')}
+                </div>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+      </section>
+
+    </div>`;
+
+    container.insertAdjacentHTML('beforeend', html);
+  });
+
+  // Wire up metier switch buttons
+  container.querySelectorAll('.metier-switch-btn').forEach(btn => {
+    btn.addEventListener('click', () => navigateTo(btn.dataset.switchTo));
+  });
+
+  // Wire up back buttons
+  container.querySelectorAll('.btn-back').forEach(btn => {
+    btn.addEventListener('click', () => navigateTo('view-dashboard'));
+  });
+
+}
+
+// ===============================================
+// INJECT ICONS INTO PLACEHOLDER SPANS
+// ===============================================
+function injectIcons(theme) {
+  const iconMap = {
+    'icon-print': ['printer', 14, 'var(--muted)'],
+    'icon-gauge-title': ['gauge', 16, 'var(--primary)'],
+    'icon-risks-title': ['shield-alert', 16, 'var(--accent)'],
+    'icon-roadmap-title': ['map', 16, 'var(--primary)'],
+    'icon-glossary-title': ['book-open', 16, 'var(--primary)'],
+    'icon-glossary-search': ['search', 16, 'var(--muted-soft)'],
+    'icon-cta-arrow': ['arrow-right', 16, 'var(--primary)'],
+    'icon-gouv-risk': ['alert-triangle', 16, 'var(--accent)'],
+    'icon-gouv-defis': ['alert-circle', 16, 'var(--primary)'],
+    'icon-gouv-formation': ['graduation-cap', 16, 'var(--primary)']
+  };
+
+  Object.entries(iconMap).forEach(([id, args]) => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = icon(...args);
+  });
+
+  document.querySelectorAll('.icon-back').forEach(el => {
+    el.innerHTML = icon('arrow-left', 16, 'var(--primary)');
+  });
+}
+
+// ===============================================
+// FOOTER
+// ===============================================
+function buildFooter() {
+  const mission = document.getElementById('footer-mission');
+  const copy = document.getElementById('footer-copyright');
+  if (mission) mission.textContent = `${CLIENT_DATA.branding.missionCode} — ${CLIENT_DATA.branding.period}`;
+  if (copy) copy.textContent = `© ${new Date().getFullYear()} Hubvisory — Confidentiel`;
+}
+
+// ===============================================
+// BOOT
+// ===============================================
+document.addEventListener('DOMContentLoaded', () => {
+  const THEME = buildTheme(CLIENT_DATA.branding, CLIENT_DATA.computedColors);
+
+  function safe(name, fn) {
+    try { fn(); } catch (e) { console.error(`[${name}]`, e); }
+  }
+
+  safe('icons', () => injectIcons(THEME));
+  safe('heroPills', () => buildHeroPills(THEME));
+  safe('metierList', () => buildMetierList(THEME));
+  safe('shadowStats', () => buildShadowStats(THEME));
+  safe('gaugeLegend', () => buildGaugeLegend(THEME));
+  safe('risksList', () => buildRisksList(THEME));
+  safe('roadmap', () => buildRoadmap(THEME));
+  safe('cta', () => buildCTA(THEME));
+  safe('footer', () => buildFooter());
+  safe('gouvernance', () => buildGouvernance(THEME));
+  safe('dataHealth', () => buildDataHealth(THEME));
+  safe('processMapping', () => buildProcessMapping(THEME));
+  safe('methodology', () => buildMethodology(THEME));
+  safe('metierViews', () => buildMetierViews(THEME));
+  safe('gauge', () => renderGauge('gauge-container', CLIENT_DATA.globalMetrics.maturiteGlobale, 5, [], THEME));
+  safe('radarChart', () => initRadarChart(THEME));
+  safe('heatmap', () => initHeatmap(THEME));
+  safe('frequencyBars', () => initFrequencyBars(THEME));
+  safe('adoptionBars', () => initAdoptionBars(THEME));
+  safe('scatterChart', () => initScatterChart(THEME));
+  safe('navigation', () => initNavigation(THEME));
+  safe('glossary', () => initGlossary());
+  safe('methodologyTabs', () => initMethodologyTabs());
+  safe('print', () => initPrint());
+
+  document.body.classList.add('loaded');
+});
+</script>
+
+</body>
+</html>

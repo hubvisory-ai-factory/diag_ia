@@ -1,0 +1,70 @@
+<!--
+  COMPONENT: Frequency Bar Chart
+  SECTION: Dashboard > Frequency + Adoption row (left column)
+  DATA NEEDED:
+    - CLIENT_DATA.frequencyUsage — array of { bucket, pct }
+      e.g. [{ bucket: "Quotidien", pct: 42 }, { bucket: "Hebdomadaire", pct: 31 }, ...]
+    - THEME.primary — bar fill color
+    - THEME.ink — datalabel text color
+    - THEME.muted — axis tick color
+  CUSTOMIZATION:
+    - Change backgroundColor to theme.accent for a different color
+    - Adjust scales.y.max to allow taller bars
+    - Set maxBarThickness for wider/narrower bars
+    - Change datalabels.formatter for different label format
+  DEPENDENCIES: Chart.js 4+ loaded, chartjs-plugin-datalabels registered
+-->
+
+<!-- Frequency Bar Chart Card -->
+<div class="rounded-2xl border p-6" style="background: var(--surface); border-color: var(--border);">
+  <h3 class="font-semibold text-sm mb-4" style="color: var(--ink);">Frequence d'utilisation IA</h3>
+  <div style="height: 240px;">
+    <canvas id="frequency-chart"></canvas>
+  </div>
+</div>
+
+<script>
+// ---- FREQUENCY BARS INIT ----
+function initFrequencyBars(theme) {
+  const ctx = document.getElementById('frequency-chart');
+  if (!ctx) return;
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: CLIENT_DATA.frequencyUsage.map(f => f.bucket),
+      datasets: [{
+        data: CLIENT_DATA.frequencyUsage.map(f => f.pct),
+        backgroundColor: theme.primary,
+        borderRadius: 6,
+        maxBarThickness: 48
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        datalabels: {
+          display: true,
+          anchor: 'end',
+          align: 'top',
+          color: theme.ink,
+          font: { weight: '600', size: 12 },
+          formatter: v => v + '%'
+        }
+      },
+      scales: {
+        y: { display: false, max: 55 },
+        x: {
+          grid: { display: false },
+          ticks: { font: { size: 11, family: 'Inter' }, color: theme.muted }
+        }
+      }
+    }
+  });
+}
+
+// ---- USAGE ----
+// initFrequencyBars(THEME);
+</script>

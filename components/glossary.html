@@ -1,0 +1,100 @@
+<!--
+  COMPONENT: Searchable Accordion Glossary
+  SECTION: Dashboard > Glossary (bottom of dashboard view)
+  DATA NEEDED:
+    - CLIENT_DATA.glossaire — array of { terme, definition }
+  CUSTOMIZATION:
+    - Change max-height of .glossary-def.open for longer definitions (default 200px)
+    - Add categories by grouping terms and adding section headers
+    - Modify the search to filter on additional fields
+  DEPENDENCIES: icon() function, CSS classes .glossary-def and .glossary-def.open
+-->
+
+<!-- GLOSSARY -->
+<section class="mb-8">
+  <div class="rounded-2xl border p-6" style="background: var(--surface); border-color: var(--border);">
+    <div class="flex items-center gap-2 mb-4">
+      <!-- icon('book-open', 16, 'var(--primary)') -->
+      <h3 class="font-semibold text-sm" style="color: var(--ink);">Glossaire IA</h3>
+    </div>
+    <!-- Search input -->
+    <div class="relative mb-4">
+      <span class="absolute left-3 top-1/2 -translate-y-1/2">
+        <!-- icon('search', 16, 'var(--muted-soft)') -->
+      </span>
+      <input id="glossary-search" type="text" placeholder="Rechercher un terme..."
+        class="w-full pl-9 pr-4 py-2 text-sm rounded-lg border outline-none focus:ring-2"
+        style="border-color: var(--border); background: var(--bg); color: var(--ink);">
+    </div>
+    <!-- Glossary terms list -->
+    <div class="divide-y" style="border-color: var(--border);" id="glossary-list">
+      <!-- JS generates accordion items -->
+    </div>
+  </div>
+</section>
+
+<!-- Required CSS (add to your stylesheet) -->
+<!--
+  .glossary-def { max-height: 0; overflow: hidden; transition: max-height 0.25s ease-out; }
+  .glossary-def.open { max-height: 200px; }
+-->
+
+<script>
+// ---- GLOSSARY INIT ----
+function initGlossary() {
+  const list = document.getElementById('glossary-list');
+  const searchInput = document.getElementById('glossary-search');
+  if (!list) return;
+
+  function renderGlossary(filter = '') {
+    const filtered = CLIENT_DATA.glossaire.filter(g =>
+      g.terme.toLowerCase().includes(filter.toLowerCase()) ||
+      g.definition.toLowerCase().includes(filter.toLowerCase())
+    );
+
+    list.innerHTML = filtered.map(g => `
+      <div class="glossary-item border-b" style="border-color: var(--border);">
+        <button class="glossary-toggle w-full flex items-center justify-between py-3 text-left">
+          <span class="font-medium text-sm" style="color: var(--ink);">${g.terme}</span>
+          <span class="glossary-chevron transition-transform" style="color: var(--muted);">
+            ${icon('chevron-down', 16)}
+          </span>
+        </button>
+        <div class="glossary-def">
+          <p class="text-sm pb-3" style="color: var(--muted);">${g.definition}</p>
+        </div>
+      </div>
+    `).join('');
+
+    // Accordion toggle behavior (one open at a time)
+    list.querySelectorAll('.glossary-toggle').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const def = btn.nextElementSibling;
+        const chevron = btn.querySelector('.glossary-chevron');
+        const isOpen = def.classList.contains('open');
+
+        // Close all
+        list.querySelectorAll('.glossary-def').forEach(d => d.classList.remove('open'));
+        list.querySelectorAll('.glossary-chevron').forEach(c => c.style.transform = 'rotate(0deg)');
+
+        // Open this one if it was closed
+        if (!isOpen) {
+          def.classList.add('open');
+          chevron.style.transform = 'rotate(180deg)';
+        }
+      });
+    });
+  }
+
+  // Initial render
+  renderGlossary();
+
+  // Live search
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => renderGlossary(e.target.value));
+  }
+}
+
+// ---- USAGE ----
+// initGlossary();
+</script>

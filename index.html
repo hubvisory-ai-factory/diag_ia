@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <title>Audits de maturité IA — Hubvisory</title>
+
+  <!-- CDN Dependencies -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind Config -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            body: ['Inter', 'system-ui', 'sans-serif'],
+            display: ['DM Serif Display', 'serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #f6f8fb;
+      color: #0f172a;
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+
+  <!-- Header -->
+  <header class="bg-white" style="border-bottom: 1px solid #e2e8f0">
+    <div class="max-w-screen-xl mx-auto px-6 py-5 flex items-center gap-3">
+      <img src="/favicon.png" alt="Hubvisory" width="32" height="32" class="rounded">
+      <span class="text-lg font-semibold tracking-tight" style="color: #003366">Hubvisory</span>
+    </div>
+  </header>
+
+  <!-- Main content -->
+  <main class="max-w-screen-xl mx-auto px-6 py-16">
+
+    <!-- Title -->
+    <h1 class="font-display text-4xl md:text-5xl mb-4" style="color: #003366; font-family: 'DM Serif Display', serif">
+      Audits de maturité IA
+    </h1>
+    <p class="text-base md:text-lg max-w-2xl mb-12" style="color: #475569">
+      Cabinet de conseil expert en stratégie, produit et industrialisation de l'IA. Retrouvez ci-dessous les diagnostics réalisés.
+    </p>
+
+    <!-- Client cards grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+      <!-- Clovis -->
+      <a href="clients/clovis/index.html" class="group block bg-white rounded-lg transition hover:shadow-lg" style="border: 1px solid #e2e8f0">
+        <div class="h-2 rounded-t-lg" style="background: linear-gradient(135deg, #003366 0%, #003366 60%, #E30613 140%)"></div>
+        <div class="p-6">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-11 h-11 rounded-lg flex items-center justify-center overflow-hidden" style="background: rgba(0,51,102,0.08)">
+              <img src="clients/clovis/assets/clovis_logo_white_backround.svg" alt="Clovis" class="w-9 h-9 object-contain">
+            </div>
+            <div>
+              <div class="font-semibold text-slate-900">Clovis</div>
+              <div class="text-xs text-slate-400">T2 2026</div>
+            </div>
+          </div>
+          <div class="text-sm text-slate-600 mb-3">Audit de maturité IA</div>
+          <div class="text-xs text-slate-400">Location & gestion de flottes PL/VUL</div>
+        </div>
+      </a>
+
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="max-w-screen-xl mx-auto px-6 py-8 text-center">
+    <p class="text-xs" style="color: #94a3b8">Hubvisory AI Factory</p>
+  </footer>
+
+</body>
+</html>

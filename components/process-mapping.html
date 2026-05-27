@@ -1,0 +1,78 @@
+<!--
+  COMPONENT: Process Mapping — Current vs Target
+  SECTION: Charte view > Cartographie des processus
+  DATA NEEDED:
+    - CLIENT_DATA.processMapping.current — { title, steps[] }
+    - CLIENT_DATA.processMapping.target — { title, steps[] }
+    - Each step: { label, description, icon }
+  CUSTOMIZATION:
+    - Add more steps to either flow by extending the steps array
+    - Change the connector line between steps (currently a vertical 0.5px bar)
+    - Use different icon colors for current (muted) vs target (primary) flows
+    - Add a third column for a "transition" flow
+  DEPENDENCIES: icon() function
+-->
+
+<!-- PROCESS MAPPING -->
+<section class="mb-8">
+  <h2 class="font-display text-2xl mb-5" style="color: var(--ink);">Cartographie des processus</h2>
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6" id="process-map">
+
+    <!-- Current process (greyed out) -->
+    <div class="rounded-2xl border p-6" style="background: var(--surface); border-color: var(--border);">
+      <h4 class="font-semibold text-sm mb-4" style="color: var(--muted);">Processus actuel</h4>
+      <div class="space-y-0" id="process-current-steps">
+        <!-- JS generates step items -->
+      </div>
+    </div>
+
+    <!-- Target process (primary colored) -->
+    <div class="rounded-2xl border p-6" style="background: var(--surface); border-color: var(--border);">
+      <h4 class="font-semibold text-sm mb-4" style="color: var(--primary);">Processus cible</h4>
+      <div class="space-y-0" id="process-target-steps">
+        <!-- JS generates step items -->
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<script>
+// ---- PROCESS MAPPING BUILDER ----
+function buildProcessMapping(theme) {
+
+  function renderSteps(containerId, steps, isTarget) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    container.innerHTML = steps.map((step, i) => `
+      <div class="flex items-start gap-3">
+        <div class="flex flex-col items-center">
+          <!-- Step icon circle -->
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center"
+               style="background: ${isTarget ? 'var(--primary-soft)' : 'var(--bg-alt)'};">
+            ${icon(step.icon, 18, isTarget ? 'var(--primary)' : 'var(--muted)')}
+          </div>
+          <!-- Connector line (except for last step) -->
+          ${i < steps.length - 1
+            ? `<div class="w-0.5 h-6 my-1" style="background: var(--border);"></div>`
+            : ''}
+        </div>
+        <div class="pt-2">
+          <p class="text-xs font-semibold"
+             style="color: ${isTarget ? 'var(--primary)' : 'var(--muted)'};">
+            ${step.label}
+          </p>
+          <p class="text-sm font-medium" style="color: var(--ink);">${step.description}</p>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  renderSteps('process-current-steps', CLIENT_DATA.processMapping.current.steps, false);
+  renderSteps('process-target-steps', CLIENT_DATA.processMapping.target.steps, true);
+}
+
+// ---- USAGE ----
+// buildProcessMapping(THEME);
+</script>

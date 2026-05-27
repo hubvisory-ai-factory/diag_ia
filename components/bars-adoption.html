@@ -1,0 +1,69 @@
+<!--
+  COMPONENT: Adoption Duration Bar Chart
+  SECTION: Dashboard > Frequency + Adoption row (right column)
+  DATA NEEDED:
+    - CLIENT_DATA.adoptionDuree — array of { bucket, pct }
+      e.g. [{ bucket: "< 6 mois", pct: 38 }, { bucket: "6-12 mois", pct: 45 }, ...]
+    - THEME.accent — bar fill color (red/accent to contrast with frequency chart)
+    - THEME.ink — datalabel text color
+    - THEME.muted — axis tick color
+  CUSTOMIZATION:
+    - Change backgroundColor to theme.primary for a different color
+    - Adjust scales.y.max for taller bars
+    - Modify the bucket labels in CLIENT_DATA.adoptionDuree
+  DEPENDENCIES: Chart.js 4+ loaded, chartjs-plugin-datalabels registered
+-->
+
+<!-- Adoption Bar Chart Card -->
+<div class="rounded-2xl border p-6" style="background: var(--surface); border-color: var(--border);">
+  <h3 class="font-semibold text-sm mb-4" style="color: var(--ink);">Duree d'adoption</h3>
+  <div style="height: 240px;">
+    <canvas id="adoption-chart"></canvas>
+  </div>
+</div>
+
+<script>
+// ---- ADOPTION BARS INIT ----
+function initAdoptionBars(theme) {
+  const ctx = document.getElementById('adoption-chart');
+  if (!ctx) return;
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: CLIENT_DATA.adoptionDuree.map(a => a.bucket),
+      datasets: [{
+        data: CLIENT_DATA.adoptionDuree.map(a => a.pct),
+        backgroundColor: theme.accent,
+        borderRadius: 6,
+        maxBarThickness: 48
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        datalabels: {
+          display: true,
+          anchor: 'end',
+          align: 'top',
+          color: theme.ink,
+          font: { weight: '600', size: 12 },
+          formatter: v => v + '%'
+        }
+      },
+      scales: {
+        y: { display: false, max: 60 },
+        x: {
+          grid: { display: false },
+          ticks: { font: { size: 11, family: 'Inter' }, color: theme.muted }
+        }
+      }
+    }
+  });
+}
+
+// ---- USAGE ----
+// initAdoptionBars(THEME);
+</script>

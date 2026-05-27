@@ -1,0 +1,146 @@
+<!--
+  COMPONENT: Full Use Case Catalog Grid
+  SECTION: Metier view > Tous les cas d'usage
+  DATA NEEDED:
+    - useCases — all use cases for this department
+    - Each: { id, titre, description, typologies[], complexite (1-5), priorite, minutesGagnees, gains[], isQuickWin }
+    - CLIENT_DATA.methodologie.typologiesExplications — for typology pill labels/colors
+    - THEME.heat[], THEME.primary, THEME.accent
+  CUSTOMIZATION:
+    - Add sorting/filtering controls above the grid
+    - Change grid from 2-col to 3-col: md:grid-cols-2 to lg:grid-cols-3
+    - Modify complexity dots count (default 5)
+    - Add vote count badge to each card
+    - Extend gain types in gainColorMap for new categories
+  DEPENDENCIES: icon() function, hexToSoft() utility, typologyMap lookup
+-->
+
+<!-- FULL USE CASE CATALOG -->
+<section class="mb-8">
+  <h3 class="font-semibold text-sm mb-4" style="color: var(--ink);">Tous les cas d'usage (6)</h3>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+    <!-- Example use case card -->
+    <div class="rounded-xl border p-5" style="border-color: var(--border); background: var(--surface);">
+      <!-- Title row with optional Quick Win badge -->
+      <div class="flex items-center justify-between mb-2">
+        <h4 class="text-sm font-semibold" style="color: var(--ink);">Cas d'usage n.1</h4>
+        <span class="text-xs px-2 py-0.5 rounded-full font-medium"
+              style="background: var(--primary-soft); color: var(--primary);">Quick win</span>
+      </div>
+      <p class="text-xs mb-3" style="color: var(--muted);">Description du premier cas d'usage identifie.</p>
+
+      <!-- Typology pills -->
+      <div class="flex flex-wrap gap-1.5 mb-3">
+        <span class="text-xs px-2 py-0.5 rounded-full"
+              style="background: rgba(0,51,102,0.1); color: var(--primary);">Typologie A</span>
+      </div>
+
+      <!-- Complexity dots + Priority pill -->
+      <div class="flex items-center gap-4 mb-3">
+        <div class="flex items-center gap-1">
+          <span class="text-xs" style="color: var(--muted-soft);">Complexite</span>
+          <div class="flex items-center gap-0.5 ml-1">
+            <!-- 5 dots, filled up to complexite value -->
+            <span class="w-1.5 h-1.5 rounded-full" style="background: var(--primary);"></span>
+            <span class="w-1.5 h-1.5 rounded-full" style="background: var(--primary);"></span>
+            <span class="w-1.5 h-1.5 rounded-full" style="background: var(--border);"></span>
+            <span class="w-1.5 h-1.5 rounded-full" style="background: var(--border);"></span>
+            <span class="w-1.5 h-1.5 rounded-full" style="background: var(--border);"></span>
+          </div>
+        </div>
+        <span class="text-xs px-2 py-0.5 rounded-full"
+              style="background: rgba(16,185,129,0.12); color: #10b981;">Court terme</span>
+      </div>
+
+      <!-- Time saved + Gain type pills -->
+      <div class="flex items-center justify-between pt-3 border-t" style="border-color: var(--border);">
+        <div class="flex items-center gap-1">
+          <!-- icon('clock', 14, 'var(--muted-soft)') -->
+          <span class="text-xs font-medium" style="color: var(--ink);">45 min/jour</span>
+        </div>
+        <div class="flex gap-1">
+          <span class="text-xs px-2 py-0.5 rounded-full"
+                style="background: rgba(0,51,102,0.1); color: var(--primary);"
+                title="Gain de temps sur le traitement">Productivite</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Repeat for each use case -->
+  </div>
+</section>
+
+<script>
+// ---- USE CASE CATALOG (part of buildMetierViews) ----
+// Renders ALL use cases for a given department in a 2-column grid.
+
+/*
+const typologyMap = {};
+CLIENT_DATA.methodologie.typologiesExplications.forEach(t => { typologyMap[t.id] = t; });
+
+const gainColorMap = {
+  'Productivite': theme.primary,
+  'Qualite': '#d97706',
+  'Confort': '#0891b2'
+};
+
+const useCasesHtml = useCases.map(uc => {
+  const prioColor = uc.priorite === 'Court terme' ? theme.heat[4]
+                  : uc.priorite === 'Moyen terme' ? '#d97706'
+                  : theme.accent;
+
+  // Complexity dots (5 total, filled up to uc.complexite)
+  const complexityDots = Array.from({length: 5}, (_, i) =>
+    `<span class="w-1.5 h-1.5 rounded-full"
+           style="background: ${i < uc.complexite ? 'var(--primary)' : 'var(--border)'};"></span>`
+  ).join('');
+
+  return `
+  <div class="rounded-xl border p-5" style="border-color: var(--border); background: var(--surface);">
+    <div class="flex items-center justify-between mb-2">
+      <h4 class="text-sm font-semibold" style="color: var(--ink);">${uc.titre}</h4>
+      ${uc.isQuickWin
+        ? `<span class="text-xs px-2 py-0.5 rounded-full font-medium"
+                 style="background: var(--primary-soft); color: var(--primary);">Quick win</span>`
+        : ''}
+    </div>
+    <p class="text-xs mb-3" style="color: var(--muted);">${uc.description}</p>
+
+    <div class="flex flex-wrap gap-1.5 mb-3">
+      ${uc.typologies.map(tid => {
+        const typo = typologyMap[tid];
+        if (!typo) return '';
+        const c = typo.couleur === 'accent' ? theme.accent : theme.primary;
+        return `<span class="text-xs px-2 py-0.5 rounded-full"
+                      style="background: ${hexToSoft(c, 0.1)}; color: ${c};">${typo.nom}</span>`;
+      }).join('')}
+    </div>
+
+    <div class="flex items-center gap-4 mb-3">
+      <div class="flex items-center gap-1">
+        <span class="text-xs" style="color: var(--muted-soft);">Complexite</span>
+        <div class="flex items-center gap-0.5 ml-1">${complexityDots}</div>
+      </div>
+      <span class="text-xs px-2 py-0.5 rounded-full"
+            style="background: ${hexToSoft(prioColor, 0.12)}; color: ${prioColor};">${uc.priorite}</span>
+    </div>
+
+    <div class="flex items-center justify-between pt-3 border-t" style="border-color: var(--border);">
+      <div class="flex items-center gap-1">
+        ${icon('clock', 14, 'var(--muted-soft)')}
+        <span class="text-xs font-medium" style="color: var(--ink);">${uc.minutesGagnees} min/jour</span>
+      </div>
+      <div class="flex gap-1">
+        ${uc.gains.map(g => {
+          const gc = gainColorMap[g.type] || theme.muted;
+          return `<span class="text-xs px-2 py-0.5 rounded-full"
+                        style="background: ${hexToSoft(gc, 0.1)}; color: ${gc};"
+                        title="${g.description}">${g.type}</span>`;
+        }).join('')}
+      </div>
+    </div>
+  </div>`;
+}).join('');
+*/
+</script>

@@ -1,0 +1,83 @@
+<!--
+  COMPONENT: Top 3 Use Cases Grid
+  SECTION: Metier view > Top 3 cas d'usage (ranked by time saved)
+  DATA NEEDED:
+    - useCases — filtered list of use cases for this department
+    - Each use case: { titre, description, minutesGagnees }
+    - THEME.accent, THEME.primary
+  CUSTOMIZATION:
+    - Change ranking criteria: replace minutesGagnees sort with votes or complexite
+    - Adjust the number of top items: change .slice(0, 3) to .slice(0, 5)
+    - Modify rank badge colors in the rankColors array
+    - Add more metadata (e.g. complexity dots) to each card
+  DEPENDENCIES: hexToSoft() utility
+-->
+
+<!-- TOP 3 USE CASES -->
+<section class="mb-8">
+  <h3 class="font-semibold text-sm mb-4" style="color: var(--ink);">Top 3 cas d'usage — temps gagne</h3>
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+    <!-- Rank 1 (accent color) -->
+    <div class="rounded-xl border p-5 card-hover" style="border-color: var(--border); background: var(--surface);">
+      <div class="flex items-center justify-between mb-3">
+        <span class="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold"
+              style="background: var(--accent);">1</span>
+        <span class="text-xs font-medium px-2 py-0.5 rounded-full"
+              style="background: rgba(227,6,19,0.12); color: var(--accent);">45 min/jour</span>
+      </div>
+      <h4 class="text-sm font-semibold mb-1" style="color: var(--ink);">Cas d'usage n.1</h4>
+      <p class="text-xs" style="color: var(--muted);">Description du premier cas d'usage identifie.</p>
+    </div>
+
+    <!-- Rank 2 (primary color) -->
+    <div class="rounded-xl border p-5 card-hover" style="border-color: var(--border); background: var(--surface);">
+      <div class="flex items-center justify-between mb-3">
+        <span class="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold"
+              style="background: var(--primary);">2</span>
+        <span class="text-xs font-medium px-2 py-0.5 rounded-full"
+              style="background: rgba(0,51,102,0.12); color: var(--primary);">30 min/jour</span>
+      </div>
+      <h4 class="text-sm font-semibold mb-1" style="color: var(--ink);">Cas d'usage n.2</h4>
+      <p class="text-xs" style="color: var(--muted);">Description du deuxieme cas d'usage.</p>
+    </div>
+
+    <!-- Rank 3 (slate color) -->
+    <div class="rounded-xl border p-5 card-hover" style="border-color: var(--border); background: var(--surface);">
+      <div class="flex items-center justify-between mb-3">
+        <span class="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold"
+              style="background: #64748b;">3</span>
+        <span class="text-xs font-medium px-2 py-0.5 rounded-full"
+              style="background: rgba(100,116,139,0.12); color: #64748b;">20 min/jour</span>
+      </div>
+      <h4 class="text-sm font-semibold mb-1" style="color: var(--ink);">Cas d'usage n.3</h4>
+      <p class="text-xs" style="color: var(--muted);">Description du troisieme cas d'usage.</p>
+    </div>
+
+  </div>
+</section>
+
+<script>
+// ---- TOP 3 USE CASES (part of buildMetierViews) ----
+// Sort use cases by minutesGagnees descending, take first 3.
+
+/*
+const top3 = [...useCases].sort((a, b) => b.minutesGagnees - a.minutesGagnees).slice(0, 3);
+const rankColors = [theme.accent, theme.primary, '#64748b'];
+
+const top3Html = top3.map((uc, i) => `
+  <div class="rounded-xl border p-5 card-hover" style="border-color: var(--border); background: var(--surface);">
+    <div class="flex items-center justify-between mb-3">
+      <span class="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold"
+            style="background: ${rankColors[i]};">${i + 1}</span>
+      <span class="text-xs font-medium px-2 py-0.5 rounded-full"
+            style="background: ${hexToSoft(rankColors[i], 0.12)}; color: ${rankColors[i]};">
+        ${uc.minutesGagnees} min/jour
+      </span>
+    </div>
+    <h4 class="text-sm font-semibold mb-1" style="color: var(--ink);">${uc.titre}</h4>
+    <p class="text-xs" style="color: var(--muted);">${uc.description}</p>
+  </div>
+`).join('');
+*/
+</script>

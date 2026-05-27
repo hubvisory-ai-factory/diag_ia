@@ -1,0 +1,70 @@
+<!--
+  COMPONENT: Risk Register Table
+  SECTION: Dashboard > Risks (below CTA banner)
+  DATA NEEDED:
+    - CLIENT_DATA.risques — array of { id, libelle, note, niveau }
+      niveau values: "Rouge", "Orange", "Vert"
+    - THEME.risk — color map { Rouge: "#dc2626", Orange: "#f59e0b", Vert: "#10b981" }
+  CUSTOMIZATION:
+    - Add more severity levels by extending THEME.risk and CLIENT_DATA.risques
+    - Change the colored bar width (w-1.5) or height (h-12) for different visual weight
+    - Add a probability column by extending the row template
+  DEPENDENCIES: hexToSoft() utility, icon() function, THEME.risk color map
+-->
+
+<!-- RISKS TABLE -->
+<section class="mb-8">
+  <div class="rounded-2xl border p-6" style="background: var(--surface); border-color: var(--border);">
+    <div class="flex items-center gap-2 mb-5">
+      <!-- icon('shield-alert', 16, 'var(--accent)') -->
+      <h3 class="font-semibold text-sm" style="color: var(--ink);">Inventaire des risques</h3>
+    </div>
+    <div class="space-y-3" id="risks-list">
+      <!-- JS generates one row per risk: -->
+
+      <!-- Example row structure: -->
+      <div class="flex items-start gap-3 p-3 rounded-xl" style="background: var(--bg);">
+        <!-- Colored severity bar -->
+        <div class="w-1.5 h-12 rounded-full flex-shrink-0 mt-0.5"
+             style="background: #dc2626;"></div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 mb-0.5">
+            <h4 class="text-sm font-semibold" style="color: var(--ink);">Risque identifie n.1</h4>
+            <span class="text-xs px-2 py-0.5 rounded-full font-medium"
+                  style="background: rgba(220,38,38,0.15); color: #dc2626;">Rouge</span>
+          </div>
+          <p class="text-xs" style="color: var(--muted);">Detail du risque et de son contexte</p>
+        </div>
+      </div>
+      <!-- Repeat for each risk -->
+    </div>
+  </div>
+</section>
+
+<script>
+// ---- RISKS LIST BUILDER ----
+function buildRisksList(theme) {
+  const list = document.getElementById('risks-list');
+  if (!list) return;
+
+  list.innerHTML = CLIENT_DATA.risques.map(r => `
+    <div class="flex items-start gap-3 p-3 rounded-xl" style="background: var(--bg);">
+      <div class="w-1.5 h-12 rounded-full flex-shrink-0 mt-0.5"
+           style="background: ${theme.risk[r.niveau]};"></div>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2 mb-0.5">
+          <h4 class="text-sm font-semibold" style="color: var(--ink);">${r.libelle}</h4>
+          <span class="text-xs px-2 py-0.5 rounded-full font-medium"
+                style="background: ${hexToSoft(theme.risk[r.niveau], 0.15)}; color: ${theme.risk[r.niveau]};">
+            ${r.niveau}
+          </span>
+        </div>
+        <p class="text-xs" style="color: var(--muted);">${r.note}</p>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ---- USAGE ----
+// buildRisksList(THEME);
+</script>

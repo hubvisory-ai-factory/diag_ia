@@ -1,0 +1,134 @@
+<!--
+  COMPONENT: Governance Deep-Dive (3-column grid)
+  SECTION: Charte view > Gouvernance approfondie
+  DATA NEEDED:
+    - CLIENT_DATA.gouvernanceApprofondie.risquesOperationnels — array of { titre, description, impact }
+    - CLIENT_DATA.gouvernanceApprofondie.defisOrganisationnels — array of { titre, description, impact }
+    - CLIENT_DATA.gouvernanceApprofondie.besoinsFormation — array of { titre, description, cible }
+    - THEME.accent, THEME.primary, THEME.heat[0]
+  CUSTOMIZATION:
+    - Add a fourth column by changing grid-cols-3 to grid-cols-4
+    - Adjust impact color mapping for your severity levels
+    - Change the icon in each column header
+  DEPENDENCIES: icon() function, hexToSoft() utility
+-->
+
+<!-- Back button (Charte view has a back-to-dashboard link) -->
+<button class="btn-back flex items-center gap-1.5 text-sm font-medium mb-6" style="color: var(--primary);">
+  <!-- icon('arrow-left', 16, 'var(--primary)') -->
+  Retour au Dashboard Global
+</button>
+
+<!-- GOUVERNANCE DEEP-DIVE -->
+<section class="mb-8">
+  <h2 class="font-display text-2xl mb-5" style="color: var(--ink);">Gouvernance approfondie</h2>
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4" id="gouvernance-grid">
+
+    <!-- Column 1: Risques operationnels -->
+    <div class="rounded-2xl border p-5" style="background: var(--surface); border-color: var(--border);">
+      <div class="flex items-center gap-2 mb-4">
+        <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background: var(--accent-soft);">
+          <!-- icon('alert-triangle', 16, 'var(--accent)') -->
+        </div>
+        <h4 class="font-semibold text-sm" style="color: var(--ink);">Risques operationnels</h4>
+      </div>
+      <div class="space-y-3" id="gouv-risks">
+        <!-- JS generates risk items -->
+      </div>
+    </div>
+
+    <!-- Column 2: Defis organisationnels -->
+    <div class="rounded-2xl border p-5" style="background: var(--surface); border-color: var(--border);">
+      <div class="flex items-center gap-2 mb-4">
+        <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background: var(--primary-soft);">
+          <!-- icon('alert-circle', 16, 'var(--primary)') -->
+        </div>
+        <h4 class="font-semibold text-sm" style="color: var(--ink);">Defis organisationnels</h4>
+      </div>
+      <div class="space-y-3" id="gouv-defis">
+        <!-- JS generates challenge items -->
+      </div>
+    </div>
+
+    <!-- Column 3: Besoins de formation -->
+    <div class="rounded-2xl border p-5" style="background: var(--surface); border-color: var(--border);">
+      <div class="flex items-center gap-2 mb-4">
+        <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background: var(--primary-soft);">
+          <!-- icon('graduation-cap', 16, 'var(--primary)') -->
+        </div>
+        <h4 class="font-semibold text-sm" style="color: var(--ink);">Besoins de formation</h4>
+      </div>
+      <div class="space-y-3" id="gouv-formation">
+        <!-- JS generates training need items -->
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<script>
+// ---- GOVERNANCE BUILDER ----
+function buildGouvernance(theme) {
+  // Risques operationnels
+  const risksEl = document.getElementById('gouv-risks');
+  if (risksEl) {
+    risksEl.innerHTML = CLIENT_DATA.gouvernanceApprofondie.risquesOperationnels.map(r => {
+      const impactColor = r.impact === 'Eleve' ? theme.accent
+                        : r.impact === 'Critique' ? theme.heat[0]
+                        : '#d97706';
+      return `
+        <div class="p-3 rounded-lg" style="background: var(--bg);">
+          <div class="flex items-center justify-between mb-1">
+            <h5 class="text-sm font-medium" style="color: var(--ink);">${r.titre}</h5>
+            <span class="text-xs px-2 py-0.5 rounded-full"
+                  style="background: ${hexToSoft(impactColor, 0.12)}; color: ${impactColor};">
+              ${r.impact}
+            </span>
+          </div>
+          <p class="text-xs" style="color: var(--muted);">${r.description}</p>
+        </div>`;
+    }).join('');
+  }
+
+  // Defis organisationnels
+  const defisEl = document.getElementById('gouv-defis');
+  if (defisEl) {
+    defisEl.innerHTML = CLIENT_DATA.gouvernanceApprofondie.defisOrganisationnels.map(d => {
+      const impactColor = d.impact === 'Critique' ? theme.heat[0]
+                        : d.impact === 'Eleve' ? theme.accent
+                        : '#d97706';
+      return `
+        <div class="p-3 rounded-lg" style="background: var(--bg);">
+          <div class="flex items-center justify-between mb-1">
+            <h5 class="text-sm font-medium" style="color: var(--ink);">${d.titre}</h5>
+            <span class="text-xs px-2 py-0.5 rounded-full"
+                  style="background: ${hexToSoft(impactColor, 0.12)}; color: ${impactColor};">
+              ${d.impact}
+            </span>
+          </div>
+          <p class="text-xs" style="color: var(--muted);">${d.description}</p>
+        </div>`;
+    }).join('');
+  }
+
+  // Besoins de formation
+  const formEl = document.getElementById('gouv-formation');
+  if (formEl) {
+    formEl.innerHTML = CLIENT_DATA.gouvernanceApprofondie.besoinsFormation.map(b => `
+      <div class="p-3 rounded-lg" style="background: var(--bg);">
+        <div class="flex items-center justify-between mb-1">
+          <h5 class="text-sm font-medium" style="color: var(--ink);">${b.titre}</h5>
+          <span class="text-xs px-2 py-0.5 rounded-full"
+                style="background: var(--primary-soft); color: var(--primary);">
+            ${b.cible}
+          </span>
+        </div>
+        <p class="text-xs" style="color: var(--muted);">${b.description}</p>
+      </div>
+    `).join('');
+  }
+}
+
+// ---- USAGE ----
+// buildGouvernance(THEME);
+</script>

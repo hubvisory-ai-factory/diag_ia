@@ -1,0 +1,94 @@
+<!--
+  COMPONENT: Espace Partenaire — Équipe Projet Hubvisory
+  SECTION: Bas du Dashboard global + en-tête index
+  DATA NEEDED:
+    - CLIENT_DATA.espacePartenaire:
+        { titre, intro, ctaLabel, prochaineEtape,
+          consultants[{ prenom, nom, initiales, role, email }],
+          liens: { site, linkedin } }
+  CUSTOMIZATION:
+    - Accent top border (4px solid var(--accent))
+    - Consultant initials avatars use primary-soft background
+    - CTA button uses accent background
+  DEPENDENCIES: Tailwind CSS, icon() function
+-->
+
+<!-- ─── ESPACE PARTENAIRE ─── -->
+<div class="rounded-2xl overflow-hidden" style="border: 2px solid var(--border); border-top: 4px solid var(--accent);">
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-0">
+
+    <!-- Left: Team intro + CTA -->
+    <div class="lg:col-span-5 p-6 lg:p-8">
+      <div class="flex items-center gap-2 mb-3">
+        <span class="w-2 h-2 rounded-full" style="background: var(--primary);"></span>
+        <p class="text-[11px] font-semibold uppercase tracking-[0.18em]" style="color: var(--accent);">Espace Partenaire · Hubvisory</p>
+      </div>
+      <h3 class="font-display text-xl mb-3" style="color: var(--ink);">Votre Équipe Projet Hubvisory</h3>
+      <p class="text-sm leading-relaxed mb-5" style="color: var(--muted);">
+        Votre équipe dédiée vous accompagne dans la mise en œuvre des recommandations issues du diagnostic.
+      </p>
+
+      <!-- CTA Button -->
+      <button class="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold text-white mb-3" style="background: var(--accent);">
+        <!-- icon('mail', 18, 'white') -->
+        Contacter l'équipe projet
+        <!-- icon('arrow-right', 16, 'white') -->
+      </button>
+      <p class="text-xs mb-5" style="color: var(--muted-soft);">Email groupé · les 4 consultants seront destinataires</p>
+
+      <!-- Prochaine étape -->
+      <div class="flex items-start gap-3 p-3 rounded-xl" style="background: var(--primary-soft);">
+        <div class="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center" style="background: var(--primary-border);">
+          <!-- icon('calendar', 14, 'var(--primary)') -->
+        </div>
+        <p class="text-xs leading-relaxed" style="color: var(--primary);">
+          <strong>Prochaine étape</strong> — Description de la prochaine étape identifiée
+        </p>
+      </div>
+    </div>
+
+    <!-- Right: Consultant cards -->
+    <div class="lg:col-span-7 p-6 lg:p-8" style="background: var(--bg);">
+      <div class="flex items-center justify-between mb-4">
+        <p class="text-[11px] font-semibold uppercase tracking-[0.18em]" style="color: var(--muted);">Consultants en charge</p>
+        <span class="text-xs font-medium px-2.5 py-1 rounded-full inline-flex items-center gap-1.5" style="background: var(--surface); color: var(--muted); border: 1px solid var(--border);">
+          <!-- icon('users', 14, 'var(--primary)') -->
+          4 consultants
+        </span>
+      </div>
+
+      <!-- Consultant card grid (JS-rendered) -->
+      <!--
+        Each card:
+        <div class="rounded-xl border p-4" style="border-color: var(--border); background: var(--surface);">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold"
+                 style="background: var(--primary-soft); color: var(--primary); border: 2px solid var(--primary-border);">
+              PA
+            </div>
+            <div>
+              <p class="text-sm font-semibold" style="color: var(--ink);">Prénom NOM</p>
+              <p class="text-xs" style="color: var(--muted);">Rôle du consultant</p>
+            </div>
+          </div>
+          <a class="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg" style="background: var(--bg); color: var(--muted);" href="mailto:prenom@hubvisory.com">
+            icon('mail', 14, 'var(--muted-soft)') prenom@hubvisory.com
+          </a>
+        </div>
+      -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="consultants-grid"></div>
+
+      <!-- Bottom links -->
+      <div class="flex items-center gap-4 mt-5 pt-4 border-t" style="border-color: var(--border);">
+        <span class="text-xs" style="color: var(--muted);">Hubvisory ·</span>
+        <span class="text-xs flex items-center gap-1" style="color: var(--primary);">
+          <!-- icon('server', 14, 'var(--muted)') --> hubvisory.com
+        </span>
+        <span class="text-xs flex items-center gap-1" style="color: var(--primary);">
+          <!-- icon('users', 14, 'var(--muted)') --> LinkedIn
+        </span>
+      </div>
+    </div>
+
+  </div>
+</div>

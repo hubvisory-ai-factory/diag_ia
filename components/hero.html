@@ -1,0 +1,132 @@
+<!--
+  COMPONENT: Hero Section
+  SECTION: Dashboard > Hero (top of page)
+  DATA NEEDED:
+    - CLIENT_DATA.branding — clientName, missionTitle, missionSubtitle, sector, period
+    - CLIENT_DATA.globalMetrics.totalRepondants — respondent count
+    - CLIENT_DATA.perimetre — array of departments (nom, effectif, icon, id)
+    - CLIENT_DATA.ui.blocks.perimetreTitle — section label text
+  CUSTOMIZATION:
+    - Swap the intro paragraph text for client-specific context
+    - Add/remove pills in the hero-pills container
+    - Adjust grid ratio (col-span-7 / col-span-5) for wider/narrower metier card
+  DEPENDENCIES: icon() function from ICON REGISTRY, navigateTo() for metier links
+-->
+
+<!-- HERO SECTION -->
+<section class="grid grid-cols-12 gap-6 mb-8">
+  <!-- Left: Mission info -->
+  <div class="col-span-12 lg:col-span-7">
+    <div class="w-10 h-1 rounded-full mb-4" style="background: var(--accent);"></div>
+    <p class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--accent);">
+      Perimetre de l'audit
+    </p>
+    <h1 class="font-display text-3xl lg:text-4xl mb-1" style="color: var(--ink);">
+      Audit de maturite IA
+    </h1>
+    <p class="font-display text-xl lg:text-2xl mb-4" style="color: var(--primary);">
+      Sous-titre de la mission
+    </p>
+    <p class="text-sm leading-relaxed mb-5" style="color: var(--muted); max-width: 540px;">
+      Ce rapport presente les resultats de l'audit de maturite IA mene aupres des equipes.
+      Il identifie les cas d'usage prioritaires, evalue la maturite actuelle et propose une feuille de route operationnelle.
+    </p>
+    <!-- Metadata pills — built dynamically from branding data -->
+    <div class="flex flex-wrap gap-2" id="hero-pills">
+      <!-- JS injects pills like: -->
+      <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium"
+            style="background: var(--bg-alt); color: var(--muted);">
+        <!-- icon('briefcase', 14, 'var(--muted)') --> Secteur d'activite
+      </span>
+      <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium"
+            style="background: var(--bg-alt); color: var(--muted);">
+        <!-- icon('users', 14, 'var(--muted)') --> 16 repondants
+      </span>
+      <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium"
+            style="background: var(--bg-alt); color: var(--muted);">
+        <!-- icon('calendar', 14, 'var(--muted)') --> T1 2026
+      </span>
+    </div>
+  </div>
+
+  <!-- Right: Metiers audites card -->
+  <div class="col-span-12 lg:col-span-5">
+    <div class="rounded-2xl border p-6 card-hover" style="background: var(--surface); border-color: var(--border);">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-semibold text-sm" style="color: var(--ink);">Metiers audites</h3>
+        <span class="text-xs font-medium px-2.5 py-1 rounded-full"
+              style="background: var(--primary-soft); color: var(--primary);">
+          3 metiers
+        </span>
+      </div>
+      <div class="space-y-3" id="metier-list">
+        <!-- JS generates one row per CLIENT_DATA.perimetre entry: -->
+        <div class="flex items-center justify-between p-3 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors"
+             data-metier-goto="departement_a">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg flex items-center justify-center" style="background: var(--primary-soft);">
+              <!-- icon(dept.icon, 18, 'var(--primary)') -->
+            </div>
+            <div>
+              <p class="text-sm font-medium" style="color: var(--ink);">Departement A</p>
+              <p class="text-xs" style="color: var(--muted);">5 personnes</p>
+            </div>
+          </div>
+          <span style="color: var(--muted-soft);"><!-- icon('chevron-right', 16) --></span>
+        </div>
+        <!-- Repeat for each department -->
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+// --- JS to populate hero pills ---
+function buildHeroPills(theme) {
+  const pills = document.getElementById('hero-pills');
+  if (!pills) return;
+
+  const data = [
+    { label: CLIENT_DATA.branding.sector, icon: 'briefcase' },
+    { label: CLIENT_DATA.globalMetrics.totalRepondants + ' repondants', icon: 'users' },
+    { label: CLIENT_DATA.branding.period, icon: 'calendar' }
+  ];
+
+  pills.innerHTML = data.map(p => `
+    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium"
+          style="background: var(--bg-alt); color: var(--muted);">
+      ${icon(p.icon, 14, 'var(--muted)')} ${p.label}
+    </span>
+  `).join('');
+}
+
+// --- JS to populate metier list ---
+function buildMetierList(theme) {
+  const list = document.getElementById('metier-list');
+  const countPill = document.getElementById('metier-count-pill');
+  if (!list) return;
+
+  if (countPill) countPill.textContent = CLIENT_DATA.perimetre.length + ' metiers';
+
+  list.innerHTML = CLIENT_DATA.perimetre.map(dept => `
+    <div class="flex items-center justify-between p-3 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors"
+         data-metier-goto="${dept.id}">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg flex items-center justify-center" style="background: var(--primary-soft);">
+          ${icon(dept.icon, 18, 'var(--primary)')}
+        </div>
+        <div>
+          <p class="text-sm font-medium" style="color: var(--ink);">${dept.nom}</p>
+          <p class="text-xs" style="color: var(--muted);">${dept.effectif} personnes</p>
+        </div>
+      </div>
+      <span style="color: var(--muted-soft);">${icon('chevron-right', 16)}</span>
+    </div>
+  `).join('');
+
+  // Click handler — navigate to metier view
+  list.querySelectorAll('[data-metier-goto]').forEach(el => {
+    el.addEventListener('click', () => navigateTo('view-metier-' + el.dataset.metierGoto));
+  });
+}
+</script>

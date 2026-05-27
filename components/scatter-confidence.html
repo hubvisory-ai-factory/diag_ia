@@ -1,0 +1,149 @@
+<!--
+  COMPONENT: Bubble/Scatter Chart — Tools vs Confidence
+  SECTION: Dashboard > Scatter chart (full-width section)
+  DATA NEEDED:
+    - CLIENT_DATA.stackByMetier — array of { idMetier, outils, confiance }
+    - CLIENT_DATA.perimetre — array of { id, nom, effectif } for bubble labels/size
+    - THEME.primary, THEME.accent, THEME.ink, THEME.muted, THEME.border
+  CUSTOMIZATION:
+    - Adjust the risky threshold (outils > 6 || confiance < 60) to change red/blue split
+    - Move annotation lines by changing vLine.xMin and hLine.yMin
+    - Scale bubble radius via the `r` calculation (effectif * multiplier)
+    - Change axis ranges with scales.x.max and scales.y.max
+  DEPENDENCIES: Chart.js 4+ loaded, chartjs-plugin-datalabels, chartjs-plugin-annotation, hexToSoft()
+-->
+
+<!-- Scatter Chart Card -->
+<div class="rounded-2xl border p-6" style="background: var(--surface); border-color: var(--border);">
+  <h3 class="font-semibold text-sm mb-1" style="color: var(--ink);">Outils IA vs Confiance par metier</h3>
+  <p class="text-xs mb-4" style="color: var(--muted);">Positionnement des metiers selon leur outillage et leur niveau de confiance</p>
+  <div style="height: 300px;">
+    <canvas id="scatter-chart"></canvas>
+  </div>
+</div>
+
+<script>
+// ---- BUBBLE/SCATTER CHART INIT ----
+// Plots each department as a bubble: X = number of AI tools, Y = confidence %,
+// bubble size = team headcount. Splits into "OK" (blue) and "Attention" (red)
+// datasets based on risk thresholds.
+
+function initScatterChart(theme) {
+  const ctx = document.getElementById('scatter-chart');
+  if (!ctx) return;
+
+  // Build lookup for department metadata
+  const metierMap = {};
+  CLIENT_DATA.perimetre.forEach(p => { metierMap[p.id] = p; });
+
+  // Map data points, flag risky ones
+  const data = CLIENT_DATA.stackByMetier.map(s => {
+    const m = metierMap[s.idMetier];
+    const risky = s.outils > 6 || s.confiance < 60;
+    return {
+      x: s.outils,
+      y: s.confiance,
+      r: m ? Math.max(m.effectif * 2.5, 8) : 10,
+      label: m ? m.nom : s.idMetier,
+      risky
+    };
+  });
+
+  const safePoints = data.filter(d => !d.risky);
+  const riskyPoints = data.filter(d => d.risky);
+
+  new Chart(ctx, {
+    type: 'bubble',
+    data: {
+      datasets: [
+        {
+          label: 'OK',
+          data: safePoints,
+          backgroundColor: hexToSoft(theme.primary, 0.5),
+          borderColor: theme.primary,
+          borderWidth: 1.5
+        },
+        {
+          label: 'Attention',
+          data: riskyPoints,
+          backgroundColor: hexToSoft(theme.accent, 0.5),
+          borderColor: theme.accent,
+          borderWidth: 1.5
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        datalabels: {
+          display: true,
+          color: theme.ink,
+          font: { size: 10, weight: '600' },
+          formatter: (v, ctx) => ctx.raw.label
+        },
+        annotation: {
+          annotations: {
+            vLine: {
+              type: 'line',
+              xMin: 6, xMax: 6,
+              borderColor: theme.accent,
+              borderWidth: 1,
+              borderDash: [4, 4],
+              label: {
+                display: true,
+                content: '6 outils',
+                position: 'start',
+                font: { size: 10 },
+                color: theme.accent
+              }
+            },
+            hLine: {
+              type: 'line',
+              yMin: 70, yMax: 70,
+              borderColor: theme.primary,
+              borderWidth: 1,
+              borderDash: [4, 4],
+              label: {
+                display: true,
+                content: '70% confiance',
+                position: 'end',
+                font: { size: 10 },
+                color: theme.primary
+              }
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          min: 0, max: 12,
+          title: {
+            display: true,
+            text: "Nombre d'outils IA",
+            font: { size: 11, family: 'Inter' },
+            color: theme.muted
+          },
+          grid: { color: theme.border },
+          ticks: { color: theme.muted, font: { size: 10 } }
+        },
+        y: {
+          min: 0, max: 100,
+          title: {
+            display: true,
+            text: 'Confiance (%)',
+            font: { size: 11, family: 'Inter' },
+            color: theme.muted
+          },
+          grid: { color: theme.border },
+          ticks: { color: theme.muted, font: { size: 10 } }
+        }
+      }
+    }
+  });
+}
+
+// ---- USAGE ----
+// initScatterChart(THEME);
+</script>

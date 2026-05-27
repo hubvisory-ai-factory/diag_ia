@@ -1,0 +1,64 @@
+<!--
+  COMPONENT: Quick Wins Grid
+  SECTION: Metier view > Quick wins (department-specific)
+  DATA NEEDED:
+    - quickWins — filtered use cases where isQuickWin === true for this department
+    - Each: { titre, description }
+  CUSTOMIZATION:
+    - Change the tinted background from primary-soft to accent-soft for a different color
+    - Add tags from the use case data
+    - Change grid columns: md:grid-cols-2 lg:grid-cols-3
+    - Swap the zap icon for any other Lucide icon
+  DEPENDENCIES: icon() function
+-->
+
+<!-- QUICK WINS GRID -->
+<section class="mb-8">
+  <h3 class="font-semibold text-sm mb-4" style="color: var(--ink);">Quick wins</h3>
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+    <!-- Quick win card (primary-soft background, no border) -->
+    <div class="rounded-xl p-5" style="background: var(--primary-soft);">
+      <div class="flex items-center gap-2 mb-2">
+        <!-- icon('zap', 16, 'var(--primary)') -->
+        <h4 class="text-sm font-semibold" style="color: var(--primary);">Quick win generique n.1</h4>
+      </div>
+      <p class="text-xs" style="color: var(--muted);">Description du premier quick win transverse.</p>
+    </div>
+
+    <div class="rounded-xl p-5" style="background: var(--primary-soft);">
+      <div class="flex items-center gap-2 mb-2">
+        <!-- icon('zap', 16, 'var(--primary)') -->
+        <h4 class="text-sm font-semibold" style="color: var(--primary);">Quick win generique n.2</h4>
+      </div>
+      <p class="text-xs" style="color: var(--muted);">Description du deuxieme quick win.</p>
+    </div>
+
+    <!-- Repeat for each quick win -->
+  </div>
+</section>
+
+<script>
+// ---- QUICK WINS (part of buildMetierViews) ----
+// Filters use cases for the current department where isQuickWin === true.
+
+/*
+const quickWins = useCases.filter(uc => uc.isQuickWin);
+
+const quickWinsHtml = quickWins.length > 0 ? `
+  <section class="mb-8">
+    <h3 class="font-semibold text-sm mb-4" style="color: var(--ink);">Quick wins</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      ${quickWins.map(qw => `
+        <div class="rounded-xl p-5" style="background: var(--primary-soft);">
+          <div class="flex items-center gap-2 mb-2">
+            ${icon('zap', 16, 'var(--primary)')}
+            <h4 class="text-sm font-semibold" style="color: var(--primary);">${qw.titre}</h4>
+          </div>
+          <p class="text-xs" style="color: var(--muted);">${qw.description}</p>
+        </div>
+      `).join('')}
+    </div>
+  </section>` : '';
+*/
+</script>

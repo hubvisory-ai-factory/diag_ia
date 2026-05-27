@@ -1,0 +1,214 @@
+<!--
+  COMPONENT: Style Guide — UI Primitives
+  SECTION: Reference documentation (not rendered in portal)
+  DATA NEEDED:
+    - None — this is a static reference document
+  CUSTOMIZATION:
+    - Override CSS custom properties in :root to change the palette
+    - Swap font-family in tailwind.config for a different typeface
+  DEPENDENCIES: Tailwind CSS loaded (CDN or build), CSS custom properties defined in :root
+-->
+
+<!-- ================================================================
+     STYLE GUIDE: UI Primitive Patterns
+     ================================================================
+     This file documents the Tailwind class recipes used across the
+     diagnostic portal. Copy-paste the class strings into your own
+     components. All color values reference CSS custom properties so
+     theming is automatic.
+     ================================================================ -->
+
+<!-- ─── CSS CUSTOM PROPERTIES (define these in your :root) ─── -->
+<!--
+  :root {
+    --primary:        #003366;          /* Brand primary */
+    --accent:         #E30613;          /* Brand accent / alert */
+    --primary-soft:   rgba(0,51,102,0.08);
+    --accent-soft:    rgba(227,6,19,0.08);
+    --primary-border: rgba(0,51,102,0.22);
+    --accent-border:  rgba(227,6,19,0.22);
+    --ink:            #0f172a;          /* Main text */
+    --muted:          #475569;          /* Secondary text */
+    --muted-soft:     #94a3b8;          /* Tertiary / hints */
+    --border:         #e2e8f0;
+    --surface:        #ffffff;
+    --bg:             #f6f8fb;          /* Page background */
+    --bg-alt:         #eef2f8;          /* Alternate surface */
+  }
+-->
+
+<!-- ─── FONT FAMILIES ─── -->
+<!--
+  Body:    font-family: 'Inter', system-ui, sans-serif;   (Tailwind: font-body)
+  Display: font-family: 'DM Serif Display', serif;        (Tailwind: font-display)
+-->
+
+
+<!-- ======================== CARD ======================== -->
+<!-- Standard card wrapper used for every panel in the portal -->
+<div class="rounded-2xl border p-6" style="background: var(--surface); border-color: var(--border);">
+  <!-- Card content here -->
+</div>
+
+<!-- Card with hover effect (for clickable cards) -->
+<div class="rounded-2xl border p-6 card-hover" style="background: var(--surface); border-color: var(--border);">
+  <!-- card-hover class adds: transition box-shadow 0.2s, transform 0.15s
+       :hover adds: box-shadow 0 4px 24px rgba(0,0,0,0.06); translateY(-1px) -->
+</div>
+
+<!-- Card — smaller variant (used inside grids) -->
+<div class="rounded-xl border p-5" style="border-color: var(--border); background: var(--surface);">
+  <!-- Smaller padding, less rounded -->
+</div>
+
+<!-- Card — colored background variant (e.g. quick wins) -->
+<div class="rounded-xl p-5" style="background: var(--primary-soft);">
+  <!-- No border, tinted background -->
+</div>
+
+
+<!-- ======================== PILL ======================== -->
+<!-- Metadata pill (hero section, tags) -->
+<span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium"
+      style="background: var(--bg-alt); color: var(--muted);">
+  <!-- Optional SVG icon here -->
+  Pill Label
+</span>
+
+<!-- Primary pill (counts, badges) -->
+<span class="text-xs font-medium px-2.5 py-1 rounded-full"
+      style="background: var(--primary-soft); color: var(--primary);">
+  3 items
+</span>
+
+<!-- Accent pill (warnings, alerts) -->
+<span class="text-xs px-2 py-0.5 rounded-full font-medium"
+      style="background: var(--accent-border); color: var(--accent);">
+  RGPD
+</span>
+
+<!-- Severity pill (dynamic color from risk/priority) -->
+<span class="text-xs px-2 py-0.5 rounded-full font-medium"
+      style="background: rgba(COLOR, 0.15); color: COLOR;">
+  Niveau
+</span>
+
+
+<!-- ======================== STAT ======================== -->
+<!-- Stat block (used in the stats grid) -->
+<div class="flex flex-col">
+  <div class="flex items-center gap-1.5 mb-1">
+    <!-- icon(name, 14, 'var(--muted-soft)') -->
+    <span class="text-xs" style="color: var(--muted);">Label</span>
+  </div>
+  <span class="text-xl font-bold" style="color: var(--ink);">42</span>
+</div>
+
+<!-- Large stat (CTA banner / hero) -->
+<span class="text-white font-bold" style="font-size: 64px; line-height: 1;">12</span>
+
+<!-- Shadow IA giant stat -->
+<p class="font-bold" style="color: var(--accent); font-size: 56px; line-height: 1;">15%</p>
+
+
+<!-- ======================== SECTION TITLE ======================== -->
+<!-- Page-level heading (display font) -->
+<h2 class="font-display text-2xl mb-5" style="color: var(--ink);">Section Title</h2>
+
+<!-- Card-level heading -->
+<h3 class="font-semibold text-sm" style="color: var(--ink);">Card Title</h3>
+
+<!-- Card subtitle -->
+<p class="text-xs" style="color: var(--muted);">Subtitle text</p>
+
+<!-- Section label (small caps above heading) -->
+<p class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--accent);">Section Label</p>
+
+<!-- Hero title (largest) -->
+<h1 class="font-display text-3xl lg:text-4xl mb-1" style="color: var(--ink);">Hero Title</h1>
+
+<!-- Hero subtitle -->
+<p class="font-display text-xl lg:text-2xl mb-4" style="color: var(--primary);">Hero Subtitle</p>
+
+<!-- Accent bar (above section label) -->
+<div class="w-10 h-1 rounded-full mb-4" style="background: var(--accent);"></div>
+
+
+<!-- ======================== BUTTON ======================== -->
+<!-- Primary CTA button (white on gradient) -->
+<button class="flex items-center gap-2 px-5 py-2.5 bg-white rounded-lg font-semibold text-sm whitespace-nowrap"
+        style="color: var(--primary);">
+  Button Label
+  <!-- arrow-right icon -->
+</button>
+
+<!-- Nav pill button -->
+<button class="nav-pill px-3.5 py-1.5 rounded-full text-xs font-medium transition-all"
+        style="background: var(--primary-soft); color: var(--primary);">
+  Active Tab
+</button>
+<button class="nav-pill px-3.5 py-1.5 rounded-full text-xs font-medium transition-all"
+        style="color: var(--muted);">
+  Inactive Tab
+</button>
+
+<!-- Methodology tab button -->
+<button class="meth-tab px-4 py-2 rounded-lg text-sm font-medium"
+        style="background: var(--primary-soft); color: var(--primary);">
+  Active
+</button>
+<button class="meth-tab px-4 py-2 rounded-lg text-sm font-medium"
+        style="color: var(--muted);">
+  Inactive
+</button>
+
+<!-- Print / outline button -->
+<button class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium border"
+        style="border-color: var(--border); color: var(--muted);">
+  Imprimer
+</button>
+
+<!-- Back navigation link -->
+<button class="flex items-center gap-1.5 text-sm font-medium" style="color: var(--primary);">
+  <!-- arrow-left icon -->
+  Retour au Dashboard Global
+</button>
+
+<!-- Metier switch button -->
+<button class="px-3 py-1.5 rounded-full text-xs font-medium border"
+        style="border-color: var(--border); color: var(--muted); background: var(--surface);">
+  Other Department
+</button>
+
+
+<!-- ======================== ICON HELPER ======================== -->
+<!--
+  Icons are generated via the icon() JS function:
+    icon(name, size = 16, color = 'currentColor')
+
+  Returns an SVG string with Lucide-style paths.
+  Available names: briefcase, users, settings, calendar, chevron-right,
+    chevron-down, chevron-up, arrow-left, arrow-right, printer, search,
+    zap, clock, check-circle, check, alert-triangle, shield-alert, shield,
+    shield-check, lightbulb, alert-circle, file-search, layers, edit-3,
+    filter, bar-chart-3, gauge, radar, grid-3x3, book-open, map, rocket,
+    database, file-text, clipboard, trending-up, truck, headset,
+    git-merge, server, mail, tool, graduation-cap
+
+  Usage pattern:
+    ${icon('zap', 16, 'var(--primary)')}
+-->
+
+
+<!-- ======================== UTILITY CLASSES ======================== -->
+<!--
+  .card-hover       — subtle lift + shadow on hover
+  .nav-pill         — smooth background/color transition (0.15s)
+  .heat-cell        — heatmap cell scale on hover (1.08)
+  .glossary-def     — accordion collapse (max-height: 0 -> 200px)
+  .glossary-def.open — expanded state
+
+  Layout grid:   class="max-w-7xl mx-auto px-4"
+  Section gap:   class="mb-8"
+  12-col grid:   class="grid grid-cols-12 gap-6"
+-->

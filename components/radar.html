@@ -1,0 +1,113 @@
+<!--
+  COMPONENT: Radar Chart (6-axis maturity positioning)
+  SECTION: Dashboard > Radar + Heatmap row
+  DATA NEEDED:
+    - CLIENT_DATA.axesRadar — array of { axe, scoreActuel, scoreCible, description }
+    - CLIENT_DATA.ui.blocks.radarTitle — card title
+    - CLIENT_DATA.ui.blocks.radarSubtitle — card subtitle
+    - CLIENT_DATA.ui.blocks.radarLegendActuel — legend label for current scores
+    - CLIENT_DATA.ui.blocks.radarLegendCible — legend label for target scores
+    - THEME.primary, THEME.accent, THEME.ink, THEME.muted, THEME.border
+  CUSTOMIZATION:
+    - Adjust scales.r.max for different score ranges (default 5)
+    - Change borderDash pattern for the target dataset
+    - Modify pointRadius and borderWidth for different visual weight
+    - Add more datasets by pushing to the datasets array
+  DEPENDENCIES: Chart.js 4+ loaded, chartjs-plugin-datalabels registered, hexToSoft() utility
+-->
+
+<!-- Radar Chart Card -->
+<div class="rounded-2xl border p-6" style="background: var(--surface); border-color: var(--border);">
+  <div class="flex items-center justify-between mb-1">
+    <h3 class="font-semibold text-sm" style="color: var(--ink);">Positionnement multi-axes</h3>
+  </div>
+  <p class="text-xs mb-4" style="color: var(--muted);">Vue d'ensemble</p>
+  <div class="relative" style="height: 300px;">
+    <canvas id="radar-chart"></canvas>
+  </div>
+  <!-- Manual legend (Chart.js legend is hidden) -->
+  <div class="flex items-center justify-center gap-6 mt-3">
+    <div class="flex items-center gap-1.5">
+      <span class="w-3 h-3 rounded-full" style="background: var(--primary);"></span>
+      <span class="text-xs" style="color: var(--muted);">Score actuel</span>
+    </div>
+    <div class="flex items-center gap-1.5">
+      <span class="w-3 h-3 rounded-full border-2 border-dashed" style="border-color: var(--accent); background: transparent;"></span>
+      <span class="text-xs" style="color: var(--muted);">Cible 2027</span>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---- RADAR CHART INIT ----
+// Requires Chart.js 4+ and ChartDataLabels plugin registered globally.
+// hexToSoft(hex, alpha) converts a hex color to rgba.
+
+function initRadarChart(theme) {
+  const ctx = document.getElementById('radar-chart');
+  if (!ctx) return;
+
+  const labels = CLIENT_DATA.axesRadar.map(a => a.axe);
+  const actuel = CLIENT_DATA.axesRadar.map(a => a.scoreActuel);
+  const cible = CLIENT_DATA.axesRadar.map(a => a.scoreCible);
+
+  new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: CLIENT_DATA.ui.blocks.radarLegendActuel,
+          data: actuel,
+          borderColor: theme.primary,
+          backgroundColor: hexToSoft(theme.primary, 0.25),
+          borderWidth: 2,
+          pointRadius: 4,
+          pointBackgroundColor: theme.primary,
+          fill: true
+        },
+        {
+          label: CLIENT_DATA.ui.blocks.radarLegendCible,
+          data: cible,
+          borderColor: theme.accent,
+          backgroundColor: hexToSoft(theme.accent, 0.08),
+          borderWidth: 2,
+          borderDash: [6, 4],
+          pointRadius: 4,
+          pointBackgroundColor: theme.accent,
+          fill: true
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        datalabels: { display: false }
+      },
+      scales: {
+        r: {
+          min: 0,
+          max: 5,
+          ticks: {
+            stepSize: 1,
+            font: { size: 10 },
+            backdropColor: 'transparent',
+            color: theme.muted
+          },
+          pointLabels: {
+            font: { size: 11, family: 'Inter' },
+            color: theme.ink
+          },
+          grid: { color: theme.border },
+          angleLines: { color: theme.border }
+        }
+      }
+    }
+  });
+}
+
+// ---- USAGE ----
+// initRadarChart(THEME);
+</script>

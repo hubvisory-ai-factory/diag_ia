@@ -1,0 +1,97 @@
+<!--
+  COMPONENT: 3-Phase Roadmap Cards
+  SECTION: Dashboard > Roadmap (below risks)
+  DATA NEEDED:
+    - CLIENT_DATA.roadmap — array of { type, horizon, titre, items[], impact, complexite }
+      type values: "Quick-wins", "Structurel", "Strategique"
+    - THEME.primary, THEME.accent, THEME.primarySoft, THEME.accentSoft, THEME.bgAlt
+  CUSTOMIZATION:
+    - Add more phases by extending the roadmap array
+    - Change background tints in bgColors map
+    - Swap icons in iconMap for different phase icons
+    - Adjust the grid from 3-col to 2-col: change lg:grid-cols-3 to lg:grid-cols-2
+  DEPENDENCIES: icon() function, hexToSoft() utility
+-->
+
+<!-- ROADMAP -->
+<section class="mb-8">
+  <div class="rounded-2xl border p-6" style="background: var(--surface); border-color: var(--border);">
+    <div class="flex items-center gap-2 mb-5">
+      <!-- icon('map', 16, 'var(--primary)') -->
+      <h3 class="font-semibold text-sm" style="color: var(--ink);">Feuille de route</h3>
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4" id="roadmap-grid">
+      <!-- JS generates one card per phase -->
+    </div>
+  </div>
+</section>
+
+<script>
+// ---- ROADMAP BUILDER ----
+function buildRoadmap(theme) {
+  const grid = document.getElementById('roadmap-grid');
+  if (!grid) return;
+
+  // Background color per phase type
+  const bgColors = {
+    'Quick-wins': theme.primarySoft,
+    'Structurel': '#fef3c7',
+    'Strategique': theme.accentSoft
+  };
+
+  // Icon per phase type
+  const iconMap = {
+    'Quick-wins': 'zap',
+    'Structurel': 'git-merge',
+    'Strategique': 'rocket'
+  };
+
+  // Icon tint color per phase type
+  const iconColorMap = {
+    'Quick-wins': theme.primary,
+    'Structurel': '#d97706',
+    'Strategique': theme.accent
+  };
+
+  grid.innerHTML = CLIENT_DATA.roadmap.map(phase => `
+    <div class="rounded-xl p-5" style="background: ${bgColors[phase.type] || theme.bgAlt};">
+      <!-- Phase header with icon and horizon -->
+      <div class="flex items-center gap-2 mb-3">
+        <div class="w-8 h-8 rounded-lg flex items-center justify-center"
+             style="background: ${hexToSoft(iconColorMap[phase.type], 0.15)};">
+          ${icon(iconMap[phase.type] || 'rocket', 16, iconColorMap[phase.type])}
+        </div>
+        <div>
+          <p class="text-xs font-medium" style="color: ${iconColorMap[phase.type]};">${phase.horizon}</p>
+        </div>
+      </div>
+
+      <!-- Phase title -->
+      <h4 class="text-sm font-semibold mb-3" style="color: var(--ink);">${phase.titre}</h4>
+
+      <!-- Action items checklist -->
+      <ul class="space-y-2 mb-4">
+        ${phase.items.map(item => `
+          <li class="flex items-start gap-2">
+            ${icon('check', 14, iconColorMap[phase.type])}
+            <span class="text-xs" style="color: var(--muted);">${item}</span>
+          </li>
+        `).join('')}
+      </ul>
+
+      <!-- Impact / Complexity footer -->
+      <div class="flex items-center justify-between pt-3 border-t" style="border-color: rgba(0,0,0,0.06);">
+        <span class="text-xs" style="color: var(--muted);">
+          Impact: <strong style="color: var(--ink);">${phase.impact}</strong>
+        </span>
+        <span class="text-xs" style="color: var(--muted);">
+          Complexite: <strong style="color: var(--ink);">${phase.complexite}</strong>
+        </span>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ---- USAGE ----
+// buildRoadmap(THEME);
+</script>
