@@ -61,7 +61,7 @@ This project is a consulting deliverable for Hubvisory. Apply these additional c
 - **Inline SVG** for gauges, heatmaps, and custom visualizations
 - **Google Fonts**: Inter (body) + DM Serif Display (headings) via `<link>` tag
 - **CSS custom properties** for theming (defined in `:root` block)
-- All data is embedded inline as a JavaScript object (`const CLIENT_DATA = { ... }`)
+- Client data lives in a separate `data.js` file (`const CLIENT_DATA = { ... }`), loaded via `<script src="data.js"></script>`
 - No npm, no TypeScript, no React — pure HTML/CSS/JS
 
 ### Component Library
@@ -72,9 +72,9 @@ Reference snippets in `components/` when building or modifying sections:
 
 ### What to Build
 When asked to create or refine components for the portal:
-1. Read `_template/index.html` for the full page structure and data schema
+1. Read `_template/index.html` for the page structure and `_template/data.js` for the data schema
 2. Check existing components in `components/` for consistency
-3. Check `clients/clovis/index.html` for a complete real example
+3. Check `clients/clovis/` for a complete real example (index.html for layout, data.js for data)
 4. Build the component as a self-contained HTML/CSS/JS snippet
 5. Ensure it looks exceptional with real data AND gracefully handles missing/sparse data
 6. Test by opening the HTML file directly in a browser

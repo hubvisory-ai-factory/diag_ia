@@ -21,6 +21,7 @@ This repo hosts all client-facing AI diagnostic websites for Hubvisory's consult
 ```
 diag_ia/
 ├── CLAUDE.md                        # This file
+├── REGISTRY.md                      # Template & client registry — read first when adding a client
 ├── index.html                       # Landing page — lists all client diagnostics
 ├── vercel.json                      # Vercel rewrite rules (/<slug> -> /clients/<slug>/index.html)
 ├── favicon.png                      # Hubvisory logo (shared favicon)
@@ -31,11 +32,12 @@ diag_ia/
 │       ├── add-client.md            # Guided workflow to add a new client case
 │       └── frontend-design.md       # Design system for executive audience
 ├── _template/
-│   ├── index.html                   # Complete working page with placeholder data
-│   └── assets/                      # Template-level assets
+│   ├── index.html                   # Rendering engine + HTML structure (copy this for new clients)
+│   └── data.js                      # Placeholder CLIENT_DATA (shows the data shape)
 ├── clients/
 │   ├── clovis/                      # First real client
-│   │   ├── index.html               # Self-contained diagnostic page (all data inline)
+│   │   ├── index.html               # Rendering engine (copied from template, may have structural edits)
+│   │   ├── data.js                  # Client data — the only file the agent writes per client
 │   │   └── assets/                  # Client-specific images (logo, etc.)
 │   └── <new-client>/                # Each new client gets a folder here
 ├── components/
@@ -49,19 +51,25 @@ diag_ia/
 
 ## How It Works
 
-### Self-contained pages
+### Two-file architecture
 
-Each client gets one HTML file in `clients/<slug>/index.html`. All data is embedded inline as a JavaScript object (`const CLIENT_DATA = { ... }`) — this is the **single source of truth** for all visualizations, charts, and content on that page. No build step, no external JSON, no framework. Open the file in a browser and it works.
+Each client gets a folder `clients/<slug>/` with two files:
+- **`index.html`** — the rendering engine + HTML structure. Copied verbatim from a template via `cp`. The agent never rewrites this file from scratch.
+- **`data.js`** — contains `const CLIENT_DATA = { ... }`, the single source of truth for all visualizations, charts, and content. This is the **only file the agent writes** per client.
 
-The `CLIENT_DATA` object drives every section: branding, radar axes, heatmap, use cases, risks, roadmap, glossary, and UI labels. The rendering logic reads from this object and populates the page dynamically.
+The `index.html` loads data via `<script src="data.js"></script>`. The `CLIENT_DATA` object drives every section: branding, radar axes, heatmap, use cases, risks, roadmap, glossary, and UI labels. The rendering logic reads from this object and populates the page dynamically.
+
+No build step, no framework. Open the HTML file in a browser (with `data.js` in the same folder) and it works. Each client folder is self-contained.
 
 ### Component library
 
 The `components/` folder contains **25 documented HTML snippets** — one per visual section (radar chart, heatmap, gauge, use-case cards, etc.). Claude reads these when assembling new client pages. They are **not** runtime dependencies — they are copy-paste reference material showing the HTML structure, Tailwind classes, and Chart.js configuration for each section type.
 
-### Template
+### Templates & Registry
 
-`_template/index.html` is a complete working page with self-descriptive placeholder data. To add a new client, Claude copies the template and replaces the `CLIENT_DATA` block and all HTML content with real client data from the diagnostic.
+`_template/` contains `index.html` (rendering engine) and `data.js` (placeholder CLIENT_DATA showing the data shape). To add a new client, Claude copies the template's `index.html` via `cp` and writes a new `data.js` with real client data.
+
+`REGISTRY.md` tracks all available templates and existing clients. As the repo grows, clients that diverge significantly from the base template can be promoted to named templates. Every client's `index.html` is implicitly reusable as a layout reference since it contains no client data — the data lives entirely in `data.js`.
 
 ### Landing page
 
@@ -72,25 +80,29 @@ The `components/` folder contains **25 documented HTML snippets** — one per vi
 1. Pull the repo: `git pull origin main`
 2. Start Claude conversation in the repo root
 3. Type: **"I want to add a new client case"** (triggers the `add-client` skill)
-4. Claude guides data collection (branding, metrics, use cases, risks, roadmap, etc.)
-5. Claude generates `clients/<slug>/index.html` from the template + real data
-6. Claude adds a card to `index.html` for the new client
-7. Consultant opens the HTML file directly in a browser to verify
-8. Push to GitHub -> Vercel auto-deploys
+4. Claude reads `REGISTRY.md` and shows available templates/layouts
+5. Claude guides data collection (branding, metrics, use cases, risks, roadmap, etc.)
+6. Claude copies the template and writes the client's `data.js`
+7. Claude adds a card to `index.html` for the new client
+8. Consultant opens the HTML file directly in a browser to verify
+9. Push to GitHub -> Vercel auto-deploys
 
-### What Claude does during step 4-6
+### What Claude does during step 4-7
 
 See `.claude/skills/add-client.md` for the full guided workflow. In summary:
 
-1. Asks for client name, slug, and branding
-2. Asks for (or reads) diagnostic source materials (PDF, PPT, Excel, or interactive Q&A)
-3. Extracts and structures all data into the `CLIENT_DATA` format
-4. Creates `clients/<slug>/` directory with an `assets/` subfolder
-5. Copies `_template/index.html` -> `clients/<slug>/index.html`
-6. Replaces the entire `CLIENT_DATA` JavaScript object with real structured data
-7. Updates all HTML content (section headings, text, table rows, nav pill labels)
-8. Adds a client card to the root `index.html`
-9. Flags any missing fields as `"TODO: provide X"` rather than inventing data
+1. Reads `REGISTRY.md` to find available templates and existing client layouts
+2. Asks for client name, slug, and branding
+3. Asks for (or reads) diagnostic source materials (PDF, PPT, Excel, or interactive Q&A)
+4. Extracts and structures all data into the `CLIENT_DATA` format
+5. `mkdir -p clients/<slug>/assets`
+6. `cp _template/index.html clients/<slug>/index.html` (or from a chosen existing layout)
+7. Edits `clients/<slug>/index.html` to set `<base href="/clients/<slug>/">`
+8. Writes `clients/<slug>/data.js` with the complete CLIENT_DATA object
+9. If the consultant provided a logo, copies it to `clients/<slug>/assets/`
+10. Adds a client card to the root `index.html`
+11. Updates `REGISTRY.md` with the new client entry
+12. Flags any missing fields as `"TODO: provide X"` rather than inventing data
 
 ## Component Catalog
 
@@ -184,6 +196,12 @@ All visual tokens live in `CLIENT_DATA.branding` and flow through `buildTheme()`
 - Component files: kebab-case (`radar-chart.html`, `use-case-card.html`)
 - Client folders: match the slug exactly
 
+### Data architecture
+
+- Client data lives in `data.js`, loaded via `<script src="data.js">`. No inline CLIENT_DATA in index.html.
+- One folder per client, self-contained: `index.html` + `data.js` + `assets/`.
+- The `<base href="/clients/<slug>/">` tag in each client's `index.html` is required for Vercel URL rewrites.
+
 ### Data integrity
 
 - **Never fabricate diagnostic data.** If a field is missing, mark it as `"TODO: provide X"`.
@@ -227,9 +245,9 @@ git push origin main    # Vercel auto-deploys
 
 ## Current Status
 
-- [x] Repo structure and CLAUDE.md + skills
-- [x] Static HTML architecture (no framework, no build step, all data inline)
-- [x] Template page (`_template/index.html`) with full placeholder data
+- [x] Repo structure, CLAUDE.md, skills, and REGISTRY.md
+- [x] Two-file architecture: `index.html` (rendering engine) + `data.js` (client data)
+- [x] Template split: `_template/index.html` + `_template/data.js` with placeholder data
 - [x] CDN stack: Tailwind CSS, Chart.js 4, Google Fonts
 - [x] All visualization types: Gauge (SVG), Radar, Bar, Scatter (Chart.js), Heatmap (HTML table)
 - [x] Full section set: Dashboard, Métier spaces, Governance, Methodology, Roadmap, Glossary

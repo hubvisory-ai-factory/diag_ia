@@ -8,8 +8,10 @@ description: Guided workflow to add a new AI diagnostic client case to the porta
 You are helping a Hubvisory consultant add a new AI diagnostic client case to the portal. Your job is to gather all the necessary information, structure it as a `CLIENT_DATA` JavaScript object, and generate the client HTML page — without ever fabricating data.
 
 **Reference files**:
-- `_template/index.html` — complete working page with placeholder data (copy this as the starting point)
-- `clients/clovis/index.html` — first real client (complete example of a finished page)
+- `REGISTRY.md` — lists available templates and existing client layouts (read this first)
+- `_template/index.html` — rendering engine (copy this as the starting point)
+- `_template/data.js` — placeholder CLIENT_DATA showing the data shape
+- `clients/clovis/data.js` — first real client data (complete example of a finished data file)
 - `components/` — HTML snippets for individual sections (use as reference when customizing)
 
 ## Phase 1: Client Identity
@@ -182,29 +184,49 @@ Once all data is collected:
 1. **Present a full summary** of all collected data, organized by section
 2. **Flag any gaps**: fields marked as TODO, sections with sparse data, inconsistencies
 3. **Ask for final confirmation**: "Does this accurately represent the diagnostic findings?"
-4. **Generate the files**:
-   - Create `clients/<slug>/` directory with `assets/` subfolder
-   - Copy `_template/index.html` -> `clients/<slug>/index.html`
-   - Replace the entire `CLIENT_DATA` JavaScript object with real structured data
-   - Update the `<title>` tag with the client name
-   - Update all HTML content: section headings, nav pill labels (métier names), header/footer branding
-   - Copy any provided assets (logo, images) to `clients/<slug>/assets/`
-   - Reference `components/` snippets if adding or removing sections from the template
-5. **Update the landing page**: Add a client card to `index.html` in the grid
-6. **Tell the consultant** to open `clients/<slug>/index.html` directly in a browser to verify
+4. **Read `REGISTRY.md`** to show available templates and existing client layouts. Ask the consultant which layout is closest to what they need. Default to the base template if unsure.
+5. **Generate the files** using these exact mechanical steps:
 
-### How to replace data in the template
+```bash
+# Step 1: Create client directory
+mkdir -p clients/<slug>/assets
 
-The template contains a `<script>` block with:
-```javascript
-const CLIENT_DATA = { ... };
+# Step 2: Copy the rendering engine from chosen template (0 tokens — shell copy)
+cp _template/index.html clients/<slug>/index.html
+# OR to use an existing client's layout instead:
+# cp clients/<reference-client>/index.html clients/<slug>/index.html
 ```
 
-Replace this entire object with the real client data. The rendering logic at the bottom of the page reads from `CLIENT_DATA` to populate all charts, tables, cards, and text. Also update:
-- All visible text in HTML sections (headings, paragraphs, list items)
-- Navigation pill labels (métier names from `perimetre`)
-- Header/footer with client branding
-- `<title>` tag
+Then use the **Edit** tool to set the `<base>` tag in `clients/<slug>/index.html`:
+```html
+<base href="/clients/<slug>/">
+```
+
+Then **Write** `clients/<slug>/data.js` with the complete CLIENT_DATA object. This is the only file you write from scratch — it contains all the client's data. Use `_template/data.js` as the reference for the object shape and `clients/clovis/data.js` as a real example. Make sure to set `branding.slug` to `"<slug>"`.
+
+6. **If the consultant provided a logo**, copy it to `clients/<slug>/assets/`
+7. **If you need to add/remove sections** from the template's index.html for this client, reference `components/` snippets. Use the Edit tool for surgical changes — never rewrite the whole file.
+8. **Update the landing page**: Add a client card to `index.html` in the grid (see below)
+9. **Update `REGISTRY.md`** with the new client entry (template used, date, any structural changes)
+10. **Tell the consultant** to open `clients/<slug>/index.html` directly in a browser to verify
+
+### How to write data.js
+
+Create `clients/<slug>/data.js` containing:
+```javascript
+const CLIENT_DATA = {
+  branding: { slug: "<slug>", clientName: "...", ... },
+  // ... all sections from Phase 3
+};
+```
+
+The rendering engine in `index.html` loads this via `<script src="data.js">` and uses it to populate all charts, tables, cards, and text. The `<title>` tag is set dynamically from `CLIENT_DATA.branding.clientName`.
+
+### Template divergence
+
+If you modified `index.html` for this client (added a section, changed layout, rearranged content):
+- **Document the changes** in `REGISTRY.md` under the client's entry
+- **If the changes are significant and reusable** (new page structure, major section additions), offer to promote the layout to a named template: copy the modified `index.html` to `_template-<name>/index.html` and add it to REGISTRY.md's Templates section
 
 ### How to update the landing page
 
@@ -240,16 +262,19 @@ Before the consultant pushes:
 - [ ] Radar chart shows 6 axes with actual vs target scores (0-5 scale)
 - [ ] Heatmap values are 1-5 per dimension per métier
 - [ ] Risks have correct severity levels (Rouge/Orange/Vert)
+- [ ] `clients/<slug>/data.js` exists and contains the complete CLIENT_DATA object
+- [ ] `clients/<slug>/index.html` has `<base href="/clients/<slug>/">` set correctly
 - [ ] The page renders correctly when opened in a browser (`clients/<slug>/index.html`)
 - [ ] Nav pills show all métiers and clicking them filters use cases
 - [ ] Charts render without errors (check browser console)
 - [ ] The landing page (`index.html`) shows the new client card
+- [ ] `REGISTRY.md` is updated with the new client entry
 - [ ] No other client pages were affected
 
 Tell the consultant:
 ```
 Ready to go live! When you've verified everything, run:
-  git add clients/<slug>/ index.html
+  git add clients/<slug>/ index.html REGISTRY.md
   git commit -m "add(client): <client-name>"
   git push origin main
 Vercel will auto-deploy within ~1 minute.
@@ -262,8 +287,10 @@ Vercel will auto-deploy within ~1 minute.
 - **Match the diagnostic.** The website must reflect exactly what was delivered in the PDF/PowerPoint. No embellishments.
 - **Be patient.** Consultants may not have all data at hand. It's fine to pause and resume.
 - **Check for existing clients.** Before creating a folder, verify the slug isn't already taken.
-- **Use Clovis as reference.** When in doubt about data format or page structure, check `clients/clovis/index.html`.
-- **Use the template.** Always start from `_template/index.html` — never build a page from scratch.
+- **Use Clovis as reference.** When in doubt about data format, check `clients/clovis/data.js`. For page structure, check `clients/clovis/index.html`.
+- **Copy the template via `cp`.** Always start from `cp _template/index.html clients/<slug>/index.html` — never write `index.html` from scratch. Then write `data.js` as a new file.
 - **No build step.** The page must work by opening the HTML file directly in a browser. No npm, no compilation.
-- **All data inline.** There is no `data.json` or external data file. Everything goes in the `CLIENT_DATA` JavaScript object inside the HTML file.
+- **Data goes in `data.js`.** Write `const CLIENT_DATA = { ... }` to `clients/<slug>/data.js`. Do not inline CLIENT_DATA in index.html. The rendering engine loads it via `<script src="data.js">`.
+- **Set `<base href>`.** After copying the template, edit `<base href="/clients/<slug>/">` in the client's `index.html`. This is required for Vercel URL routing.
+- **Update REGISTRY.md.** Every new client must be added to the registry with template used, date, and any structural changes.
 - **Keep `idMetier` consistent.** The same id must be used across `perimetre`, `useCasesList`, `heatmapMatrix`, and `stackByMetier`.
