@@ -13,15 +13,15 @@
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link data-theme-fonts href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
   <script>
     tailwind.config = {
       theme: {
         extend: {
           fontFamily: {
-            body: ['Inter', 'system-ui', 'sans-serif'],
-            display: ['DM Serif Display', 'serif'],
+            body: ['var(--font-body)'],
+            display: ['var(--font-display)'],
           }
         }
       }
@@ -43,10 +43,12 @@
       --surface: #ffffff;
       --bg: #f6f8fb;
       --bg-alt: #eef2f8;
+      --font-body: 'Inter', system-ui, sans-serif;
+      --font-display: 'DM Serif Display', serif;
     }
 
     body {
-      font-family: 'Inter', system-ui, sans-serif;
+      font-family: var(--font-body);
       background: var(--bg);
       color: var(--ink);
     }
@@ -69,6 +71,9 @@
 
     .heat-cell { transition: transform 0.15s; border-radius: 6px; }
     .heat-cell:hover { transform: scale(1.08); }
+
+    /* SVG text inherits theme font */
+    svg text { font-family: var(--font-body) !important; }
 
     /* Library-specific styles */
     .lib-sidebar { position: sticky; top: 80px; max-height: calc(100vh - 100px); overflow-y: auto; }
@@ -104,7 +109,20 @@ const CLIENT_DATA = {
     primaryColor: "#003366",
     secondaryColor: "#E30613",
     logoUrl: "",
-    font: "'Inter', system-ui, sans-serif"
+    neutrals: {
+      ink: "#0f172a",
+      muted: "#475569",
+      mutedSoft: "#94a3b8",
+      border: "#e2e8f0",
+      surface: "#ffffff",
+      bg: "#f6f8fb",
+      bgAlt: "#eef2f8"
+    },
+    fonts: {
+      body: "'Inter', system-ui, sans-serif",
+      display: "'DM Serif Display', serif",
+      googleFontsUrl: "https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700&display=swap"
+    }
   },
   methodologie: {
     introTitle: "Guide méthodologique",
@@ -269,6 +287,12 @@ const CLIENT_DATA = {
       heatmapSubtitle: "Maturité croisée",
       frequenceTitle: "Fréquence d'utilisation IA",
       adoptionTitle: "Durée d'adoption",
+      metricsUsageEyebrow: "Métriques d'utilisation",
+      metricsUsageTitle: "Fréquence & adoption — vue granulaire",
+      metricsUsageSubtitle: "Bascule global ↔ métier pour comparer les pratiques",
+      metricsTabGlobal: "Au global",
+      freqBuckets: { quotidien: "Quotidien", hebdomadaire: "Hebdomadaire", mensuel: "Mensuel", jamais: "Jamais" },
+      adoptionBuckets: { moins6mois: "< 6 mois", de6a12mois: "6-12 mois", plus12mois: "> 12 mois" },
       casUsageTitle: "Cas d'usage identifiés",
       casUsageCta: "Explorer les espaces métier",
       risquesTitle: "Inventaire des risques",
@@ -359,7 +383,13 @@ const CLIENT_DATA = {
         <div class="text-xs" style="color: var(--muted);">Hubvisory AI Diagnostic — Référence visuelle</div>
       </div>
     </div>
-    <span class="text-xs px-3 py-1.5 rounded-full font-medium" style="background: var(--primary-soft); color: var(--primary);">v1.0</span>
+    <div class="flex items-center gap-3">
+      <span class="text-xs px-3 py-1.5 rounded-full font-medium" style="background: var(--primary-soft); color: var(--primary);">v1.0</span>
+      <a href="/" class="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition" style="color: var(--muted); border: 1px solid var(--border);" onmouseover="this.style.background='var(--primary-soft)';this.style.color='var(--primary)'" onmouseout="this.style.background='';this.style.color='var(--muted)'">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        Retour
+      </a>
+    </div>
   </div>
 </header>
 
@@ -386,7 +416,6 @@ const CLIENT_DATA = {
 
   <!-- MAIN CONTENT -->
   <main class="flex-1 min-w-0 space-y-12">
-
     <!-- ══════════════════════════════════════════════════════════════ -->
     <!-- 1. DESIGN TOKENS                                             -->
     <!-- ══════════════════════════════════════════════════════════════ -->
@@ -684,7 +713,7 @@ const CLIENT_DATA = {
     <!-- ══════════════════════════════════════════════════════════════ -->
     <section id="sec-charts">
       <div class="comp-header">
-        <p class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--accent);">Composants : gauge.html, radar.html, bars-*.html, scatter-confidence.html, heatmap.html, data-health.html</p>
+        <p class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--accent);">Composants : gauge.html, radar.html, bars.html, scatter-confidence.html, heatmap.html, data-health.html</p>
         <p class="text-sm font-semibold" style="color: var(--ink);">Graphiques — Toutes les visualisations disponibles</p>
         <p class="text-xs" style="color: var(--muted);">Dashboard · Données : globalMetrics, axesRadar, frequencyUsage, adoptionDuree, stackByMetier, heatmapMatrix, dataGovernance</p>
       </div>
@@ -719,22 +748,47 @@ const CLIENT_DATA = {
         </div>
       </div>
 
-      <!-- Bar charts side by side -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <div class="rounded-2xl border p-6" style="background: var(--surface); border-color: var(--border);">
-          <h3 class="font-semibold text-sm mb-1" style="color: var(--ink);">Barres — Fréquence (Chart.js)</h3>
-          <p class="text-xs mb-4" style="color: var(--muted);">bars-frequency.html · CLIENT_DATA.frequencyUsage</p>
-          <div style="height: 240px;">
-            <canvas id="lib-frequency-chart"></canvas>
-          </div>
+      <!-- Frequency & Adoption — Vue Granulaire (bars.html) -->
+      <div class="mb-6">
+        <div class="comp-header mb-4">
+          <p class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--accent);">bars.html — Vue granulaire avec onglets par métier</p>
         </div>
-        <div class="rounded-2xl border p-6" style="background: var(--surface); border-color: var(--border);">
-          <h3 class="font-semibold text-sm mb-1" style="color: var(--ink);">Barres — Adoption (Chart.js)</h3>
-          <p class="text-xs mb-4" style="color: var(--muted);">bars-adoption.html · CLIENT_DATA.adoptionDuree</p>
-          <div style="height: 240px;">
-            <canvas id="lib-adoption-chart"></canvas>
+        <section id="section-frequency-adoption">
+          <div class="mb-5">
+            <div class="flex items-center gap-2 mb-1">
+              <span id="icon-freq-eyebrow"></span>
+              <span class="text-[11px] font-semibold uppercase tracking-[0.18em]" style="color: var(--accent);" id="freq-eyebrow-text"></span>
+            </div>
+            <h2 class="text-xl font-semibold" style="color: var(--ink); font-family: 'DM Serif Display', serif;" id="freq-section-title"></h2>
+            <p class="text-sm mt-1" style="color: var(--muted);" id="freq-section-subtitle"></p>
           </div>
-        </div>
+          <div class="flex items-center justify-between flex-wrap gap-3 mb-5">
+            <div class="flex items-center gap-2 flex-wrap" id="freq-adoption-tabs"></div>
+            <div id="freq-active-role-badge" class="hidden"></div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="rounded-lg border p-6" style="background: var(--surface); border-color: var(--border);">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <h3 class="text-xs font-semibold uppercase tracking-wider" style="color: var(--muted);">Fréquence d'utilisation</h3>
+                  <p class="text-[11px] mt-0.5" style="color: var(--muted-soft);">% du panel — fréquence déclarée</p>
+                </div>
+                <span class="text-[11px] font-medium px-2.5 py-1 rounded-full" style="background: var(--primary-soft); color: var(--primary);" id="freq-bucket-count"></span>
+              </div>
+              <div style="height: 240px; width: 100%;" id="frequency-bar-chart"></div>
+            </div>
+            <div class="rounded-lg border p-6" style="background: var(--surface); border-color: var(--border);">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <h3 class="text-xs font-semibold uppercase tracking-wider" style="color: var(--muted);">Durée d'adoption</h3>
+                  <p class="text-[11px] mt-0.5" style="color: var(--muted-soft);">Depuis première utilisation déclarée</p>
+                </div>
+                <span class="text-[11px] font-medium px-2.5 py-1 rounded-full" style="background: var(--accent-soft); color: var(--accent);" id="adoption-bucket-count"></span>
+              </div>
+              <div style="height: 240px; width: 100%;" id="adoption-bar-chart"></div>
+            </div>
+          </div>
+        </section>
       </div>
 
       <!-- Scatter -->
@@ -991,7 +1045,7 @@ const CLIENT_DATA = {
         </div>
 
         <!-- Two columns with arrow -->
-        <div class="grid grid-cols-1 lg:grid-cols-11 gap-4 items-start">
+        <div class="grid grid-cols-1 lg:grid-cols-11 gap-4 items-stretch">
           <!-- AVANT column -->
           <div class="lg:col-span-5 rounded-2xl border p-5" style="border-color: var(--border);">
             <div class="flex items-center gap-2 mb-3">
@@ -1009,10 +1063,11 @@ const CLIENT_DATA = {
           </div>
 
           <!-- Arrow -->
-          <div class="lg:col-span-1 flex flex-col items-center justify-center py-8">
-            <div class="w-10 h-10 rounded-full flex items-center justify-center" style="background: var(--accent);">
-              <span id="lib-icon-arrow-ia"></span>
-            </div>
+          <div class="lg:col-span-1 flex flex-col items-center justify-center">
+            <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="20" cy="20" r="20" fill="var(--accent)"/>
+              <path d="M14 20H26M26 20L21 15M26 20L21 25" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
             <span class="text-[10px] font-bold mt-1" style="color: var(--accent);">IA</span>
           </div>
 
@@ -1374,6 +1429,7 @@ function hexToSoft(hex, alpha = 0.08) {
 }
 
 function buildTheme(branding, colors) {
+  const n = branding.neutrals || {};
   const t = {
     primary: branding.primaryColor,
     accent: branding.secondaryColor,
@@ -1381,9 +1437,13 @@ function buildTheme(branding, colors) {
     accentSoft: hexToSoft(branding.secondaryColor, 0.08),
     primaryBorder: hexToSoft(branding.primaryColor, 0.22),
     accentBorder: hexToSoft(branding.secondaryColor, 0.22),
-    ink: '#0f172a', muted: '#475569', mutedSoft: '#94a3b8',
-    border: '#e2e8f0', surface: '#ffffff',
-    bg: '#f6f8fb', bgAlt: '#eef2f8',
+    ink: n.ink || '#0f172a',
+    muted: n.muted || '#475569',
+    mutedSoft: n.mutedSoft || '#94a3b8',
+    border: n.border || '#e2e8f0',
+    surface: n.surface || '#ffffff',
+    bg: n.bg || '#f6f8fb',
+    bgAlt: n.bgAlt || '#eef2f8',
     heat: colors.heat,
     risk: colors.riskMap
   };
@@ -1395,6 +1455,15 @@ function buildTheme(branding, colors) {
     '--ink': t.ink, '--muted': t.muted, '--muted-soft': t.mutedSoft,
     '--border': t.border, '--surface': t.surface, '--bg': t.bg, '--bg-alt': t.bgAlt
   }).forEach(([k, v]) => root.setProperty(k, v));
+
+  const fonts = branding.fonts;
+  if (fonts) {
+    const fontLink = document.querySelector('link[data-theme-fonts]');
+    if (fontLink && fonts.googleFontsUrl) fontLink.href = fonts.googleFontsUrl;
+    if (fonts.body) root.setProperty('--font-body', fonts.body);
+    if (fonts.display) root.setProperty('--font-display', fonts.display);
+  }
+
   return t;
 }
 
@@ -1492,18 +1561,125 @@ function initRadarChart(canvasId, theme) {
   });
 }
 
-function initBarChart(canvasId, data, color, theme) {
-  const ctx = document.getElementById(canvasId);
-  if (!ctx) return;
-  new Chart(ctx, {
-    type: 'bar',
-    data: { labels: data.map(d => d.bucket), datasets: [{ data: data.map(d => d.pct), backgroundColor: color, borderRadius: 6, maxBarThickness: 48 }] },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, datalabels: { display: true, anchor: 'end', align: 'top', color: theme.ink, font: { weight: '600', size: 12 }, formatter: v => v + '%' } },
-      scales: { y: { display: false, max: 60 }, x: { grid: { display: false }, ticks: { font: { size: 11, family: 'Inter' }, color: theme.muted } } }
-    }
+function renderBarChart(containerId, data, color, dataKey, categoryKey, theme) {
+  const container = document.getElementById(containerId);
+  if (!container || !data || data.length === 0) return;
+
+  const width = container.offsetWidth || 400;
+  const height = container.offsetHeight || 240;
+  const padding = 50;
+  const chartWidth = width - padding * 2;
+  const chartHeight = height - 60;
+  const maxValue = Math.max(...data.map(d => d[dataKey])) * 1.15;
+  const barWidth = Math.min(56, (width - 50) / (data.length + 1));
+
+  let svg = `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" style="font-family: Inter, sans-serif;">`;
+
+  [0, 0.25, 0.5, 0.75, 1].forEach(ratio => {
+    const y = height - 40 - (chartHeight * ratio);
+    const val = Math.round(maxValue * ratio);
+    svg += `<line x1="${padding - 5}" y1="${y}" x2="${width - padding}" y2="${y}" stroke="${theme.border}" stroke-width="1" opacity="0.5" />`;
+    svg += `<text x="${padding - 10}" y="${y + 4}" text-anchor="end" font-size="11" fill="${theme.mutedSoft}">${val}%</text>`;
   });
+
+  svg += `<line x1="${padding}" y1="${height - 40}" x2="${width - padding}" y2="${height - 40}" stroke="${theme.border}" stroke-width="1.5" />`;
+
+  data.forEach((item, i) => {
+    const x = padding + (i + 0.5) * (chartWidth / data.length);
+    const barHeight = (item[dataKey] / maxValue) * chartHeight;
+    const barX = x - barWidth / 2;
+    const barY = height - 40 - barHeight;
+    svg += `<rect x="${barX}" y="${barY}" width="${barWidth}" height="${barHeight}" rx="4" ry="4" fill="${color}" />`;
+    svg += `<text x="${x}" y="${barY - 8}" text-anchor="middle" font-size="12" font-weight="600" fill="${theme.ink}">${item[dataKey]}%</text>`;
+    svg += `<text x="${x}" y="${height - 15}" text-anchor="middle" font-size="11" fill="${theme.muted}">${item[categoryKey]}</text>`;
+  });
+
+  svg += '</svg>';
+  container.innerHTML = svg;
+}
+
+function normalizePerRoleData(roleObj, bucketLabels) {
+  return Object.entries(bucketLabels).map(([key, label]) => ({
+    bucket: label,
+    pct: roleObj[key] || 0
+  }));
+}
+
+function renderFreqAdoptionData(roleId, theme) {
+  const ui = CLIENT_DATA.ui.blocks;
+  let freqData, adoptData;
+  const badge = document.getElementById('freq-active-role-badge');
+
+  if (roleId === 'global') {
+    freqData = CLIENT_DATA.frequencyUsage;
+    adoptData = CLIENT_DATA.adoptionDuree;
+    if (badge) { badge.classList.add('hidden'); badge.innerHTML = ''; }
+  } else {
+    const role = CLIENT_DATA.perimetre.find(p => p.id === roleId);
+    if (!role) return;
+    freqData = normalizePerRoleData(role.frequenceUsage, ui.freqBuckets);
+    adoptData = normalizePerRoleData(role.dureeAdoption, ui.adoptionBuckets);
+    if (badge) {
+      badge.classList.remove('hidden');
+      badge.innerHTML = '<div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold" style="background: var(--accent-soft); color: var(--accent);">'
+        + icon(role.icon, 14, 'var(--accent)') + ' ' + role.nom + '</div>';
+    }
+  }
+
+  const freqCount = document.getElementById('freq-bucket-count');
+  const adoptCount = document.getElementById('adoption-bucket-count');
+  if (freqCount) freqCount.textContent = freqData.length + ' buckets';
+  if (adoptCount) adoptCount.textContent = adoptData.length + ' buckets';
+
+  renderBarChart('frequency-bar-chart', freqData, theme.primary, 'pct', 'bucket', theme);
+  renderBarChart('adoption-bar-chart', adoptData, theme.accent, 'pct', 'bucket', theme);
+}
+
+function initFreqAdoptionSection(theme) {
+  const tabsContainer = document.getElementById('freq-adoption-tabs');
+  if (!tabsContainer || !CLIENT_DATA) return;
+
+  const ui = CLIENT_DATA.ui.blocks;
+  const perimetre = CLIENT_DATA.perimetre;
+
+  const eyebrowEl = document.getElementById('freq-eyebrow-text');
+  const titleEl = document.getElementById('freq-section-title');
+  const subtitleEl = document.getElementById('freq-section-subtitle');
+  const eyebrowIcon = document.getElementById('icon-freq-eyebrow');
+  if (eyebrowEl) eyebrowEl.textContent = ui.metricsUsageEyebrow;
+  if (titleEl) titleEl.textContent = ui.metricsUsageTitle;
+  if (subtitleEl) subtitleEl.textContent = ui.metricsUsageSubtitle;
+  if (eyebrowIcon) eyebrowIcon.innerHTML = icon('bar-chart-3', 14, 'var(--accent)');
+
+  let tabsHtml = '<button class="freq-tab flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all" data-role="global">'
+    + icon('users', 13, 'currentColor') + ' ' + ui.metricsTabGlobal + '</button>';
+
+  perimetre.forEach(p => {
+    tabsHtml += '<button class="freq-tab flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all" data-role="' + p.id + '">'
+      + icon(p.icon, 13, 'currentColor') + ' ' + p.nom.split(' ')[0]
+      + ' <span class="opacity-60">' + p.effectif + 'p</span></button>';
+  });
+  tabsContainer.innerHTML = tabsHtml;
+
+  const allTabs = tabsContainer.querySelectorAll('.freq-tab');
+  function activateTab(activeTab) {
+    allTabs.forEach(t => {
+      t.style.background = 'transparent';
+      t.style.color = 'var(--muted)';
+      t.style.border = '1px solid var(--border)';
+    });
+    activeTab.style.background = 'var(--primary)';
+    activeTab.style.color = 'white';
+    activeTab.style.border = '1px solid var(--primary)';
+    renderFreqAdoptionData(activeTab.dataset.role, theme);
+  }
+
+  allTabs.forEach(tab => {
+    tab.style.border = '1px solid var(--border)';
+    tab.addEventListener('click', () => activateTab(tab));
+  });
+
+  activateTab(allTabs[0]);
 }
 
 function initScatterChart(canvasId, theme) {
@@ -2115,8 +2291,7 @@ document.addEventListener('DOMContentLoaded', () => {
   safe('gauge', () => renderGauge('lib-gauge-container', CLIENT_DATA.globalMetrics.maturiteGlobale, 5, [], THEME));
   safe('gaugeLegend', () => buildGaugeLegend('lib-gauge-legend', THEME));
   safe('radar', () => initRadarChart('lib-radar-chart', THEME));
-  safe('freqBars', () => initBarChart('lib-frequency-chart', CLIENT_DATA.frequencyUsage, THEME.primary, THEME));
-  safe('adoptBars', () => initBarChart('lib-adoption-chart', CLIENT_DATA.adoptionDuree, THEME.accent, THEME));
+  safe('freqAdoption', () => initFreqAdoptionSection(THEME));
   safe('scatter', () => initScatterChart('lib-scatter-chart', THEME));
   safe('heatmap', () => initHeatmap('lib-heatmap-body', 'lib-heat-legend', THEME));
   safe('qualityRing', () => renderQualityRing('lib-quality-ring', THEME));

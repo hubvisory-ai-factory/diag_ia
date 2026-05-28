@@ -1,0 +1,171 @@
+<!--
+  COMPONENT: Frequency & Adoption — Vue Granulaire
+  SECTION: Dashboard > Frequency + Adoption row
+  REPLACES: bars-frequency.html + bars-adoption.html (unified with role tabs)
+
+  DATA NEEDED:
+    - CLIENT_DATA.frequencyUsage — array of { bucket, pct } for global view
+    - CLIENT_DATA.adoptionDuree — array of { bucket, pct } for global view
+    - CLIENT_DATA.perimetre — array of { id, nom, effectif, icon, frequenceUsage, dureeAdoption }
+      where frequenceUsage is { quotidien, hebdomadaire, occasionnel, jamais }
+      and dureeAdoption is { moinsDe3Mois, de3a12Mois, plusDe12Mois }
+    - CLIENT_DATA.ui.blocks.metricsUsageEyebrow — e.g. "Métriques d'utilisation"
+    - CLIENT_DATA.ui.blocks.metricsUsageTitle — e.g. "Fréquence & adoption — vue granulaire"
+    - CLIENT_DATA.ui.blocks.metricsUsageSubtitle — e.g. "Bascule global ↔ métier..."
+    - CLIENT_DATA.ui.blocks.metricsTabGlobal — e.g. "Au global"
+    - CLIENT_DATA.ui.blocks.freqBuckets — { quotidien: "Quotidien", ... } (label map + ordering)
+    - CLIENT_DATA.ui.blocks.adoptionBuckets — { moinsDe3Mois: "< 3 mois", ... }
+    - THEME — theme object with primary, accent, ink, muted, etc.
+
+  DEPENDENCIES: icon() helper, renderBarChart() function
+
+  CUSTOMIZATION:
+    - Adjust freqBuckets/adoptionBuckets in CLIENT_DATA.ui.blocks to change labels per client
+    - Change bar colors via theme.primary (frequency) and theme.accent (adoption)
+-->
+
+<!-- Section wrapper -->
+<section class="mb-8" id="section-frequency-adoption">
+  <!-- Section header -->
+  <div class="mb-5">
+    <div class="flex items-center gap-2 mb-1">
+      <span id="icon-freq-eyebrow"></span>
+      <span class="text-[11px] font-semibold uppercase tracking-[0.18em]" style="color: var(--accent);" id="freq-eyebrow-text"></span>
+    </div>
+    <h2 class="text-xl font-semibold" style="color: var(--ink); font-family: 'DM Serif Display', serif;" id="freq-section-title"></h2>
+    <p class="text-sm mt-1" style="color: var(--muted);" id="freq-section-subtitle"></p>
+  </div>
+
+  <!-- Tab strip + active role badge -->
+  <div class="flex items-center justify-between flex-wrap gap-3 mb-5">
+    <div class="flex items-center gap-2 flex-wrap" id="freq-adoption-tabs">
+      <!-- Dynamically generated: "Au global" + one tab per perimetre role -->
+    </div>
+    <div id="freq-active-role-badge" class="hidden">
+      <!-- Shows role name badge when a specific role is selected -->
+    </div>
+  </div>
+
+  <!-- Two chart cards side by side -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- Frequency Chart -->
+    <div class="rounded-lg border p-6" style="background: var(--surface); border-color: var(--border);">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h3 class="text-xs font-semibold uppercase tracking-wider" style="color: var(--muted);">Fréquence d'utilisation</h3>
+          <p class="text-[11px] mt-0.5" style="color: var(--muted-soft);">% du panel — fréquence déclarée</p>
+        </div>
+        <span class="text-[11px] font-medium px-2.5 py-1 rounded-full" style="background: var(--primary-soft); color: var(--primary);" id="freq-bucket-count">4 buckets</span>
+      </div>
+      <div style="height: 240px; width: 100%;" id="frequency-bar-chart"></div>
+    </div>
+
+    <!-- Adoption Duration Chart -->
+    <div class="rounded-lg border p-6" style="background: var(--surface); border-color: var(--border);">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h3 class="text-xs font-semibold uppercase tracking-wider" style="color: var(--muted);">Durée d'adoption</h3>
+          <p class="text-[11px] mt-0.5" style="color: var(--muted-soft);">Depuis première utilisation déclarée</p>
+        </div>
+        <span class="text-[11px] font-medium px-2.5 py-1 rounded-full" style="background: var(--accent-soft); color: var(--accent);" id="adoption-bucket-count">3 buckets</span>
+      </div>
+      <div style="height: 240px; width: 100%;" id="adoption-bar-chart"></div>
+    </div>
+  </div>
+</section>
+
+<script>
+// ---- DATA NORMALIZER ----
+function normalizePerRoleData(roleObj, bucketLabels) {
+  return Object.entries(bucketLabels).map(([key, label]) => ({
+    bucket: label,
+    pct: roleObj[key] || 0
+  }));
+}
+
+// ---- RENDER DATA FOR A GIVEN ROLE ----
+function renderFreqAdoptionData(roleId, theme) {
+  var ui = CLIENT_DATA.ui.blocks;
+  var freqData, adoptData;
+  var badge = document.getElementById('freq-active-role-badge');
+
+  if (roleId === 'global') {
+    freqData = CLIENT_DATA.frequencyUsage;
+    adoptData = CLIENT_DATA.adoptionDuree;
+    if (badge) { badge.classList.add('hidden'); badge.innerHTML = ''; }
+  } else {
+    var role = CLIENT_DATA.perimetre.find(function(p) { return p.id === roleId; });
+    if (!role) return;
+    freqData = normalizePerRoleData(role.frequenceUsage, ui.freqBuckets);
+    adoptData = normalizePerRoleData(role.dureeAdoption, ui.adoptionBuckets);
+    if (badge) {
+      badge.classList.remove('hidden');
+      badge.innerHTML = '<div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold" style="background: var(--accent-soft); color: var(--accent);">'
+        + icon(role.icon, 14, 'var(--accent)') + ' ' + role.nom + '</div>';
+    }
+  }
+
+  var freqCount = document.getElementById('freq-bucket-count');
+  var adoptCount = document.getElementById('adoption-bucket-count');
+  if (freqCount) freqCount.textContent = freqData.length + ' buckets';
+  if (adoptCount) adoptCount.textContent = adoptData.length + ' buckets';
+
+  renderBarChart('frequency-bar-chart', freqData, theme.primary, 'pct', 'bucket', theme);
+  renderBarChart('adoption-bar-chart', adoptData, theme.accent, 'pct', 'bucket', theme);
+}
+
+// ---- SECTION INIT ----
+function initFreqAdoptionSection(theme) {
+  var tabsContainer = document.getElementById('freq-adoption-tabs');
+  if (!tabsContainer || !CLIENT_DATA) return;
+
+  var ui = CLIENT_DATA.ui.blocks;
+  var perimetre = CLIENT_DATA.perimetre;
+
+  // Populate section header
+  var eyebrowEl = document.getElementById('freq-eyebrow-text');
+  var titleEl = document.getElementById('freq-section-title');
+  var subtitleEl = document.getElementById('freq-section-subtitle');
+  var eyebrowIcon = document.getElementById('icon-freq-eyebrow');
+  if (eyebrowEl) eyebrowEl.textContent = ui.metricsUsageEyebrow;
+  if (titleEl) titleEl.textContent = ui.metricsUsageTitle;
+  if (subtitleEl) subtitleEl.textContent = ui.metricsUsageSubtitle;
+  if (eyebrowIcon) eyebrowIcon.innerHTML = icon('bar-chart-3', 14, 'var(--accent)');
+
+  // Build tabs
+  var tabsHtml = '<button class="freq-tab flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all" data-role="global">'
+    + icon('users', 13, 'currentColor') + ' ' + ui.metricsTabGlobal + '</button>';
+
+  perimetre.forEach(function(p) {
+    tabsHtml += '<button class="freq-tab flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all" data-role="' + p.id + '">'
+      + icon(p.icon, 13, 'currentColor') + ' ' + p.nom.split(' ')[0]
+      + ' <span class="opacity-60">' + p.effectif + 'p</span></button>';
+  });
+  tabsContainer.innerHTML = tabsHtml;
+
+  // Wire click handlers
+  var allTabs = tabsContainer.querySelectorAll('.freq-tab');
+  function activateTab(activeTab) {
+    allTabs.forEach(function(t) {
+      t.style.background = 'transparent';
+      t.style.color = 'var(--muted)';
+      t.style.border = '1px solid var(--border)';
+    });
+    activeTab.style.background = 'var(--primary)';
+    activeTab.style.color = 'white';
+    activeTab.style.border = '1px solid var(--primary)';
+    renderFreqAdoptionData(activeTab.dataset.role, theme);
+  }
+
+  allTabs.forEach(function(tab) {
+    tab.style.border = '1px solid var(--border)';
+    tab.addEventListener('click', function() { activateTab(tab); });
+  });
+
+  // Initial render — activate "Au global"
+  activateTab(allTabs[0]);
+}
+
+// ---- USAGE ----
+// initFreqAdoptionSection(THEME);
+</script>

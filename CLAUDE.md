@@ -100,8 +100,7 @@ Components in `components/` (HTML snippets Claude uses as reference when buildin
 - **gauge.html** — SVG arc gauge for maturity score (0-5)
 - **radar.html** — Chart.js radar for 6-axis maturity assessment
 - **heatmap.html** — HTML table heatmap (métier x dimension, 5-step color scale)
-- **bars-frequency.html** — Chart.js bar chart for frequency distribution
-- **bars-adoption.html** — Chart.js bar chart for adoption duration
+- **bars.html** — Production-grade SVG bar charts (frequency + adoption, from hubvisory-ai-maturity-asset) — *replaces bars-frequency.html + bars-adoption.html*
 - **scatter-confidence.html** — Chart.js bubble chart for tools x confidence per métier
 - **hero.html** — Hero section with mission info + métier list card
 - **cta-banner.html** — Gradient call-to-action banner
@@ -158,14 +157,24 @@ All placeholder text in the library (and in the template) must be literal descri
 
 ## Design System
 
-- **Theme**: primary `#003366` (navy), accent `#E30613` (red), with soft variants (`rgba(0,51,102,0.08)`, `rgba(227,6,19,0.08)`)
+All visual tokens live in `CLIENT_DATA.branding` and flow through `buildTheme()` into CSS custom properties. Every component reads `var(--primary)`, `var(--accent)`, `var(--font-body)`, etc. — never hardcoded values.
+
+### Branding tokens (in `CLIENT_DATA.branding`)
+
+- **`primaryColor`** / **`secondaryColor`** — main brand colors. `buildTheme()` auto-generates soft (`0.08 alpha`) and border (`0.22 alpha`) variants.
+- **`neutrals`** (optional, has defaults) — `ink`, `muted`, `mutedSoft`, `border`, `surface`, `bg`, `bgAlt`. Override any or all for a custom neutral palette.
+- **`fonts`** (optional, has defaults) — `body` (CSS font stack), `display` (heading font stack), `googleFontsUrl` (the `<link>` href to load). `buildTheme()` swaps the Google Fonts `<link>` and sets `--font-body` / `--font-display` CSS variables.
+- **`logoUrl`** — path to client logo in `assets/`
+
+### Defaults (Hubvisory design language)
+
+- **Colors**: primary `#003366` (navy), accent `#E30613` (red)
+- **Neutrals**: ink `#0f172a`, muted `#475569`, mutedSoft `#94a3b8`, border `#e2e8f0`, surface `#ffffff`, bg `#f6f8fb`, bgAlt `#eef2f8`
+- **Fonts**: Inter (body), DM Serif Display (headings)
 - **Heat scale**: 5-step red-to-green: `["#dc2626", "#f97316", "#f59e0b", "#84cc16", "#10b981"]`
 - **Risk colors**: rouge `#dc2626`, orange `#f59e0b`, vert `#10b981`
-- **Typography**: Inter for body text, DM Serif Display for headings
-- **Cards**: white background, `1px solid #e2e8f0` border, `rounded-lg`
+- **Cards**: white background, `1px solid var(--border)`, `rounded-lg`
 - **Layout**: max-width 1280px (`max-w-screen-xl`), responsive grid
-- **Background**: `#f6f8fb` (light blue-grey)
-- **Ink**: `#0f172a` (near-black), muted `#475569`, soft `#94a3b8`
 
 ## Conventions
 
