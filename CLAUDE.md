@@ -228,12 +228,11 @@ All visual tokens live in `CLIENT_DATA.branding` and flow through `buildTheme()`
 No build step. Development workflow:
 
 ```bash
-# Preview any page — just open the HTML file in a browser
-open clients/clovis/index.html
-open index.html
+# Preview a client page (auto-opens browser, no install required)
+npx serve -o clients/clovis
 
-# Or use a local server for proper routing
-npx serve .
+# Preview the landing page
+npx serve -o .
 
 # Deploy
 git push origin main    # Vercel auto-deploys

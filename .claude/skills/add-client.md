@@ -288,7 +288,10 @@ Then **Write** `clients/<slug>/data.js` with the complete CLIENT_DATA object. Th
 8. **If you need to add/remove sections** from the template's index.html for this client, reference `components/` snippets. Use the Edit tool for surgical changes — never rewrite the whole file. See "Removing Sections" below.
 9. **Update the landing page**: Add a client card to `index.html` in the grid (see below). Add the card at the **end of the grid** to minimize merge conflicts with other work.
 10. **Update `REGISTRY.md`** with the new client entry (template used, date, any structural changes)
-11. **Tell the consultant** to open `clients/<slug>/index.html` directly in a browser to verify
+11. **Launch local preview** so the consultant can verify:
+    ```bash
+    npx serve -o clients/<slug>
+    ```
 
 **Commit after file generation:**
 ```bash
@@ -370,16 +373,18 @@ git commit -m "feat(client): <slug> — remove glossary section"
 
 Before pushing, the consultant MUST verify locally:
 
-### Open in Browser
+### Preview with Local Server
 ```bash
-open clients/<slug>/index.html
+npx serve -o clients/<slug>
 ```
 
-Or use a local server for proper routing:
-```bash
-npx serve .
-# Then visit http://localhost:3000/clients/<slug>/
-```
+This command:
+- Requires no installation (npx downloads and runs it automatically)
+- Starts a local server in the client folder
+- Auto-opens the browser (`-o` flag)
+- Properly handles CSS/JS paths (no `file://` quirks)
+
+The page will open at `http://localhost:3000/index.html`.
 
 ### Verification Checklist
 

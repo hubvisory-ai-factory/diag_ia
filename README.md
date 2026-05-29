@@ -67,7 +67,7 @@ Quand tu dis « je veux ajouter un nouveau client », Claude va :
    - `data.js` — les données du diagnostic (le seul fichier que Claude écrit)
    - `assets/` — le logo du client
 3. Ajouter une carte sur la page d'accueil (`index.html`)
-4. Tester en ouvrant la page dans un navigateur
+4. Lancer un serveur local (`npx serve`) et ouvrir le navigateur automatiquement
 5. Prêt à pousser sur GitHub → Vercel déploie automatiquement
 
 ### ✏️ Modifier un diagnostic existant
@@ -150,7 +150,7 @@ Cela garantit que la bibliothèque de composants reste à jour et réutilisable.
    ↓
 6. Claude crée les fichiers, commit régulièrement
    ↓
-7. Vérifie dans le navigateur — ouvre le fichier HTML
+7. Vérifie dans le navigateur — Claude lance `npx serve` pour toi
    ↓
 8. Si tout est bon, Claude pousse la branche et merge dans main
    ↓
@@ -163,7 +163,7 @@ Cela garantit que la bibliothèque de composants reste à jour et réutilisable.
 
 | Problème | Solution |
 |----------|----------|
-| Page blanche | Erreur dans `data.js` — Claude te guide pour corriger |
+| Page blanche | Erreur dans `data.js` — ouvre la console (F12) pour voir l'erreur |
 | Graphiques absents | Format de données incorrect — vérifie avec Claude |
 | "Permission denied" au push | Lance `gh repo fork --remote` pour configurer ton fork |
 | La page ne se met pas à jour | Vérifie que tu as bien merge dans `main` |
