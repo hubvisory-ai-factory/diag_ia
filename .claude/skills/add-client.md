@@ -7,12 +7,64 @@ description: Guided workflow to add a new AI diagnostic client case to the porta
 
 You are helping a Hubvisory consultant add a new AI diagnostic client case to the portal. Your job is to gather all the necessary information, structure it as a `CLIENT_DATA` JavaScript object, and generate the client HTML page — without ever fabricating data.
 
+**Live site**: https://diag-ia.hubvisory.app/
+
 **Reference files**:
 - `REGISTRY.md` — lists available templates and existing client layouts (read this first)
 - `_template/index.html` — rendering engine (copy this as the starting point)
 - `_template/data.js` — placeholder CLIENT_DATA showing the data shape
 - `clients/clovis/data.js` — first real client data (complete example of a finished data file)
 - `components/` — HTML snippets for individual sections (use as reference when customizing)
+
+---
+
+## Phase 0: Git Setup & Access Check
+
+Before starting any work, ensure the repo is ready:
+
+### Check Git Status
+```bash
+git status
+git branch -a
+```
+
+### Create a Feature Branch
+**ALWAYS work on a branch, never directly on `main`.**
+
+```bash
+git checkout -b client/<slug>
+# Example: git checkout -b client/acme-corp
+```
+
+### GitHub Account Check
+To publish changes, the consultant needs a GitHub account (free). They do NOT need collaborator access — the fork/PR workflow works for everyone.
+
+Ask:
+
+> "Do you have a GitHub account?"
+
+**If YES**: Check if repo is properly forked:
+```bash
+git remote -v
+```
+If `origin` points to `hubvisory-ai-factory/diag_ia` (not their fork), set up the fork:
+```bash
+gh repo fork --remote
+```
+
+**If NO**: Use the `git-setup` skill to create an account and fork the repo.
+
+**If they can't create an account**: The work can still be done locally but won't be published. Someone else will need to push for them.
+
+### Regular Commits
+**Commit frequently** as you work — after each major step. Don't wait until the end.
+
+```bash
+git add clients/<slug>/
+git commit -m "wip(client): <slug> — add data.js skeleton"
+```
+
+---
 
 ## Phase 1: Client Identity
 
@@ -29,15 +81,25 @@ Ask for:
 
 Before moving on, confirm the slug doesn't already exist by checking `clients/` for a folder with that name.
 
+**Commit after Phase 1:**
+```bash
+git add .
+git commit -m "wip(client): <slug> — identity collected"
+```
+
+---
+
 ## Phase 2: Source Materials
 
 Ask the consultant how they want to provide the diagnostic data:
 
 - **Option A: Provide source files** — PDF report, PowerPoint deck, Excel sheets. Claude extracts and structures the data.
-- **Option B: Walk through section by section** — Claude asks for each section's data interactively.
+- **Option B: Walk through section by section** — Claude asks for each section's data interactively. Best if consultant only has verbal notes or scattered information.
 - **Option C: Provide a pre-filled JSON** — If the consultant already has structured data matching the CLIENT_DATA format.
 
 For Option A: ask them to place files in the project directory or paste content, extract all data points, present a summary for confirmation.
+
+---
 
 ## Phase 3: Data Collection (section by section)
 
@@ -169,7 +231,13 @@ Phased implementation plan (typically 3 phases):
 AI terminology definitions:
 - `terme`, `definition`
 
-### 3q. UI Config & Colors
+### 3q. Prompts Bank (`promptsBanque`)
+
+Per-métier prompt templates. Each key is a `perimetre[].id`, value is a prompt string.
+
+**Important**: Replace `{{client}}` placeholders with the actual client name when writing the file.
+
+### 3r. UI Config & Colors
 
 Usually keep defaults — only customize if the client needs different labels:
 - `ui.sections` — main navigation section names
@@ -177,15 +245,26 @@ Usually keep defaults — only customize if the client needs different labels:
 - `computedColors.heat` — 5-step color scale `["#dc2626", "#f97316", "#f59e0b", "#84cc16", "#10b981"]`
 - `computedColors.riskMap` — `{Rouge: "#dc2626", Orange: "#f59e0b", Vert: "#10b981"}`
 
+**For non-French clients**: All labels in `ui.blocks` and `ui.sections` can be overridden with translations.
+
+**Commit regularly during Phase 3** — after every 2-3 sections:
+```bash
+git add .
+git commit -m "wip(client): <slug> — add perimetre + metrics"
+```
+
+---
+
 ## Phase 4: Generate the Client Page
 
 Once all data is collected:
 
 1. **Present a full summary** of all collected data, organized by section
 2. **Flag any gaps**: fields marked as TODO, sections with sparse data, inconsistencies
-3. **Ask for final confirmation**: "Does this accurately represent the diagnostic findings?"
-4. **Read `REGISTRY.md`** to show available templates and existing client layouts. Ask the consultant which layout is closest to what they need. Default to the base template if unsure.
-5. **Generate the files** using these exact mechanical steps:
+3. **Check idMetier consistency**: The same id must be used across `perimetre`, `useCasesList`, `heatmapMatrix`, and `stackByMetier`
+4. **Ask for final confirmation**: "Does this accurately represent the diagnostic findings?"
+5. **Read `REGISTRY.md`** to show available templates and existing client layouts. Ask the consultant which layout is closest to what they need. Default to the base template if unsure.
+6. **Generate the files** using these exact mechanical steps:
 
 ```bash
 # Step 1: Create client directory
@@ -201,14 +280,21 @@ Then use the **Edit** tool to set the `<base>` tag in `clients/<slug>/index.html
 ```html
 <base href="/clients/<slug>/">
 ```
+**This step is critical** — without the correct `<base href>`, Vercel routing will break.
 
 Then **Write** `clients/<slug>/data.js` with the complete CLIENT_DATA object. This is the only file you write from scratch — it contains all the client's data. Use `_template/data.js` as the reference for the object shape and `clients/clovis/data.js` as a real example. Make sure to set `branding.slug` to `"<slug>"`.
 
-6. **If the consultant provided a logo**, copy it to `clients/<slug>/assets/`
-7. **If you need to add/remove sections** from the template's index.html for this client, reference `components/` snippets. Use the Edit tool for surgical changes — never rewrite the whole file.
-8. **Update the landing page**: Add a client card to `index.html` in the grid (see below)
-9. **Update `REGISTRY.md`** with the new client entry (template used, date, any structural changes)
-10. **Tell the consultant** to open `clients/<slug>/index.html` directly in a browser to verify
+7. **If the consultant provided a logo**, copy it to `clients/<slug>/assets/`
+8. **If you need to add/remove sections** from the template's index.html for this client, reference `components/` snippets. Use the Edit tool for surgical changes — never rewrite the whole file. See "Removing Sections" below.
+9. **Update the landing page**: Add a client card to `index.html` in the grid (see below). Add the card at the **end of the grid** to minimize merge conflicts with other work.
+10. **Update `REGISTRY.md`** with the new client entry (template used, date, any structural changes)
+11. **Tell the consultant** to open `clients/<slug>/index.html` directly in a browser to verify
+
+**Commit after file generation:**
+```bash
+git add clients/<slug>/ index.html REGISTRY.md
+git commit -m "feat(client): <slug> — complete page generated"
+```
 
 ### How to write data.js
 
@@ -230,7 +316,7 @@ If you modified `index.html` for this client (added a section, changed layout, r
 
 ### How to update the landing page
 
-Add a new card to `index.html` inside the `.grid` container. Follow the pattern of the existing Clovis card:
+Add a new card to `index.html` inside the `.grid` container. **Add at the end of the grid** to minimize merge conflicts. Follow the pattern of the existing Clovis card:
 ```html
 <a href="clients/<slug>/index.html" class="group block bg-white rounded-lg transition hover:shadow-lg" style="border: 1px solid #e2e8f0">
   <div class="h-2 rounded-t-lg" style="background: linear-gradient(135deg, <primary> 0%, <primary> 60%, <accent> 140%)"></div>
@@ -250,39 +336,167 @@ Add a new card to `index.html` inside the `.grid` container. Follow the pattern 
 </a>
 ```
 
-## Phase 5: Pre-push Checklist
+---
 
-Before the consultant pushes:
+## Removing Sections
 
-- [ ] All sections have real data (no TODOs remaining)
-- [ ] Numbers and scores match the original diagnostic materials
-- [ ] Company name, sector, and mission info are correct
-- [ ] Use cases have correct typologies, complexity, and gains
-- [ ] `idMetier` values in use cases, heatmap, and stackByMetier all match `perimetre[].id`
-- [ ] Radar chart shows 6 axes with actual vs target scores (0-5 scale)
-- [ ] Heatmap values are 1-5 per dimension per métier
-- [ ] Risks have correct severity levels (Rouge/Orange/Vert)
-- [ ] `clients/<slug>/data.js` exists and contains the complete CLIENT_DATA object
-- [ ] `clients/<slug>/index.html` has `<base href="/clients/<slug>/">` set correctly
-- [ ] The page renders correctly when opened in a browser (`clients/<slug>/index.html`)
-- [ ] Nav pills show all métiers and clicking them filters use cases
-- [ ] Charts render without errors (check browser console)
-- [ ] The landing page (`index.html`) shows the new client card
-- [ ] `REGISTRY.md` is updated with the new client entry
-- [ ] No other client pages were affected
+If the client doesn't need certain sections (e.g., no process mapping, no glossary):
 
-Tell the consultant:
+### In `index.html`:
+1. Find the section in `clients/<slug>/index.html` (search for the section id or heading)
+2. Delete the entire `<section>` block
+3. If there's a nav pill for that section, remove it from the nav (or it will be orphaned)
+
+### In `data.js`:
+1. You can either:
+   - Remove the corresponding data object entirely, OR
+   - Leave it as an empty array/object (the rendering engine handles missing data gracefully)
+
+### Example: Remove Glossary
+```bash
+# In index.html: delete the section with id="section-glossaire"
+# In data.js: set glossaire: [] or remove the key entirely
 ```
-Ready to go live! When you've verified everything, run:
-  git add clients/<slug>/ index.html REGISTRY.md
-  git commit -m "add(client): <client-name>"
-  git push origin main
-Vercel will auto-deploy within ~1 minute.
+
+**Commit after structural changes:**
+```bash
+git add clients/<slug>/
+git commit -m "feat(client): <slug> — remove glossary section"
 ```
+
+---
+
+## Phase 5: Local Verification
+
+Before pushing, the consultant MUST verify locally:
+
+### Open in Browser
+```bash
+open clients/<slug>/index.html
+```
+
+Or use a local server for proper routing:
+```bash
+npx serve .
+# Then visit http://localhost:3000/clients/<slug>/
+```
+
+### Verification Checklist
+
+- [ ] Page loads without blank screen
+- [ ] Client name and branding appear correctly in header
+- [ ] Radar chart renders with 6 axes
+- [ ] Heatmap shows all métiers with colored cells
+- [ ] Nav pills work — clicking filters content
+- [ ] Use case cards display correctly
+- [ ] Charts render without errors (check browser console: F12 > Console)
+- [ ] All numbers match the original diagnostic materials
+- [ ] No "TODO" placeholders remaining in visible text
+- [ ] Landing page (`index.html`) shows the new client card
+
+### If Something Is Wrong
+See **Troubleshooting** section below.
+
+---
+
+## Phase 6: Push & Create Pull Request
+
+Once the consultant confirms everything looks good locally:
+
+### Final Commit
+```bash
+git add .
+git commit -m "feat(client): <slug> — ready for review"
+```
+
+### Push the Branch to Their Fork
+```bash
+git push -u origin client/<slug>
+```
+
+### Create Pull Request
+```bash
+gh pr create --title "Add client: <Client Name>" --body "New diagnostic for <Client Name>.
+
+## Checklist
+- [ ] Page renders correctly locally
+- [ ] All data matches diagnostic materials
+- [ ] No TODO placeholders remaining
+
+## Preview
+Once merged, will be live at: https://diag-ia.hubvisory.app/<slug>"
+```
+
+This automatically:
+1. Opens a PR from their fork to the main repo
+2. Notifies @gaspardhassenforder for review (via CODEOWNERS)
+3. Shows the PR URL
+
+Tell the user:
+> "Done! Your Pull Request has been created. Gaspard will be notified automatically and will review and merge it. Once merged, your diagnostic will be live within ~1 minute."
+
+### After Merge (Automatic)
+Once the PR is merged:
+- **Vercel auto-deploys** within ~1 minute
+- The diagnostic goes live at `https://diag-ia.hubvisory.app/<slug>`
+
+The user doesn't need to do anything else — they'll see it live once Gaspard merges.
+
+---
+
+## Troubleshooting
+
+### Page is Blank / White Screen
+1. **Check browser console** (F12 > Console) for JavaScript errors
+2. **Most common cause**: Syntax error in `data.js`
+   - Missing comma between fields
+   - Unclosed bracket or brace
+   - Trailing comma before closing brace (usually OK in modern JS, but check)
+3. **Verify `data.js` loads**: Check Network tab (F12 > Network) — `data.js` should return 200
+
+### Charts Don't Render
+1. **Check browser console** for Chart.js errors
+2. **Verify data format**: Radar needs exactly 6 axes in `axesRadar[]`
+3. **Check for NaN**: All scores must be numbers, not strings
+4. **CDN blocked?**: Corporate firewalls sometimes block CDN. Test on personal network.
+
+### Nav Pills Don't Filter Content
+1. **Check idMetier consistency**: `useCasesList[].idMetier` must match `perimetre[].id` exactly
+2. **Case-sensitive**: `gestionnaire_parc` ≠ `Gestionnaire_Parc`
+
+### Heatmap Shows Wrong Colors
+1. **Values must be 1-5**: Not 0-5, not percentages
+2. **Check heatmapMatrix**: Each row needs `idMetier`, `usage`, `confiance`
+
+### Vercel Routing Doesn't Work (404 on /<slug>)
+1. **Check `<base href>`**: Must be `/clients/<slug>/` (with trailing slash)
+2. **Check `vercel.json`**: Should have the rewrite rule
+3. **File location**: Must be `clients/<slug>/index.html`, not somewhere else
+
+### "Permission Denied" on Git Push
+1. **Pushing to wrong remote**: Check `git remote -v` — `origin` should be their fork, not `hubvisory-ai-factory/diag_ia`
+2. **Not forked yet**: Run `gh repo fork --remote` to set up fork
+3. **Auth expired**: Re-authenticate with `gh auth login` or GitHub Desktop
+
+### Template is Broken
+If `_template/index.html` was accidentally modified:
+```bash
+git checkout main -- _template/index.html
+```
+
+### Data Doesn't Match Diagnostic
+**Never fabricate data.** If something is missing:
+1. Mark it as `"TODO: provide X"` in the data
+2. Ask the consultant to fill it in
+3. Don't guess numbers or create fake use cases
+
+---
 
 ## Rules
 
 - **Never invent data.** If information is missing, ask for it. If the consultant doesn't have it, mark it as `"TODO: <what's needed>"` in the data object.
+- **Always work on a branch.** Never commit directly to `main`.
+- **Commit frequently.** After each phase or major step.
 - **Always confirm before writing files.** Show the structured data and get explicit approval.
 - **Match the diagnostic.** The website must reflect exactly what was delivered in the PDF/PowerPoint. No embellishments.
 - **Be patient.** Consultants may not have all data at hand. It's fine to pause and resume.
@@ -294,3 +508,6 @@ Vercel will auto-deploy within ~1 minute.
 - **Set `<base href>`.** After copying the template, edit `<base href="/clients/<slug>/">` in the client's `index.html`. This is required for Vercel URL routing.
 - **Update REGISTRY.md.** Every new client must be added to the registry with template used, date, and any structural changes.
 - **Keep `idMetier` consistent.** The same id must be used across `perimetre`, `useCasesList`, `heatmapMatrix`, and `stackByMetier`.
+- **Add cards at end of grid.** Minimizes merge conflicts when multiple people work in parallel.
+- **Only merge after local verification.** The consultant must confirm the page works before merging to `main`.
+- **Replace placeholders.** `promptsBanque` templates use `{{client}}` — replace with actual client name.

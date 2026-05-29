@@ -2,6 +2,26 @@
 
 Bienvenue ! Ce projet permet aux consultants de créer des sites de diagnostic IA pour les clients, **sans besoin d'expérience en programmation**.
 
+**Site en ligne** : https://diag-ia.hubvisory.app/
+
+## 🔑 Prérequis : Compte GitHub (gratuit)
+
+Pour publier ton diagnostic, tu as besoin d'un compte GitHub gratuit. **Pas besoin d'accès spécial** — tout le monde peut contribuer via Pull Request.
+
+### Si tu as un compte GitHub
+Parfait ! Tu peux commencer directement.
+
+### Si tu n'as pas de compte GitHub
+**Pas de souci !** Claude peut te guider pour en créer un (2 minutes). Dans le prompt, choisis l'option 3 "Configurer Git et GitHub" et suis les étapes.
+
+### Comment ça marche ?
+1. Tu crées ton diagnostic en local avec Claude
+2. Claude pousse vers ta copie (fork) du repo
+3. Claude crée une Pull Request — Gaspard est notifié automatiquement
+4. Une fois validée, ton diagnostic est en ligne !
+
+---
+
 ## 🚀 Démarrage rapide
 
 **Tu n'as pas besoin d'ouvrir un terminal.** Ouvre Claude Code Desktop, puis copie-colle le prompt ci-dessous. Claude s'occupe de tout : cloner le repo, lire la doc, et te guider.
@@ -13,7 +33,11 @@ Bienvenue ! Ce projet permet aux consultants de créer des sites de diagnostic I
 ```
 Ce projet est le portail de diagnostics IA d'Hubvisory. Il permet de créer des sites web interactifs pour présenter les résultats de diagnostics IA réalisés pour des clients.
 
-Pour commencer, clone le repo depuis GitHub :
+Avant de commencer, vérifie que Git est installé en lançant : git --version
+
+Si Git n'est pas installé ou si j'ai une erreur, guide-moi pour l'installer (utilise le skill git-setup).
+
+Si Git est installé, clone le repo depuis GitHub :
 
 git clone https://github.com/hubvisory-ai-factory/diag_ia.git
 
@@ -23,7 +47,8 @@ Une fois que tu as compris le projet, demande-moi ce que je souhaite faire :
 
 1. Ajouter un nouveau diagnostic client — créer un nouveau rapport complet pour un client
 2. Modifier un rapport existant — mettre à jour ou corriger un diagnostic déjà en place
-3. Autre chose — ajouter un composant, modifier le design, mettre à jour la landing page, etc.
+3. Configurer Git et GitHub — si je n'ai jamais utilisé Git ou si je n'ai pas de compte GitHub
+4. Autre chose — ajouter un composant, modifier le design, mettre à jour la landing page, etc.
 
 Pose-moi les questions une par une pour collecter les informations nécessaires. Ne suppose jamais les données du diagnostic, demande-moi toujours de les fournir ou de les confirmer.
 ```
@@ -119,16 +144,29 @@ Cela garantit que la bibliothèque de composants reste à jour et réutilisable.
    ↓
 3. Claude clone le repo et lit la documentation
    ↓
-4. Réponds aux questions de Claude
+4. Claude crée une branche de travail (jamais direct sur main)
    ↓
-5. Claude crée/modifie les fichiers
+5. Réponds aux questions de Claude (nom client, données, etc.)
    ↓
-6. Vérifie dans le navigateur (Claude le fait aussi)
+6. Claude crée les fichiers, commit régulièrement
    ↓
-7. Claude pousse sur GitHub → Vercel déploie automatiquement
+7. Vérifie dans le navigateur — ouvre le fichier HTML
    ↓
-8. Ton diagnostic est en ligne ! 🎉
+8. Si tout est bon, Claude pousse la branche et merge dans main
+   ↓
+9. Vercel déploie automatiquement (~1 minute)
+   ↓
+10. Ton diagnostic est en ligne sur https://diag-ia.hubvisory.app/<slug> ! 🎉
 ```
+
+## 🛠️ Problèmes courants
+
+| Problème | Solution |
+|----------|----------|
+| Page blanche | Erreur dans `data.js` — Claude te guide pour corriger |
+| Graphiques absents | Format de données incorrect — vérifie avec Claude |
+| "Permission denied" au push | Lance `gh repo fork --remote` pour configurer ton fork |
+| La page ne se met pas à jour | Vérifie que tu as bien merge dans `main` |
 
 ## 📞 Besoin d'aide ?
 
@@ -136,6 +174,7 @@ Cela garantit que la bibliothèque de composants reste à jour et réutilisable.
 - **Besoin de connaître les clients existants ?** Lis `REGISTRY.md`
 - **Besoin de voir tous les composants ?** Ouvre `components/index.html` dans un navigateur
 - **Besoin de modifier un diagnostic ?** Demande à Claude avec ce prompt
+- **Pas de compte GitHub ?** Choisis l'option 3 dans le prompt, Claude te guide
 
 ---
 

@@ -6,14 +6,24 @@
       "Edit",
       "Glob",
       "Grep",
-      "Bash(npm run dev)",
-      "Bash(npm run build)",
-      "Bash(npm run lint)",
-      "Bash(npm run type-check)",
-      "Bash(npx next dev*)",
       "Bash(ls *)",
       "Bash(cat *)",
-      "Bash(mkdir *)"
+      "Bash(mkdir *)",
+      "Bash(cp *)",
+      "Bash(open *)",
+      "Bash(git status*)",
+      "Bash(git branch*)",
+      "Bash(git checkout*)",
+      "Bash(git switch*)",
+      "Bash(git add *)",
+      "Bash(git commit*)",
+      "Bash(git push*)",
+      "Bash(git pull*)",
+      "Bash(git merge*)",
+      "Bash(git log*)",
+      "Bash(git diff*)",
+      "Bash(git stash*)",
+      "Bash(npx serve*)"
     ]
   }
 }

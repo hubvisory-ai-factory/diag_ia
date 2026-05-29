@@ -2,7 +2,9 @@
 
 ## Purpose
 
-This repo hosts all client-facing AI diagnostic websites for Hubvisory's consulting practice. Each client engagement produces a rich, interactive website deployed at `<domain>/<client-slug>` on Vercel. Consultants add new client cases by having a guided conversation with Claude Code — no frontend experience required.
+This repo hosts all client-facing AI diagnostic websites for Hubvisory's consulting practice. Each client engagement produces a rich, interactive website deployed at `https://diag-ia.hubvisory.app/<client-slug>`. Consultants add new client cases by having a guided conversation with Claude Code — no frontend experience required.
+
+**Live site**: https://diag-ia.hubvisory.app/
 
 **Delivery pipeline**: Diagnostic engagement -> PDF + PowerPoint + **this website**
 
@@ -30,6 +32,7 @@ diag_ia/
 │   ├── settings.json
 │   └── skills/
 │       ├── add-client.md            # Guided workflow to add a new client case
+│       ├── git-setup.md             # Git & GitHub setup for beginners
 │       └── frontend-design.md       # Design system for executive audience
 ├── _template/
 │   ├── index.html                   # Rendering engine + HTML structure (copy this for new clients)
@@ -238,10 +241,75 @@ git push origin main    # Vercel auto-deploys
 
 ## Deployment
 
+- **Live URL**: https://diag-ia.hubvisory.app/
 - **Vercel project**: Static site (no build command needed)
-- **Deploy trigger**: Push to `main`
+- **Deploy trigger**: Push to `main` — auto-deploys within ~1 minute
 - **Routing**: `vercel.json` rewrites `/<slug>` -> `/clients/<slug>/index.html`
-- **Domain**: TBD — will be `<something>.vercel.app` initially, then custom domain
+
+### GitHub Account Required (No Special Access Needed)
+
+To publish changes, consultants need a free GitHub account. **No collaborator access required** — the repo uses a fork & Pull Request workflow.
+
+**How it works:**
+1. Fork the repo to your own GitHub account
+2. Push changes to your fork
+3. Open a Pull Request — Gaspard is auto-notified via CODEOWNERS
+4. Once merged, Vercel deploys automatically
+
+**If you don't have a GitHub account**: Use the `git-setup` skill — it walks through:
+1. Installing Git (if needed)
+2. Creating a GitHub account (free, 2 minutes)
+3. Configuring authentication
+4. Forking and cloning the repo
+
+Without a GitHub account, you can still create pages locally, but someone else will need to push for you.
+
+## Git Workflow
+
+**Always use branches** — never commit directly to `main`.
+
+### Starting Work
+```bash
+git checkout -b client/<slug>    # New client
+git checkout -b fix/<what>       # Bug fix
+git checkout -b feat/<what>      # New feature
+```
+
+### During Work
+Commit frequently — after each major step:
+```bash
+git add .
+git commit -m "wip(client): <slug> — add metrics section"
+```
+
+### When Done
+1. Consultant verifies locally in browser
+2. Final commit
+3. Push branch to fork: `git push -u origin client/<slug>`
+4. Create Pull Request: `gh pr create`
+5. Gaspard is auto-notified, reviews, and merges
+6. Vercel auto-deploys `main` within ~1 minute
+
+## Removing Sections
+
+If a client doesn't need certain sections:
+
+1. **In `index.html`**: Delete the `<section>` block and any associated nav pill
+2. **In `data.js`**: Remove the data object or set it to an empty array
+
+The rendering engine handles missing data gracefully. See `.claude/skills/add-client.md` for details.
+
+## Troubleshooting
+
+Common issues and solutions (full details in `.claude/skills/add-client.md`):
+
+| Problem | Likely Cause | Fix |
+|---------|--------------|-----|
+| Blank page | Syntax error in `data.js` | Check browser console (F12), fix JS syntax |
+| Charts don't render | Wrong data format | Radar needs 6 axes, scores must be numbers |
+| Nav pills don't filter | `idMetier` mismatch | Same ID in `perimetre`, `useCasesList`, `heatmapMatrix` |
+| 404 on live site | Wrong `<base href>` | Must be `/clients/<slug>/` with trailing slash |
+| Can't push | Wrong remote or not forked | Run `gh repo fork --remote` to set up fork |
 
 ## Current Status
 
@@ -254,8 +322,6 @@ git push origin main    # Vercel auto-deploys
 - [x] Layout: Sticky nav, section routing, responsive grid, print-friendly
 - [x] Landing page (`index.html`) with client card grid
 - [x] First real client case (Clovis — `clients/clovis/`)
-- [x] Vercel config (`vercel.json` with slug rewrites)
+- [x] Vercel deployed at https://diag-ia.hubvisory.app/
 - [x] Component library: 25 snippet files + visual showcase (`components/index.html`)
-- [x] Add-client skill with full `CLIENT_DATA` field reference
-- [ ] Vercel project setup and domain configuration
-- [ ] End-to-end test of the consultant workflow
+- [x] Add-client skill with full workflow, git guidance, and troubleshooting
