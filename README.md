@@ -4,51 +4,28 @@ Bienvenue ! Ce projet permet aux consultants de créer des sites de diagnostic I
 
 ## 🚀 Démarrage rapide
 
-### 1. Cloner le repo
-
-```bash
-git clone https://github.com/hubvisory-ai-factory/diag_ia.git
-cd diag_ia
-```
-
-### 2. Ouvrir dans Claude Code Desktop
-
-Ouvrez Claude Code Desktop dans le dossier du projet. Puis **copiez-collez ce prompt** pour commencer :
+**Tu n'as pas besoin d'ouvrir un terminal.** Ouvre Claude Code Desktop, puis copie-colle le prompt ci-dessous. Claude s'occupe de tout : cloner le repo, lire la doc, et te guider.
 
 ---
 
-## 📋 Prompt pour Claude Code Desktop
+## 📋 Prompt à copier-coller dans Claude Code Desktop
 
 ```
-Tu es un assistant pour créer et modifier des pages de diagnostic IA client.
+Ce projet est le portail de diagnostics IA d'Hubvisory. Il permet de créer des sites web interactifs pour présenter les résultats de diagnostics IA réalisés pour des clients.
 
-Contexte : ce repo Diag IA héberge des sites de diagnostic interactifs pour les clients Hubvisory. Chaque diagnostic est une page HTML auto-contenue avec des données client.
+Pour commencer, clone le repo depuis GitHub :
 
-Avant toute chose, lis le fichier CLAUDE.md et REGISTRY.md pour comprendre la structure du projet et les conventions.
+git clone https://github.com/hubvisory-ai-factory/diag_ia.git
 
-Ensuite, pose-moi ces questions pour déterminer ce que tu dois faire :
+Ensuite, place-toi dans le dossier diag_ia/ et lis attentivement le fichier CLAUDE.md ainsi que REGISTRY.md pour comprendre la structure du projet, les conventions, et les clients existants.
 
-1. Veux-tu **ajouter un nouveau diagnostic client** (nouveau dossier, nouvelle page) ou **modifier un diagnostic existant** ?
+Une fois que tu as compris le projet, demande-moi ce que je souhaite faire :
 
-2. Si tu ajoutes un nouveau diagnostic :
-   - Quel est le nom du client (ex: "Acme Corp") ?
-   - Quel est le slug client en minuscules (ex: "acme-corp") ?
-   - Peux-tu fournir ou me donner accès au diagnostic (PDF, PowerPoint, Excel, ou lien) ?
-   - Quel est le logo du client (image URL ou fichier à télécharger) ?
+1. Ajouter un nouveau diagnostic client — créer un nouveau rapport complet pour un client
+2. Modifier un rapport existant — mettre à jour ou corriger un diagnostic déjà en place
+3. Autre chose — ajouter un composant, modifier le design, mettre à jour la landing page, etc.
 
-3. Si tu modifies un diagnostic existant :
-   - Quel client veux-tu modifier (ex: "Clovis") ?
-   - Qu'est-ce qui doit changer (design, données, nouvelles sections) ?
-
-Après tes réponses, je vais :
-- Lire les fichiers nécessaires (templates, composants existants)
-- Extraire et structurer les données du diagnostic
-- Créer/modifier les fichiers HTML et JavaScript
-- Ajouter un lien vers la page d'accueil si c'est un nouveau client
-- Vérifier que tout fonctionne en ouvrant la page dans un navigateur
-- Expliquer les changements
-
-Questions ?
+Pose-moi les questions une par une pour collecter les informations nécessaires. Ne suppose jamais les données du diagnostic, demande-moi toujours de les fournir ou de les confirmer.
 ```
 
 ---
@@ -136,11 +113,11 @@ Cela garantit que la bibliothèque de composants reste à jour et réutilisable.
 ## 🚀 Workflow complet
 
 ```
-1. Clone le repo
+1. Ouvre Claude Code Desktop
    ↓
-2. Ouvre dans Claude Code Desktop
+2. Colle le prompt ci-dessus
    ↓
-3. Colle le prompt ci-dessus
+3. Claude clone le repo et lit la documentation
    ↓
 4. Réponds aux questions de Claude
    ↓
@@ -148,7 +125,7 @@ Cela garantit que la bibliothèque de composants reste à jour et réutilisable.
    ↓
 6. Vérifie dans le navigateur (Claude le fait aussi)
    ↓
-7. git push → Vercel déploie automatiquement
+7. Claude pousse sur GitHub → Vercel déploie automatiquement
    ↓
 8. Ton diagnostic est en ligne ! 🎉
 ```
