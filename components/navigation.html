@@ -121,10 +121,61 @@ function initNavigation(theme) {
   navigateTo('view-dashboard');
 }
 
-// ---- PRINT ----
+// ---- PRINT / PDF EXPORT ----
+// The export button just calls window.print() against a print stylesheet.
+// Before printing, expand everything so nothing is clipped in the PDF:
+//  - re-fit Chart.js canvases to the (reflowed) print width
+//  - inline each "click to expand" modal detail as a hidden-on-screen block
+//  - clear catalogue filters and open glossary accordions
+// All steps are guarded, so this is safe even on pages without those features.
+function resizeChartsForPrint() {
+  if (typeof Chart === 'undefined' || typeof Chart.getChart !== 'function') return;
+  document.querySelectorAll('canvas').forEach(cv => {
+    const chart = Chart.getChart(cv);
+    if (!chart) return;
+    try { chart.options.animation = false; chart.resize(); } catch (e) {}
+  });
+}
+
+function expandDetailsForPrint() {
+  if (typeof window.openModal !== 'function') return;
+  const cards = document.querySelectorAll('.clickable-card');
+  if (!cards.length) return;
+  const realOpen = window.openModal;
+  cards.forEach(card => {
+    if (card.querySelector(':scope > .print-detail')) return;
+    let captured = null;
+    window.openModal = (html) => { captured = html; };
+    try { card.click(); } catch (e) {}
+    if (captured != null) {
+      const wrap = document.createElement('div');
+      wrap.className = 'print-detail';
+      wrap.innerHTML = captured;
+      card.appendChild(wrap);
+    }
+  });
+  window.openModal = realOpen;
+  if (typeof closeModal === 'function') closeModal();
+}
+
+function preparePrintLayout() {
+  document.querySelectorAll('.cat-filter[data-filter="all"]').forEach(b => b.click());
+  document.querySelectorAll('.glossary-def').forEach(d => d.classList.add('open'));
+  expandDetailsForPrint();
+  resizeChartsForPrint();
+}
+
 function initPrint() {
   const btn = document.getElementById('btn-print');
-  if (btn) btn.addEventListener('click', () => window.print());
+  if (btn) btn.addEventListener('click', () => { preparePrintLayout(); window.print(); });
+  window.addEventListener('beforeprint', preparePrintLayout);
+  window.addEventListener('afterprint', resizeChartsForPrint);
+  if (window.matchMedia) {
+    const mq = window.matchMedia('print');
+    const onChange = () => { if (mq.matches) preparePrintLayout(); resizeChartsForPrint(); };
+    if (mq.addEventListener) mq.addEventListener('change', onChange);
+    else if (mq.addListener) mq.addListener(onChange);
+  }
 }
 
 // ---- USAGE ----
