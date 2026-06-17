@@ -1,2 +1,6 @@
 node_modules/
 .DS_Store
+
+# Confidential client source materials (decks, PDFs, exports) — never commit/deploy.
+# Keep them locally per client for reference during the build.
+clients/*/_sources/

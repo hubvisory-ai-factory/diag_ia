@@ -67,7 +67,7 @@ Quand tu dis « je veux ajouter un nouveau client », Claude va :
    - `data.js` — les données du diagnostic (le seul fichier que Claude écrit)
    - `assets/` — le logo du client
 3. Ajouter une carte sur la page d'accueil (`index.html`)
-4. Lancer un serveur local (`npx serve`) et ouvrir le navigateur automatiquement
+4. Lancer un serveur local depuis la **racine** (`npx serve`) et ouvrir `http://localhost:3000/clients/<slug>/`
 5. Prêt à pousser sur GitHub → Vercel déploie automatiquement
 
 ### ✏️ Modifier un diagnostic existant
@@ -150,7 +150,7 @@ Cela garantit que la bibliothèque de composants reste à jour et réutilisable.
    ↓
 6. Claude crée les fichiers, commit régulièrement
    ↓
-7. Vérifie dans le navigateur — Claude lance `npx serve` pour toi
+7. Vérifie dans le navigateur — Claude lance `npx serve` (depuis la racine) et te donne l'URL `/clients/<slug>/`
    ↓
 8. Si tout est bon, Claude pousse la branche et merge dans main
    ↓

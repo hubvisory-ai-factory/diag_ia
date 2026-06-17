@@ -91,13 +91,51 @@ git commit -m "wip(client): <slug> — identity collected"
 
 ## Phase 2: Source Materials
 
-Ask the consultant how they want to provide the diagnostic data:
+**Gather as much as possible UP FRONT, before writing anything.** The single biggest
+time sink is discovering the data shape, the scoring method, and source discrepancies
+mid-build. Front-load it instead.
 
-- **Option A: Provide source files** — PDF report, PowerPoint deck, Excel sheets. Claude extracts and structures the data.
-- **Option B: Walk through section by section** — Claude asks for each section's data interactively. Best if consultant only has verbal notes or scattered information.
-- **Option C: Provide a pre-filled JSON** — If the consultant already has structured data matching the CLIENT_DATA format.
+### Collect every source into the client folder
+Create a `clients/<slug>/_sources/` folder (git-ignored or kept — your call) and a
+**`clients/<slug>/context.md`** that captures, in one place:
+- The **restitution deck / report** (PDF, PPTX) — drop the file in `_sources/`.
+- **Notion** database/page URLs (and which DB holds what).
+- The **call transcript / Slack recap** describing the desired page (what stays, what
+  changes, what to remove).
+- The **scoring method** used for this mission and its exact definition (see below).
+- Branding (logo, colors), périmètre, respondents, period.
 
-For Option A: ask them to place files in the project directory or paste content, extract all data points, present a summary for confirmation.
+This `context.md` is the brief Claude works from and the audit trail for the post-mortem.
+
+### Sources & their authority (READ THIS)
+- **The diagnostic is NOT a fixed format.** Every mission differs: different analysis,
+  different scoring system, different solution/use-case structure. The `_template/` is
+  only an *example / catalogue of components* — never assume its sections or its
+  `CLIENT_DATA` shape match this mission. Derive the real shape from the sources.
+- **A restitution deck (PDF/PPT), if it exists, is the SOURCE OF TRUTH** for numbers,
+  scoring, and wording — over Notion, which is a living workspace and may contain
+  drafts, duplicates, or stale/inconsistent values. When Notion and the deck disagree,
+  trust the deck and surface the discrepancy to the consultant.
+- **Pin down the scoring method explicitly.** Don't infer it. Ask/confirm: which
+  criteria, what scale, and **is the score a sum or a product** of the criteria? (For
+  Clovis, VOTAC = the *product* of 5 criteria each rated 1–5 — a coincidental Notion
+  field made it look like a sum at first. Getting this wrong means redoing the catalogue.)
+- **Notion text is markdown.** Free-text fields (problème, besoins, irritants, objectif,
+  description, prérequis) contain `**bold**`, `•`/`-` bullets and line breaks, and
+  sometimes junk (a trailing model name, a duplicated heading). Always render them
+  through `formatRichText(...)` / `inlineMd(...)` (helpers ship in `_template/index.html`),
+  and strip obvious artifacts. Never inject raw Notion text into a single `<p>`.
+
+### How the consultant provides data
+- **Option A: Source files** — PDF report, PowerPoint, Excel. Place them in `_sources/`.
+- **Option B: Notion (MCP)** — connect the Notion MCP, then extract. For a large, linked
+  set (e.g. N use cases × M solutions across several DBs), use a **Workflow** to fan out
+  the page fetches in parallel and return compact structured JSON, instead of fetching
+  serially into the main context. Verify subagents can reach the Notion MCP first.
+- **Option C: Walk through section by section** — interactive, for scattered notes.
+- **Option D: Pre-filled JSON** matching the agreed `CLIENT_DATA` shape.
+
+Extract all data points, then present a summary for confirmation before writing files.
 
 ---
 
@@ -288,9 +326,9 @@ Then **Write** `clients/<slug>/data.js` with the complete CLIENT_DATA object. Th
 8. **If you need to add/remove sections** from the template's index.html for this client, reference `components/` snippets. Use the Edit tool for surgical changes — never rewrite the whole file. See "Removing Sections" below.
 9. **Update the landing page**: Add a client card to `index.html` in the grid (see below). Add the card at the **end of the grid** to minimize merge conflicts with other work.
 10. **Update `REGISTRY.md`** with the new client entry (template used, date, any structural changes)
-11. **Launch local preview** so the consultant can verify:
+11. **Launch local preview** so the consultant can verify (serve the REPO ROOT, then open the client path — see note below):
     ```bash
-    npx serve -o clients/<slug>
+    npx serve            # then open http://localhost:3000/clients/<slug>/
     ```
 
 **Commit after file generation:**
@@ -374,17 +412,38 @@ git commit -m "feat(client): <slug> — remove glossary section"
 Before pushing, the consultant MUST verify locally:
 
 ### Preview with Local Server
+
+**Serve the REPO ROOT, never the client subfolder.** Client pages use an absolute
+`<base href="/clients/<slug>/">`, so serving `clients/<slug>` directly makes `data.js`
+and `assets/` 404. Also: `serve@14` removed the `-o` (auto-open) flag.
+
 ```bash
-npx serve -o clients/<slug>
+npx serve                     # from the repo root, then open the URL below
+# or: python3 -m http.server 3000
 ```
 
-This command:
-- Requires no installation (npx downloads and runs it automatically)
-- Starts a local server in the client folder
-- Auto-opens the browser (`-o` flag)
-- Properly handles CSS/JS paths (no `file://` quirks)
+Then open **`http://localhost:3000/clients/<slug>/`** in the browser.
 
-The page will open at `http://localhost:3000/index.html`.
+### Verify the render yourself (headless, before asking the consultant)
+
+You can confirm the page actually renders (and catch JS/data errors) without a human:
+
+```bash
+# 1. Validate the data file
+node --check clients/<slug>/data.js
+
+# 2. Serve the root + screenshot / dump the rendered DOM with headless Chrome
+python3 -m http.server 8765 &
+"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless --disable-gpu \
+  --virtual-time-budget=8000 --window-size=1440,2400 \
+  --screenshot=/tmp/page.png "http://localhost:8765/clients/<slug>/index.html"
+# --dump-dom (instead of --screenshot) prints the rendered HTML — grep it to confirm
+# that JS-built sections (charts, cards, tabs) actually populated.
+```
+
+To screenshot a view that is hidden by default (e.g. a métier tab, or a modal), inject a
+tiny script into a throwaway copy that calls the relevant function on load
+(`navigateTo('view-...')`, or `.click()` a card), screenshot it, then delete the copy.
 
 ### Verification Checklist
 
@@ -446,6 +505,27 @@ Once the PR is merged:
 - The diagnostic goes live at `https://diag-ia.hubvisory.app/<slug>`
 
 The user doesn't need to do anything else — they'll see it live once Gaspard merges.
+
+---
+
+## Phase 7: Post-mortem & skill improvement (MANDATORY)
+
+This portal is meant to **get better after every use**. The friction you hit on this
+mission is the most valuable signal for the next one — capture it and act on it.
+
+1. **Log friction as you go.** While building, append to `clients/<slug>/context.md`
+   (a `## Frictions` section) every snag, surprise, or manual workaround: stale/wrong
+   docs, an undocumented data quirk, a scoring ambiguity, a source discrepancy, a
+   command that didn't work, a step that was painful. Don't rely on memory at the end.
+2. **At the very end, run a short post-mortem with the consultant:** what worked, what
+   was manual that shouldn't have been, what was missing from the skill/docs.
+3. **Improve the system immediately:** turn each recurring friction into a concrete fix —
+   update this skill, `CLAUDE.md`, `README.md`, the `components/` library or
+   `_template/`, or add a new skill/script. Small, durable edits.
+4. **Save a memory** for cross-session learnings (preferences, gotchas) so future runs
+   start ahead.
+
+Goal: the next consultant hits fewer surprises than you did.
 
 ---
 

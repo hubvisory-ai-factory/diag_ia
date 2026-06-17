@@ -107,6 +107,29 @@ See `.claude/skills/add-client.md` for the full guided workflow. In summary:
 11. Updates `REGISTRY.md` with the new client entry
 12. Flags any missing fields as `"TODO: provide X"` rather than inventing data
 
+## Continuous Improvement (mandatory post-mortem)
+
+This portal is designed to **get better after every use**. Treat each client engagement
+as both a delivery and a chance to sharpen the tooling.
+
+- **Gather context up front.** Before building, collect all sources (deck/PDF, Notion
+  links, transcript/recap, scoring definition, branding) into the client folder —
+  ideally `clients/<slug>/context.md` (+ a `_sources/` folder for files). Front-loading
+  this prevents most mid-build surprises. See the `add-client` skill, Phase 2.
+- **Log frictions while you work.** As problems surface (stale docs, data quirks,
+  scoring ambiguities, source discrepancies, broken commands, painful manual steps),
+  record them immediately in a `## Frictions` section of `clients/<slug>/context.md`.
+  Don't reconstruct from memory at the end.
+- **Run a post-mortem at the end of the engagement** (see `add-client` Phase 7) and
+  **apply the fixes right away**: update this `CLAUDE.md`, the `README.md`, the relevant
+  skill(s) in `.claude/skills/`, the `components/` library, `_template/`, or add a new
+  skill/script. Keep edits small and durable. Save cross-session learnings to memory.
+
+The `_template/` is only an **example/catalogue of components** — every mission has a
+different analysis, scoring system, and solution/use-case structure. Never assume the
+template's sections or `CLIENT_DATA` shape fit the mission; derive the real shape from
+the sources, and evolve the component library when a mission needs something new.
+
 ## Component Catalog
 
 Components in `components/` (HTML snippets Claude uses as reference when building pages):
@@ -228,11 +251,14 @@ All visual tokens live in `CLIENT_DATA.branding` and flow through `buildTheme()`
 No build step. Development workflow:
 
 ```bash
-# Preview a client page (auto-opens browser, no install required)
-npx serve -o clients/clovis
-
-# Preview the landing page
-npx serve -o .
+# Preview — ALWAYS serve the REPO ROOT, not a subfolder.
+# Each client page uses an absolute `<base href="/clients/<slug>/">`, so serving
+# `clients/<slug>` directly breaks data.js / assets (they 404). serve@14 also has
+# no `-o` flag. Serve the root and open the client path in your browser:
+npx serve                       # then open http://localhost:3000/clients/<slug>/
+# or, equivalently:
+python3 -m http.server 3000     # then open http://localhost:3000/clients/<slug>/
+# Landing page: http://localhost:3000/  · demo/template: /clients/exemple/
 
 # Deploy
 git push origin main    # Vercel auto-deploys
