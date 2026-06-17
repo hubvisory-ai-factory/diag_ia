@@ -60,16 +60,22 @@
     body { opacity: 0; transition: opacity 0.2s; }
     body.loaded { opacity: 1; }
 
-    /* Print */
+    /* Print / PDF export */
+    .print-detail { display: none; }
     @media print {
       [data-view] { display: block !important; }
       [data-print="hide"] { display: none !important; }
       header { position: static !important; }
       [data-view] { page-break-before: always; }
       [data-view]:first-child { page-break-before: auto; }
-      section { page-break-inside: avoid; }
       body { background: white !important; }
       canvas { max-width: 100% !important; }
+      /* Reveal content that is collapsed/hidden on screen so nothing is clipped */
+      .glossary-def { max-height: none !important; overflow: visible !important; }
+      .meth-panel { display: block !important; }
+      .print-detail { display: block !important; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border); }
+      /* Keep small cards whole; let tall sections flow to avoid big blank gaps */
+      .clickable-card, .glossary-def, #risks-list > *, #roadmap-grid > *, #principes-grid > * { page-break-inside: avoid; }
     }
 
     /* Scrollbar */
@@ -1220,9 +1226,63 @@ function initMethodologyTabs() {
 // ═══════════════════════════════════════════════
 // PRINT
 // ═══════════════════════════════════════════════
+// Re-fit every Chart.js canvas to its current container. Charts render to the
+// container size at creation time; on print the page reflows (hidden views are
+// revealed, width changes) so without this they print stretched/squished.
+function resizeChartsForPrint() {
+  if (typeof Chart === 'undefined' || typeof Chart.getChart !== 'function') return;
+  document.querySelectorAll('canvas').forEach(cv => {
+    const chart = Chart.getChart(cv);
+    if (!chart) return;
+    try { chart.options.animation = false; chart.resize(); } catch (e) {}
+  });
+}
+
+// "Click to expand" details live in a modal that is hidden in print and only
+// populated on click. Inline each card's detail as a hidden block inside the
+// card (display:none on screen, shown in print) so the detail prints.
+function expandDetailsForPrint() {
+  if (typeof window.openModal !== 'function') return;
+  const cards = document.querySelectorAll('.clickable-card');
+  if (!cards.length) return;
+  const realOpen = window.openModal;
+  cards.forEach(card => {
+    if (card.querySelector(':scope > .print-detail')) return; // already expanded
+    let captured = null;
+    window.openModal = (html) => { captured = html; };
+    try { card.click(); } catch (e) {}
+    if (captured != null) {
+      const wrap = document.createElement('div');
+      wrap.className = 'print-detail';
+      wrap.innerHTML = captured;
+      card.appendChild(wrap);
+    }
+  });
+  window.openModal = realOpen;
+  if (typeof closeModal === 'function') closeModal();
+}
+
+// Put the page into a fully-expanded state before printing. Idempotent and
+// degrades gracefully when a given client page lacks catalogue/glossary/modals.
+function preparePrintLayout() {
+  document.querySelectorAll('.cat-filter[data-filter="all"]').forEach(b => b.click());
+  document.querySelectorAll('.glossary-def').forEach(d => d.classList.add('open'));
+  expandDetailsForPrint();
+  resizeChartsForPrint();
+}
+
 function initPrint() {
   const btn = document.getElementById('btn-print');
-  if (btn) btn.addEventListener('click', () => window.print());
+  if (btn) btn.addEventListener('click', () => { preparePrintLayout(); window.print(); });
+  // Also cover the browser's native print (Cmd/Ctrl+P) across engines.
+  window.addEventListener('beforeprint', preparePrintLayout);
+  window.addEventListener('afterprint', resizeChartsForPrint);
+  if (window.matchMedia) {
+    const mq = window.matchMedia('print');
+    const onChange = () => { if (mq.matches) preparePrintLayout(); resizeChartsForPrint(); };
+    if (mq.addEventListener) mq.addEventListener('change', onChange);
+    else if (mq.addListener) mq.addListener(onChange);
+  }
 }
 
 // ═══════════════════════════════════════════════
