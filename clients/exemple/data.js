@@ -1,8 +1,8 @@
 const CLIENT_DATA = {
   branding: {
-    slug: "clovis",
-    clientName: "Clovis",
-    clientFullName: "Clovis",
+    slug: "exemple",
+    clientName: "Exemple (template)",
+    clientFullName: "Diagnostic IA — template d'exemple",
     sector: "Location & gestion de flottes Poids Lourds / VUL",
     missionCode: "CLV-IA-2026",
     missionTitle: "Audit de maturité IA",
