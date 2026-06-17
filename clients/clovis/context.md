@@ -36,6 +36,7 @@ Retirés : Shadow IA, heatmap, métriques d'usage, scatter, gouvernance approfon
 - **Commande preview cassée** — `npx serve -o clients/<slug>` (serve@14 sans `-o`, et `<base href>` absolu casse le sous-dossier). → corrigé partout : servir la racine, ouvrir `/clients/<slug>/`.
 - **Texte Notion = markdown/puces/retours ligne** (+ artefact « Sonnet 4.6 Medium ») rendu brut dans la modale. → `formatRichText` ajouté au moteur et au `_template`.
 - **Ids solutions dupliqués** (SN10.x ×3) → désambiguïsés `-CU4/-CU8/-CU9`.
+- **Markdown `**` orphelin** (CU-12 besoins : `**Orchestration…` et `• **Envoyer…` sans `**` fermant) rendu littéralement. → renderer robustifié (strip des `**` orphelins, heading tolérant) + **`scripts/validate-data.js`** ajouté au workflow (détecte le `**` déséquilibré par ligne, artefacts, ids/VOTAC).
 
 ## TODO restants (données réelles à fournir)
 Valeurs radar à confirmer (provisoire 4/2/2/3/2) · nb répondants · registre de risques ·

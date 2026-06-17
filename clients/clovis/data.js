@@ -284,14 +284,14 @@ Préparer le dossier comité :
     // TODO lien solutions
     { id: "CU-12", titre: "Simplifier la prise de rdv tri-partite", idMetiers: ["assistante_gp"], grandTheme: "Communication & flux entrants", grandThemeEmoji: "📧", problemeMetier: `Chaque prise de rendez-vous pour une intervention sur véhicule VT4 implique trois parties : le régiment (disponibilité du véhicule et du conducteur), la concession (créneau atelier disponible) et Clovis (coordination et ouverture de la visite dans Zadig). Aujourd'hui, cette coordination est entièrement manuelle et séquentielle, sans outil partagé.
 
-Le process à date: recevoir la demande du militaire par mail, contacter la concession par mail pour obtenir une date de RDV, attendre la réponse, transmettre la date au régiment pour validation, attendre la confirmation du régiment, puis créer la visite dans Zadig en remplissant manuellement l'ensemble des champs (immatriculation, kilométrage, qualifications, travaux à effectuer, opérations de maintenance prévisionnelles). Chaque visite nécessite un minimum de 3 échanges, et souvent davantage car les régiments répondent avec des délais longs ("dispo dans un mois", "pas de dispo") ou ne répondent pas du tout, obligeant à relancer.`, besoins: `**Orchestration automatique des visites VT4
+Le process à date: recevoir la demande du militaire par mail, contacter la concession par mail pour obtenir une date de RDV, attendre la réponse, transmettre la date au régiment pour validation, attendre la confirmation du régiment, puis créer la visite dans Zadig en remplissant manuellement l'ensemble des champs (immatriculation, kilométrage, qualifications, travaux à effectuer, opérations de maintenance prévisionnelles). Chaque visite nécessite un minimum de 3 échanges, et souvent davantage car les régiments répondent avec des délais longs ("dispo dans un mois", "pas de dispo") ou ne répondent pas du tout, obligeant à relancer.`, besoins: `**Orchestration automatique des visites VT4**
 
-  • **Envoyer automatiquement les demandes de disponibilité à chaque régiment concerné (10+) sans envoi manuel un par un
+  • Envoyer automatiquement les demandes de disponibilité à chaque régiment concerné (10+) sans envoi manuel un par un
   • Suivre les réponses reçues et relancer automatiquement les régiments sans réponse après un délai défini (adhérence autre cas d'usage)
   • Une fois la disponibilité régiment confirmée, envoyer automatiquement la demande de créneau à la concession correspondante
   • Consolider les réponses des concessions et mettre à jour la matrice sans ressaisie manuelle
 
-**Pré-remplissage automatique des visites dans Zadig **
+**Pré-remplissage automatique des visites dans Zadig**
 
   • Une fois le RDV confirmé par les deux parties, pré-remplir automatiquement les champs de création de visite dans Zadig à partir des informations déjà disponibles : immatriculation, régiment, type d'intervention, date confirmée, concession, opérations de maintenance prévisionnelles associées
   • Soumettre à validation (et complément) à l'AGP avant enregistrement définitif`, irritants: [

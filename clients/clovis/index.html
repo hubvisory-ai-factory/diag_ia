@@ -1149,7 +1149,9 @@ function escapeHtml(s) {
   return String(s == null ? '' : s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 }
 function inlineMd(s) {
-  return escapeHtml(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  return escapeHtml(s)
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>') // balanced bold
+    .replace(/\*\*/g, '');                            // drop stray/unbalanced markers
 }
 function formatRichText(raw, mutedColor) {
   if (!raw) return '';
@@ -1165,9 +1167,9 @@ function formatRichText(raw, mutedColor) {
       return;
     }
     closeList();
-    const heading = /^\*\*(.+?)\*\*:?$/.exec(t);
-    if (heading) {
-      html += `<p class="text-sm font-semibold mt-3 mb-1" style="color: var(--ink);">${escapeHtml(heading[1])}</p>`;
+    if (/^\*\*/.test(t)) { // heading line — tolerate missing/extra closing **
+      const txt = t.replace(/^\*\*+\s*/, '').replace(/\s*\*\*+:?$/, '');
+      html += `<p class="text-sm font-semibold mt-3 mb-1" style="color: var(--ink);">${inlineMd(txt)}</p>`;
     } else {
       html += `<p class="text-sm leading-relaxed mb-2" style="color: ${mutedColor || 'var(--muted)'};">${inlineMd(t)}</p>`;
     }

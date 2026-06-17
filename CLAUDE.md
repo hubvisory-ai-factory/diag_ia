@@ -251,6 +251,11 @@ All visual tokens live in `CLIENT_DATA.branding` and flow through `buildTheme()`
 No build step. Development workflow:
 
 ```bash
+# Validate a client's data BEFORE preview/commit/deploy (run after editing data.js):
+#   syntax + content lint — malformed markdown (** orphans), leaked artifacts,
+#   unknown ids, VOTAC total != product. Exits non-zero on errors.
+node --check clients/<slug>/data.js && node scripts/validate-data.js clients/<slug>/data.js
+
 # Preview — ALWAYS serve the REPO ROOT, not a subfolder.
 # Each client page uses an absolute `<base href="/clients/<slug>/">`, so serving
 # `clients/<slug>` directly breaks data.js / assets (they 404). serve@14 also has

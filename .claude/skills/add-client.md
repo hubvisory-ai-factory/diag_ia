@@ -429,8 +429,10 @@ Then open **`http://localhost:3000/clients/<slug>/`** in the browser.
 You can confirm the page actually renders (and catch JS/data errors) without a human:
 
 ```bash
-# 1. Validate the data file
+# 1. Validate the data file: JS syntax + content lint (malformed markdown / **
+#    orphans, leaked artifacts, unknown ids, VOTAC total != product). MUST pass.
 node --check clients/<slug>/data.js
+node scripts/validate-data.js clients/<slug>/data.js
 
 # 2. Serve the root + screenshot / dump the rendered DOM with headless Chrome
 python3 -m http.server 8765 &
