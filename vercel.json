@@ -1,4 +1,9 @@
 {
+  "redirects": [
+    { "source": "/clients/:slug/index.html", "destination": "/:slug", "permanent": true },
+    { "source": "/clients/:slug", "destination": "/:slug", "permanent": true },
+    { "source": "/clients/:slug/", "destination": "/:slug", "permanent": true }
+  ],
   "rewrites": [
     { "source": "/:slug", "destination": "/clients/:slug/index.html" }
   ]
