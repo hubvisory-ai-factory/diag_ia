@@ -300,8 +300,7 @@ Le process à date: recevoir la demande du militaire par mail, contacter la conc
   • Réduire le temps de traitement par prise de RDV 
   • Réduire le délais de réponse des concessions et clients`, solutionsRefs: [], votac: { total: 13 } },
     // TODO confirmer métier
-    { id: "CU-13", titre: "Pilotage activités des collaborateurs Plateforme", idMetiers: ["organisation"], grandTheme: "", grandThemeEmoji: "", problemeMetier: `**Problème métier**
-Les collaborateurs de la plateforme n'ont aucune visibilité sur l'impact concret de leur travail au quotidien : les données existent dans Zadig et le BI, mais elles sont agrégées au niveau équipe ou marché, jamais restituées à l'échelle individuelle. Sans retour sur leur propre activité, les opérationnels peinent à se situer, à se fixer des repères et à maintenir leur engagement dans la durée.`, besoins: `**Consolidation et calcul des indicateurs individuels**
+    { id: "CU-13", titre: "Pilotage activités des collaborateurs Plateforme", idMetiers: ["organisation"], grandTheme: "", grandThemeEmoji: "", problemeMetier: `Les collaborateurs de la plateforme n'ont aucune visibilité sur l'impact concret de leur travail au quotidien : les données existent dans Zadig et le BI, mais elles sont agrégées au niveau équipe ou marché, jamais restituées à l'échelle individuelle. Sans retour sur leur propre activité, les opérationnels peinent à se situer, à se fixer des repères et à maintenir leur engagement dans la durée.`, besoins: `**Consolidation et calcul des indicateurs individuels**
 Croiser automatiquement les données Zadig et BI pour calculer les indicateurs clés par collaborateur : visites clôturées, CA généré sur son périmètre, RDV planifiés vs réalisés, taux de conformité réglementaire, documents traités
 Actualiser les indicateurs à une fréquence définie (quotidienne ou hebdomadaire) sans action manuelle
 Définir le périmètre de chaque collaborateur (bases, véhicules, marchés affectés) comme filtre de référence pour les calculs
@@ -321,9 +320,7 @@ Mettre en avant les performances notables (top clôtures de la semaine, zéro re
 Les indicateurs individuels sont-ils calculables depuis Zadig tel qu'il est aujourd'hui, ou faut-il un travail de nettoyage/structuration de la donnée en amont ?
 Le périmètre de chaque collaborateur est-il formalisé dans Zadig (affectation bases / véhicules) ou reconstruit manuellement aujourd'hui ?
 Quel est le niveau d'appétence de l'équipe pour la comparaison entre pairs — à valider avec Florent avant de concevoir la couche N3 ?
-Des ajustements sur les indicateurs ou le niveau de détail des besoins ?
-
-Sonnet 4.6 Medium`, irritants: [], chiffresCles: ``, metricsSucces: ``, solutionsRefs: [
+Des ajustements sur les indicateurs ou le niveau de détail des besoins ?`, irritants: [], chiffresCles: ``, metricsSucces: ``, solutionsRefs: [
         { fonctionnalite: "Dashboard impact collaborateur", produitId: "dashboard_pilotage" }
       ], votac: { total: null } },
     // TODO lien solutions

@@ -1082,6 +1082,38 @@ function buildMetierViews(theme) {
   });
 }
 
+// Rich-text helpers: render Notion-style markdown (**bold**, • / - bullets, line breaks)
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+}
+function inlineMd(s) {
+  return escapeHtml(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+}
+function formatRichText(raw, mutedColor) {
+  if (!raw) return '';
+  const lines = String(raw).split(/\r?\n/);
+  let html = '', listOpen = false;
+  const closeList = () => { if (listOpen) { html += '</ul>'; listOpen = false; } };
+  lines.forEach(line => {
+    const t = line.trim();
+    if (!t) { closeList(); return; }
+    if (/^[•\-–*]\s+/.test(t)) {
+      if (!listOpen) { html += '<ul class="list-disc pl-5 space-y-1 mb-2">'; listOpen = true; }
+      html += `<li>${inlineMd(t.replace(/^[•\-–*]\s+/, ''))}</li>`;
+      return;
+    }
+    closeList();
+    const heading = /^\*\*(.+?)\*\*:?$/.exec(t);
+    if (heading) {
+      html += `<p class="text-sm font-semibold mt-3 mb-1" style="color: var(--ink);">${escapeHtml(heading[1])}</p>`;
+    } else {
+      html += `<p class="text-sm leading-relaxed mb-2" style="color: ${mutedColor || 'var(--muted)'};">${inlineMd(t)}</p>`;
+    }
+  });
+  closeList();
+  return html;
+}
+
 function openUseCaseModal(uc, theme) {
   if (!uc) return;
   const produitMap = getProduitMap();
@@ -1092,18 +1124,18 @@ function openUseCaseModal(uc, theme) {
         <ul class="space-y-1.5">
           ${uc.irritants.map(it => `<li class="flex items-start gap-2">
             <span class="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0" style="background: var(--accent);"></span>
-            <span class="text-sm" style="color: var(--muted);">${it}</span>
+            <span class="text-sm" style="color: var(--muted);">${inlineMd(it)}</span>
           </li>`).join('')}
         </ul>
       </div>`
     : '';
 
   const probleme = uc.problemeMetier
-    ? `<div class="mb-5"><p class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--muted);">Problème métier</p><p class="text-sm leading-relaxed" style="color: var(--ink);">${uc.problemeMetier}</p></div>`
+    ? `<div class="mb-5"><p class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--muted);">Problème métier</p>${formatRichText(uc.problemeMetier, 'var(--ink)')}</div>`
     : '';
 
   const besoins = uc.besoins
-    ? `<div class="mb-5"><p class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--muted);">Besoins</p><p class="text-sm leading-relaxed" style="color: var(--muted);">${uc.besoins}</p></div>`
+    ? `<div class="mb-5"><p class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--muted);">Besoins</p>${formatRichText(uc.besoins, 'var(--muted)')}</div>`
     : '';
 
   // Solutions associées groupées par produit
