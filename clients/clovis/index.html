@@ -1517,6 +1517,18 @@ function openCatalogueModal(s, theme) {
       </div>`
     : '';
 
+  const prereqs = (s.prerequis && s.prerequis.length)
+    ? `<div class="mb-2">
+        <p class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--muted);">Prérequis</p>
+        <ul class="space-y-1.5">
+          ${s.prerequis.map(p => `<li class="flex items-start gap-2">
+            <span class="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0" style="background: var(--muted-soft);"></span>
+            <span class="text-sm" style="color: var(--muted);">${p}</span>
+          </li>`).join('')}
+        </ul>
+      </div>`
+    : '';
+
   const html = `
     <div class="flex items-start justify-between gap-3 mb-4 pr-8">
       <div>
@@ -1529,6 +1541,7 @@ function openCatalogueModal(s, theme) {
     ${s.description ? `<div class="mb-5"><p class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--muted);">Description</p><p class="text-sm leading-relaxed" style="color: var(--muted);">${s.description}</p></div>` : ''}
     ${votacRows}
     ${outils}
+    ${prereqs}
   `;
   openModal(html);
 }
