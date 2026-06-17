@@ -351,20 +351,89 @@ Des ajustements sur les indicateurs ou le niveau de détail des besoins ?`, irri
   ],
   methodologie: {
     introTitle: "Guide méthodologique",
-    introSubtitle: "Comment lire l'audit : typologies de cas d'usage & échelle de complexité",
-    typologiesExplications: [
-      { id: "analyse_doc", nom: "Analyse documentaire", icon: "file-search", couleur: "primary", definition: "Lecture, extraction et croisement d'informations à partir de documents (contrats, rapports, factures, PDF scannés).", exemple: "Extraire automatiquement les clauses de pénalité dans 200 contrats de location longue durée chez Clovis." },
-      { id: "synthese", nom: "Synthèse", icon: "layers", couleur: "primary", definition: "Condenser des données ou textes longs en informations clés actionnables (bullet points, tableau, brief).", exemple: "Générer un briefing client 5 lignes à partir de l'historique CRM, sinistres et facturation avant un RDV commercial." },
-      { id: "redaction", nom: "Rédaction", icon: "edit-3", couleur: "primary", definition: "Production de contenu écrit personnalisé (emails, comptes-rendus, devis, supports CODIR) à partir d'instructions.", exemple: "Drafter un mail commercial personnalisé pour chaque chargé client en s'appuyant sur l'historique du compte." },
-      { id: "nettoyage_data", nom: "Nettoyage de données", icon: "filter", couleur: "accent", definition: "Normaliser, dédupliquer et structurer des données issues de saisies libres ou multi-sources.", exemple: "Harmoniser les motifs de panne saisis librement dans Zadig en référentiel contrôlé (15 catégories)." },
-      { id: "recherche", nom: "Recherche", icon: "search", couleur: "primary", definition: "Trouver une information précise dans une base documentaire interne ou une masse de données métier (RAG).", exemple: "Interroger en langage naturel le catalogue fournisseurs pour identifier la pièce compatible avec un modèle de poids lourd." },
-      { id: "automatisation", nom: "Automatisation", icon: "zap", couleur: "accent", definition: "Enchaîner plusieurs actions de bout en bout sans intervention humaine (agent IA), entre plusieurs systèmes.", exemple: "Agent qui détecte un RDV atelier non confirmé, envoie une relance, attend la réponse puis met à jour l'ERP." }
-    ],
-    complexiteCriteres: [
-      { id: "faible", niveau: "Faible complexité", sousTitre: "Quick Win — déployable en < 6 mois", couleur: "green", icon: "zap", characteristiques: ["IA sur étagère (ChatGPT, Copilot, Claude)", "Aucun développement requis", "Pas de sujet RGPD critique", "Gain de temps immédiat et mesurable"], exemples: ["Synthèse de réunion", "Aide à la rédaction d'emails", "Reformulation"], delai: "0 - 3 mois", investissement: "Faible" },
-      { id: "moyenne", niveau: "Complexité moyenne", sousTitre: "Projet métier — configuration & no-code", couleur: "amber", icon: "settings", characteristiques: ["Configuration / outils no-code (Make, Zapier, n8n)", "Assistants personnalisés (GPTs, prompts métier)", "Données internes non critiques", "Implication du métier dans le paramétrage"], exemples: ["Synthèse historique client (CRM)", "Génération de devis paramétrique", "Assistants GPTs métier"], delai: "3 - 9 mois", investissement: "Modéré" },
-      { id: "forte", niveau: "Forte valeur ajoutée", sousTitre: "Projet stratégique — sur-mesure", couleur: "red", icon: "trending-up", characteristiques: ["Développement sur-mesure", "Intégration d'API & architecture RAG", "Sécurité des données pilotée par la DSI", "Gouvernance et MLOps en production"], exemples: ["Maintenance prédictive flotte", "Jumeau numérique véhicules", "Plateforme RAG interne"], delai: "9 - 24 mois", investissement: "Élevé" }
-    ]
+    introSubtitle: "Comment les solutions sont évaluées et priorisées : le scoring VOTAC, la complexité & les risques, et les packages d'implémentation.",
+    votac: {
+      tabLabel: "Scoring VOTAC",
+      titre: "Maximiser l'impact et faciliter la priorisation",
+      formuleLabel: "VOTAC = Valeur métier × Occurence × Temps consommé × Potentiel IA × Facilité de mise en œuvre",
+      formuleParts: ["Valeur métier", "Occurence", "Temps consommé", "Potentiel IA", "Facilité de mise en œuvre"],
+      explication: "Le score VOTAC est le produit des 5 critères, chacun noté de 1 à 5, soit un score maximal de 3125. Plus le score est élevé, plus la solution combine un fort impact et une mise en œuvre aisée.",
+      scoreMax: 3125,
+      criteres: [
+        {
+          lettre: "V", nom: "Valeur métier", couleur: "primary",
+          mesure: "Volume de temps libéré, pénibilité de la tâche remplacée, impact sur la qualité du travail rendu, nombre de collaborateurs impactés.",
+          bareme: [
+            { note: 1, libelle: "Automatise une tâche déjà rapide et rare" },
+            { note: 3, libelle: "Libère jusqu'à 30 min/jour sans supprimer complètement la tâche irritante (impact max 30% de la Plateforme)" },
+            { note: 5, libelle: "Libère plus d'1h/jour, supprime une tâche identifiée comme irritante, impacte plus de 30% des collaborateurs" }
+          ]
+        },
+        {
+          lettre: "O", nom: "Occurence", couleur: "primary",
+          mesure: "Fréquence de déclenchement des irritants.",
+          bareme: [
+            { note: 1, libelle: "Exceptionnel" },
+            { note: 3, libelle: "Mensuel" },
+            { note: 4, libelle: "Hebdomadaire" },
+            { note: 5, libelle: "Quotidien ou pluriquotidien" }
+          ]
+        },
+        {
+          lettre: "T", nom: "Temps consommé", couleur: "primary",
+          mesure: "Volume de temps actuellement perdu sur la/les tâche(s) que le cas adresse.",
+          bareme: [
+            { note: 1, libelle: "< 30 min par mois" },
+            { note: 3, libelle: "Entre 2 et 4h par mois" },
+            { note: 5, libelle: "> 8h par mois" }
+          ]
+        },
+        {
+          lettre: "IA", nom: "Potentiel IA", couleur: "accent",
+          mesure: "Capacité du cas à être assisté ou automatisé par IA (aligné sur SCOPER, outil d'affinage des cas IA).",
+          bareme: [
+            { note: 1, libelle: "Faible impact" },
+            { note: 3, libelle: "Impact moyen" },
+            { note: 5, libelle: "Impact élevé" }
+          ]
+        },
+        {
+          lettre: "F", nom: "Facilité de mise en œuvre", couleur: "accent",
+          mesure: "Complexité de déploiement technique & organisationnelle (complexité agentique & intégration SI, qualité des données disponibles, conduite du changement).",
+          bareme: [
+            { note: 1, libelle: "Nombreux obstacles identifiés et non levés" },
+            { note: 3, libelle: "Dépendances techniques modérées, données imparfaites mais utilisables, acculturation à réaliser sans changement d'operating model" },
+            { note: 5, libelle: "Déployable sans dépendance critique, acculturation fluide" }
+          ]
+        }
+      ]
+    },
+    complexiteRisques: {
+      tabLabel: "Complexité & risques",
+      titre: "Apporter de la valeur sans encombrer votre environnement de travail",
+      complexiteTitre: "Complexité d'une fonctionnalité",
+      complexiteCriteres: [
+        { nom: "États", question: "Le workflow gère-t-il de la mémoire, des sessions ou des permissions ?", bareme: "0 = non / 2 = oui" },
+        { nom: "Connexions", question: "Combien de systèmes externes sont connectés ?", bareme: "0 = aucun / 0.5 = 1 simple / 1 = 2+ ou complexe" },
+        { nom: "Étapes / branches", question: "Combien d'étapes et de conditions dans le workflow ?", bareme: "0 = simple / 0.5 = quelques conditions / 1 = complexe" },
+        { nom: "Data en entrée", question: "Les données sont-elles structurées et fiables ?", bareme: "0 = propres / 0.5 = semi-structurées / 1 = instables" }
+      ],
+      risquesTitre: "Risques d'une fonctionnalité",
+      risqueCriteres: [
+        { nom: "Incertitude technique", question: "La technologie utilisée garantit-elle un résultat prévisible ?" },
+        { nom: "Dépendance bloquante", question: "La solution dépend-elle d'un autre SN ou d'un accès non encore accordé ?" },
+        { nom: "Qualité donnée incertaine", question: "Les données en entrée sont-elles stables et bien documentées ?" }
+      ]
+    },
+    packages: {
+      titre: "Packages de priorisation",
+      sousTitre: "Chaque solution est classée selon sa valeur et son effort / ses dépendances, afin de séquencer l'implémentation.",
+      items: [
+        { code: "P1", nom: "Quick Win", couleur: "green" },
+        { code: "P2", nom: "Valeur forte / effort moyen", couleur: "amber" },
+        { code: "P3", nom: "Dépendance critique", couleur: "red" }
+      ]
+    }
   },
   hubvisoryContext: {
     tagline: "Cabinet de conseil expert en stratégie, produit et industrialisation de l'IA.",

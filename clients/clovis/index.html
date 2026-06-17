@@ -349,26 +349,20 @@
 
     <!-- Methodology Guide -->
     <section class="mb-8">
-      <h2 class="font-display text-2xl mb-5" style="color: var(--ink);">Guide méthodologique : Typologies & Complexité</h2>
-      <p class="text-sm mb-5" style="color: var(--muted);">Comprendre les critères d'évaluation de l'audit IA</p>
-      <div class="rounded-2xl border p-6" style="background: var(--surface); border-color: var(--border);">
+      <h2 class="font-display text-2xl mb-2" style="color: var(--ink);" id="meth-title">Guide méthodologique</h2>
+      <p class="text-sm mb-5 max-w-3xl" style="color: var(--muted);" id="meth-subtitle"></p>
+      <div class="rounded-2xl border p-5 lg:p-6" style="background: var(--surface); border-color: var(--border);">
         <!-- Tabs -->
-        <div class="flex gap-2 mb-6">
-          <button class="meth-tab px-4 py-2 rounded-lg text-sm font-medium" data-tab="typologies" style="background: var(--primary-soft); color: var(--primary);">Décoder les typologies</button>
-          <button class="meth-tab px-4 py-2 rounded-lg text-sm font-medium" data-tab="complexite" style="color: var(--muted);">Comprendre la complexité &amp; ROI</button>
+        <div class="flex flex-wrap gap-2 mb-6">
+          <button class="meth-tab px-4 py-2 rounded-lg text-sm font-medium transition-colors" data-tab="votac" style="background: var(--primary-soft); color: var(--primary);" id="meth-tab-votac"></button>
+          <button class="meth-tab px-4 py-2 rounded-lg text-sm font-medium transition-colors" data-tab="complexite" style="color: var(--muted);" id="meth-tab-complexite"></button>
         </div>
-        <!-- Tab: Typologies -->
-        <div id="tab-typologies" class="meth-panel">
-          <div class="grid grid-cols-1 lg:grid-cols-3 gap-4" id="typologies-grid">
-            <!-- Injected by JS -->
-          </div>
-        </div>
-        <!-- Tab: Complexité -->
-        <div id="tab-complexite" class="meth-panel" style="display: none;">
-          <div class="grid grid-cols-1 lg:grid-cols-3 gap-4" id="complexite-grid">
-            <!-- Injected by JS -->
-          </div>
-        </div>
+        <!-- Tab: VOTAC -->
+        <div id="tab-votac" class="meth-panel"></div>
+        <!-- Tab: Complexité & risques -->
+        <div id="tab-complexite" class="meth-panel" style="display: none;"></div>
+        <!-- Packages de priorisation -->
+        <div id="meth-packages" class="mt-6 pt-6 border-t" style="border-color: var(--border);"></div>
       </div>
     </section>
   </div>
@@ -925,68 +919,131 @@ function buildCTA(theme) {
 // ===============================================
 
 function buildMethodology(theme) {
-  const methodologie = CLIENT_DATA.methodologie || {};
-  // Typologies
-  const typoGrid = document.getElementById('typologies-grid');
-  if (typoGrid) {
-    typoGrid.innerHTML = (methodologie.typologiesExplications || []).map(t => {
-      const color = t.couleur === 'accent' ? theme.accent : theme.primary;
-      return `
-        <div class="rounded-xl border p-5" style="border-color: var(--border);">
-          <div class="w-10 h-10 rounded-xl flex items-center justify-center mb-3" style="background: ${hexToSoft(color, 0.1)};">
-            ${icon(t.icon, 20, color)}
-          </div>
-          <h4 class="text-sm font-semibold mb-2" style="color: var(--ink);">${t.nom}</h4>
-          <p class="text-xs mb-3" style="color: var(--muted);">${t.definition}</p>
-          <div class="pt-3 border-t" style="border-color: var(--border);">
-            <p class="text-xs" style="color: var(--muted-soft);"><strong style="color: var(--muted);">Exemple :</strong> ${t.exemple}</p>
-          </div>
-        </div>`;
-    }).join('');
-  }
+  const m = CLIENT_DATA.methodologie || {};
+  const votac = m.votac || {};
+  const cr = m.complexiteRisques || {};
+  const pk = m.packages || {};
 
-  // Complexite (Clovis uses characteristiques instead of caracteristiques, and has different fields)
-  const compGrid = document.getElementById('complexite-grid');
-  if (compGrid) {
-    const levelColors = {
-      'Faible': theme.heat[4], 'Faible complexité': theme.heat[4],
-      'Moyenne': '#d97706', 'Complexité moyenne': '#d97706',
-      'Forte': theme.heat[0], 'Forte valeur ajoutée': theme.heat[0]
-    };
-    const levelIconColors = {
-      'green': theme.heat[4],
-      'amber': '#d97706',
-      'red': theme.heat[0]
-    };
-    compGrid.innerHTML = (methodologie.complexiteCriteres || []).map(c => {
-      const color = levelColors[c.niveau] || levelIconColors[c.couleur] || theme.muted;
-      const chars = c.characteristiques || c.caracteristiques || [];
-      const delai = c.delai || c.delaiMoyen || '';
+  const noteColor = (n) => {
+    if (n >= 5) return theme.heat[4];
+    if (n >= 4) return theme.heat[3];
+    if (n >= 3) return '#d97706';
+    return theme.heat[0];
+  };
+  const pkgColors = { green: theme.heat[4], amber: '#d97706', red: theme.heat[0] };
+
+  // Header
+  const titleEl = document.getElementById('meth-title');
+  if (titleEl && m.introTitle) titleEl.textContent = m.introTitle;
+  const subEl = document.getElementById('meth-subtitle');
+  if (subEl && m.introSubtitle) subEl.textContent = m.introSubtitle;
+  const tabVotac = document.getElementById('meth-tab-votac');
+  if (tabVotac) tabVotac.textContent = votac.tabLabel || 'Scoring VOTAC';
+  const tabComp = document.getElementById('meth-tab-complexite');
+  if (tabComp) tabComp.textContent = cr.tabLabel || 'Complexité & risques';
+
+  // ===== Tab 1: Scoring VOTAC =====
+  const votacPanel = document.getElementById('tab-votac');
+  if (votacPanel) {
+    const parts = (votac.formuleParts || []).map((p, i) =>
+      `<span class="inline-flex items-center">
+        <span class="font-display text-sm" style="color: var(--ink);">${p}</span>
+        ${i < (votac.formuleParts.length - 1) ? `<span class="mx-2 text-base font-light" style="color: var(--accent);">×</span>` : ''}
+      </span>`
+    ).join('');
+
+    const cards = (votac.criteres || []).map(c => {
+      const accent = c.couleur === 'accent' ? theme.accent : theme.primary;
+      const isWide = (c.lettre || '').length > 1;
       return `
-        <div class="rounded-xl border p-5" style="border-color: var(--border);">
-          <div class="flex items-center gap-2 mb-1">
-            <span class="w-3 h-3 rounded-full" style="background: ${color};"></span>
-            <h4 class="text-sm font-semibold" style="color: var(--ink);">${c.niveau}</h4>
+        <div class="rounded-xl border p-5 flex flex-col h-full" style="border-color: var(--border); background: var(--surface);">
+          <div class="flex items-start gap-3 mb-3">
+            <span class="shrink-0 ${isWide ? 'px-2.5' : 'w-10'} h-10 min-w-[2.5rem] rounded-xl flex items-center justify-center font-display text-base font-bold" style="background: ${hexToSoft(accent, 0.12)}; color: ${accent};">${c.lettre}</span>
+            <div>
+              <h4 class="text-sm font-semibold leading-tight" style="color: var(--ink);">${c.nom}</h4>
+            </div>
           </div>
-          ${c.sousTitre ? `<p class="text-xs mb-3" style="color: var(--muted);">${c.sousTitre}</p>` : `<p class="text-xs mb-3" style="color: var(--muted);">${c.description || ''}</p>`}
-          <div class="space-y-1.5 mb-3">
-            ${chars.map(ch => `
-              <div class="flex items-center gap-1.5">
-                ${icon('check', 12, color)}
-                <span class="text-xs" style="color: var(--muted);">${ch}</span>
+          <p class="text-xs mb-4 leading-relaxed" style="color: var(--muted);"><span class="font-medium" style="color: var(--muted);">Mesure :</span> ${c.mesure}</p>
+          <div class="mt-auto space-y-1.5">
+            ${(c.bareme || []).map(b => `
+              <div class="flex items-center gap-2.5">
+                <span class="shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-xs font-semibold" style="background: ${hexToSoft(noteColor(b.note), 0.14)}; color: ${noteColor(b.note)};">${b.note}</span>
+                <span class="text-xs leading-snug" style="color: var(--muted);">${b.libelle}</span>
               </div>
             `).join('')}
           </div>
-          <div class="space-y-1 mb-3">
-            <p class="text-xs font-medium" style="color: var(--muted);">Exemples :</p>
-            ${(c.exemples || []).map(ex => `<p class="text-xs" style="color: var(--muted-soft);">- ${ex}</p>`).join('')}
-          </div>
-          <div class="flex items-center justify-between pt-3 border-t" style="border-color: var(--border);">
-            <span class="text-xs" style="color: var(--muted);">${icon('clock', 12, 'var(--muted-soft)')} ${delai}</span>
-            <span class="text-xs font-medium" style="color: ${color};">${c.investissement}</span>
-          </div>
         </div>`;
     }).join('');
+
+    votacPanel.innerHTML = `
+      ${votac.titre ? `<h3 class="font-display text-lg mb-4" style="color: var(--ink);">${votac.titre}</h3>` : ''}
+      <div class="rounded-xl border p-5 mb-6" style="border-color: var(--primary-border); background: var(--primary-soft);">
+        <div class="flex flex-wrap items-center gap-y-1 mb-3">
+          <span class="font-display text-base font-bold mr-3" style="color: var(--primary);">VOTAC =</span>
+          ${parts}
+        </div>
+        ${votac.explication ? `<p class="text-xs leading-relaxed" style="color: var(--muted);">${votac.explication}</p>` : ''}
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">${cards}</div>`;
+  }
+
+  // ===== Tab 2: Complexité & risques =====
+  const compPanel = document.getElementById('tab-complexite');
+  if (compPanel) {
+    const compItems = (cr.complexiteCriteres || []).map(c => `
+      <div class="rounded-xl border p-4" style="border-color: var(--border);">
+        <div class="flex items-center justify-between gap-3 mb-1.5">
+          <h5 class="text-sm font-semibold" style="color: var(--ink);">${c.nom}</h5>
+          ${c.bareme ? `<span class="shrink-0 text-[11px] font-medium px-2 py-0.5 rounded-md" style="background: var(--primary-soft); color: var(--primary);">${c.bareme}</span>` : ''}
+        </div>
+        <p class="text-xs leading-relaxed" style="color: var(--muted);">${c.question}</p>
+      </div>`).join('');
+
+    const riskItems = (cr.risqueCriteres || []).map(r => `
+      <div class="rounded-xl border p-4 flex items-start gap-3" style="border-color: var(--border);">
+        <span class="shrink-0 mt-0.5">${icon('alert-triangle', 16, theme.accent)}</span>
+        <div>
+          <h5 class="text-sm font-semibold mb-1" style="color: var(--ink);">${r.nom}</h5>
+          <p class="text-xs leading-relaxed" style="color: var(--muted);">${r.question}</p>
+        </div>
+      </div>`).join('');
+
+    compPanel.innerHTML = `
+      ${cr.titre ? `<h3 class="font-display text-lg mb-5" style="color: var(--ink);">${cr.titre}</h3>` : ''}
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div>
+          <div class="flex items-center gap-2 mb-3">
+            ${icon('settings', 16, theme.primary)}
+            <h4 class="text-sm font-semibold" style="color: var(--ink);">${cr.complexiteTitre || 'Complexité'}</h4>
+          </div>
+          <div class="space-y-3">${compItems}</div>
+        </div>
+        <div>
+          <div class="flex items-center gap-2 mb-3">
+            ${icon('shield-alert', 16, theme.accent)}
+            <h4 class="text-sm font-semibold" style="color: var(--ink);">${cr.risquesTitre || 'Risques'}</h4>
+          </div>
+          <div class="space-y-3">${riskItems}</div>
+        </div>
+      </div>`;
+  }
+
+  // ===== Packages de priorisation =====
+  const pkgEl = document.getElementById('meth-packages');
+  if (pkgEl) {
+    const pills = (pk.items || []).map(p => {
+      const color = pkgColors[p.couleur] || theme.muted;
+      return `
+        <div class="flex items-center gap-3 rounded-xl border px-4 py-3 flex-1 min-w-[200px]" style="border-color: ${hexToSoft(color, 0.35)}; background: ${hexToSoft(color, 0.06)};">
+          <span class="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center font-display text-sm font-bold" style="background: ${color}; color: #fff;">${p.code}</span>
+          <span class="text-sm font-medium" style="color: var(--ink);">${p.nom}</span>
+        </div>`;
+    }).join('');
+
+    pkgEl.innerHTML = `
+      <h4 class="text-sm font-semibold mb-1" style="color: var(--ink);">${pk.titre || 'Packages de priorisation'}</h4>
+      ${pk.sousTitre ? `<p class="text-xs mb-4 max-w-3xl" style="color: var(--muted);">${pk.sousTitre}</p>` : '<div class="mb-4"></div>'}
+      <div class="flex flex-wrap gap-3">${pills}</div>`;
   }
 }
 
