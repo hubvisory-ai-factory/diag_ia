@@ -236,6 +236,7 @@
             Trier : <span id="solutions-sort-label">VOTAC décroissant</span> <span id="solutions-sort-arrow">↓</span>
           </button>
         </div>
+        <p id="solutions-prod-desc" class="text-xs leading-relaxed mb-4 rounded-lg p-3" style="display:none; color: var(--muted); background: var(--bg-alt);"></p>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="solutions-grid"></div>
       </div>
     </section>
@@ -1344,6 +1345,12 @@ function buildCatalogue(theme) {
   }
 
   function renderCards() {
+    const descEl = document.getElementById('solutions-prod-desc');
+    if (descEl) {
+      const p = activeFilter !== 'all' ? produitMap[activeFilter] : null;
+      descEl.textContent = (p && p.description) ? p.description : '';
+      descEl.style.display = descEl.textContent ? 'block' : 'none';
+    }
     const filtered = activeFilter === 'all' ? solutions : solutions.filter(s => s.produitId === activeFilter);
     if (!filtered.length) {
       grid.innerHTML = `<p class="text-sm col-span-full" style="color: var(--muted-soft);">Aucune solution pour ce produit.</p>`;
