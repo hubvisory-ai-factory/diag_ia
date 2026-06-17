@@ -230,7 +230,12 @@
           </div>
           <span class="text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap" style="background: var(--primary-soft); color: var(--primary);" id="solutions-count"></span>
         </div>
-        <div class="flex flex-wrap gap-2 mt-4 mb-6" id="solutions-filters"></div>
+        <div class="flex flex-wrap gap-2 mt-4 mb-3" id="solutions-filters"></div>
+        <div class="flex items-center justify-end mb-5">
+          <button id="solutions-sort-btn" class="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border cursor-pointer transition-colors" style="border-color: var(--border); color: var(--muted); background: var(--surface);">
+            Trier : <span id="solutions-sort-label">VOTAC décroissant</span> <span id="solutions-sort-arrow">↓</span>
+          </button>
+        </div>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="solutions-grid"></div>
       </div>
     </section>
@@ -1051,7 +1056,6 @@ function buildMetierViews(theme) {
             <div class="clickable-card rounded-xl border p-5 card-hover" data-uc-id="${uc.id}" style="border-color: var(--border); background: var(--surface);">
               <div class="flex items-start justify-between gap-2 mb-2">
                 <h4 class="text-sm font-semibold flex-1" style="color: var(--ink);">${uc.titre || ''}</h4>
-                ${total != null ? `<span class="text-xs font-bold px-2 py-0.5 rounded-md whitespace-nowrap" style="background: var(--primary-soft); color: var(--primary);">${total}/25</span>` : ''}
               </div>
               ${(uc.grandTheme || uc.grandThemeEmoji) ? `<span class="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full" style="background: var(--bg-alt); color: var(--muted);">
                 ${uc.grandThemeEmoji ? `<span>${uc.grandThemeEmoji}</span>` : ''}${uc.grandTheme || ''}
@@ -1255,11 +1259,12 @@ function produitPastille(prod, theme) {
   </span>`;
 }
 
-// VOTAC total = sum of 5 components /25 (recompute to avoid stored averages)
+// VOTAC score = product of the 5 components (Notion "Scoring VOTAC" = V×O×T×IA×F).
+// Falls back to a stored total only when components are absent (e.g. use-case "Somme VOTAC").
 function votacTotal(votac) {
   if (!votac) return null;
   const ks = ['valeur', 'occurrence', 'temps', 'ia', 'facilite'];
-  if (ks.every(k => votac[k] != null)) return ks.reduce((s, k) => s + votac[k], 0);
+  if (ks.every(k => votac[k] != null)) return ks.reduce((p, k) => p * votac[k], 1);
   return votac.total != null ? votac.total : null;
 }
 
@@ -1306,6 +1311,7 @@ function buildCatalogue(theme) {
   if (countEl) countEl.textContent = `${solutions.length} solutions`;
 
   let activeFilter = 'all';
+  let sortDir = 'desc';
 
   function packageBadge(pkg) {
     if (!pkg) return '';
@@ -1343,7 +1349,11 @@ function buildCatalogue(theme) {
       grid.innerHTML = `<p class="text-sm col-span-full" style="color: var(--muted-soft);">Aucune solution pour ce produit.</p>`;
       return;
     }
-    grid.innerHTML = filtered.map((s, i) => {
+    // Sort by VOTAC score; unscored solutions always go last.
+    const sentinel = sortDir === 'desc' ? -Infinity : Infinity;
+    const score = s => { const t = votacTotal(s.votac); return t == null ? sentinel : t; };
+    const rows = filtered.slice().sort((a, b) => sortDir === 'desc' ? score(b) - score(a) : score(a) - score(b));
+    grid.innerHTML = rows.map((s, i) => {
       const prod = produitMap[s.produitId];
       const c = (prod && prod.color) || theme.primary;
       const votac = s.votac || {};
@@ -1351,7 +1361,7 @@ function buildCatalogue(theme) {
       const scoreBlock = (total != null)
         ? `<div class="flex items-baseline gap-1">
              <span class="font-display text-2xl" style="color: ${c};">${total}</span>
-             <span class="text-xs" style="color: var(--muted-soft);">/25</span>
+             <span class="text-xs" style="color: var(--muted-soft);">pts</span>
            </div>`
         : `<span class="text-xs font-medium px-2 py-0.5 rounded-full" style="background: var(--bg-alt); color: var(--muted-soft);">VOTAC à scorer</span>`;
       return `
@@ -1372,11 +1382,27 @@ function buildCatalogue(theme) {
     }).join('');
 
     grid.querySelectorAll('[data-cat-idx]').forEach(card => {
-      card.addEventListener('click', () => openCatalogueModal(filtered[+card.dataset.catIdx], theme));
+      card.addEventListener('click', () => openCatalogueModal(rows[+card.dataset.catIdx], theme));
+    });
+  }
+
+  function renderSort() {
+    const arrow = document.getElementById('solutions-sort-arrow');
+    const label = document.getElementById('solutions-sort-label');
+    if (arrow) arrow.textContent = sortDir === 'desc' ? '↓' : '↑';
+    if (label) label.textContent = sortDir === 'desc' ? 'VOTAC décroissant' : 'VOTAC croissant';
+  }
+  const sortBtn = document.getElementById('solutions-sort-btn');
+  if (sortBtn) {
+    sortBtn.addEventListener('click', () => {
+      sortDir = sortDir === 'desc' ? 'asc' : 'desc';
+      renderSort();
+      renderCards();
     });
   }
 
   renderFilters();
+  renderSort();
   renderCards();
 }
 
@@ -1399,7 +1425,7 @@ function openCatalogueModal(s, theme) {
           <span class="text-xs font-semibold uppercase tracking-wider" style="color: var(--muted);">Score VOTAC</span>
           <div class="flex items-baseline gap-1">
             <span class="font-display text-2xl" style="color: ${c};">${votacComputed}</span>
-            <span class="text-xs" style="color: var(--muted-soft);">/25</span>
+            <span class="text-xs" style="color: var(--muted-soft);">pts</span>
           </div>
         </div>
         <div class="space-y-2">
