@@ -20,8 +20,26 @@ const crypto = require('crypto');
 
 const GH_API = 'https://api.github.com';
 const SLUG_RE = /^[a-z0-9][a-z0-9-]*$/;
-const MAX_FILES = 60;
-const MAX_TOTAL_BYTES = 8 * 1024 * 1024; // 8 MB across all files
+const MAX_FILES = 200;
+// Vercel rejects request bodies larger than ~4.5 MB before this function even runs,
+// so cap below that. The only realistic way to hit it is several MB of images in one
+// submission — text (HTML/JS/components/skills) is tiny. If a client genuinely needs
+// heavy imagery, switch the transport to chunked upload (see BACKEND_SETUP.md).
+const MAX_TOTAL_BYTES = 4 * 1024 * 1024; // 4 MB across all files
+
+// Path policy: a submission may write anywhere EXCEPT these dangerous areas. Everything
+// is PR-gated (a human merges), so the denylist only blocks paths that could do harm
+// before review — workflow injection, the endpoint itself, and deploy/routing config.
+const DENIED_PREFIXES = ['.github/', 'api/', '.git/'];
+const DENIED_EXACT = new Set([
+  'vercel.json',
+  'package.json',
+  'package-lock.json',
+  'pnpm-lock.yaml',
+  'yarn.lock',
+  '.gitignore',
+  '.vercelignore',
+]);
 
 function httpError(status, message) {
   const e = new Error(message);
@@ -92,6 +110,11 @@ async function installationToken(appId, privateKey, owner, repo) {
   return tok.token;
 }
 
+function isDenied(path) {
+  if (DENIED_EXACT.has(path)) return true;
+  return DENIED_PREFIXES.some((p) => path === p.slice(0, -1) || path.startsWith(p));
+}
+
 function validate(slug, files) {
   if (!SLUG_RE.test(String(slug || ''))) {
     throw httpError(400, `invalid slug "${slug}" (lowercase kebab-case only)`);
@@ -102,7 +125,6 @@ function validate(slug, files) {
   if (files.length > MAX_FILES) {
     throw httpError(400, `too many files (${files.length} > ${MAX_FILES})`);
   }
-  const prefix = `clients/${slug}/`;
   let total = 0;
   for (const f of files) {
     if (!f || typeof f.path !== 'string' || typeof f.content !== 'string') {
@@ -111,15 +133,25 @@ function validate(slug, files) {
     if (f.path.includes('..') || f.path.startsWith('/')) {
       throw httpError(400, `illegal path: ${f.path}`);
     }
-    // Hard scope: this endpoint may ONLY write inside the client's own folder.
-    // Prevents anyone with the secret from touching vercel.json, workflows, etc.
-    if (!f.path.startsWith(prefix)) {
-      throw httpError(400, `path outside ${prefix}: ${f.path}`);
+    // Denylist (not allowlist): a submission may write anywhere — client folders,
+    // components/, _template/, .claude/skills/, docs — EXCEPT areas that could do harm
+    // before a human reviews the PR (CI workflows, this endpoint, deploy/routing config).
+    if (isDenied(f.path)) {
+      throw httpError(
+        400,
+        `path not allowed: ${f.path} (cannot modify .github/, api/, or deploy config via the backend — a maintainer must do that with a normal Git PR)`
+      );
     }
     total += Buffer.byteLength(f.content, 'utf-8');
   }
   if (total > MAX_TOTAL_BYTES) {
-    throw httpError(400, `payload too large (${total} bytes > ${MAX_TOTAL_BYTES})`);
+    const mb = (total / 1024 / 1024).toFixed(1);
+    throw httpError(
+      413,
+      `payload too large: ${mb} MB exceeds the ~4 MB limit for a single submission. ` +
+        `This is almost always large images/assets. Compress or resize them, or split ` +
+        `the submission — text files (HTML/JS/components) are never the problem.`
+    );
   }
 }
 

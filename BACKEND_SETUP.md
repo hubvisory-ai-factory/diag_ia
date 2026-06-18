@@ -100,12 +100,22 @@ The first time a consultant publishes, Claude will ask for it and store it at
 
 - The App's write access is **scoped to `diag_ia` only** — it cannot touch your
   other ~29 private repos.
-- The endpoint can **only write inside `clients/<slug>/`** (enforced in
-  `api/submit.js`) — no one can overwrite `vercel.json`, workflows, or other
-  clients' folders via the API.
-- The shared secret gates **opening PRs**, not merging. Merge still requires you
-  (CODEOWNERS + branch protection). Worst case from a leaked secret is spam PRs,
-  not a breach — rotate the secret in Vercel if that happens.
+- The endpoint uses a **denylist** (enforced in `api/submit.js`): a submission may write
+  anywhere in the repo (client folders, `components/`, `_template/`, `.claude/skills/`,
+  docs) **except** paths that could do harm before you review the PR — `.github/`
+  (CI/workflow injection), `api/` (the endpoint itself), and deploy/routing config
+  (`vercel.json`, `package.json`, lockfiles, `.gitignore`, `.vercelignore`). This lets
+  the component library and skills grow with users while keeping the dangerous surface
+  off-limits.
+- **Everything is PR-gated.** The shared secret gates **opening PRs**, not merging — merge
+  still requires you (CODEOWNERS + branch protection). Your review is the real safety gate;
+  the denylist only blocks what could act before that review. Worst case from a leaked
+  secret is a junk PR you decline — not a breach. Rotate the secret in Vercel if needed.
+- **Payload size:** one submission is a single HTTP POST, capped at ~4 MB (Vercel limits
+  request bodies to ~4.5 MB). Text (HTML/JS/components/skills) is tiny; only several MB of
+  images can hit it. If a client ever needs heavy imagery, switch the transport to chunked
+  upload (per-file POSTs accumulated server-side) or host large assets on a CDN / Vercel
+  Blob and reference them by URL — both independent of the denylist.
 - Want stronger auth later? Put the endpoint behind Hubvisory Google SSO, or
   switch the shared secret for per-consultant secrets. Not required for launch.
 
