@@ -36,33 +36,22 @@ git checkout -b client/<slug>
 # Example: git checkout -b client/acme-corp
 ```
 
-### GitHub Account Check
-To publish changes, the consultant needs a GitHub account (free). They do NOT need collaborator access — the fork/PR workflow works for everyone.
+### Publishing prerequisites — no GitHub account needed
+Publishing goes through the backend (the `publish` skill): **no GitHub account, invite,
+token, fork, `gh`, or SSH.** The only requirements:
+- The repo is cloned locally (Git installed — see `git-setup` if `git --version` fails).
+- A one-time **publish key** at `~/.config/diag_ia/secret` (see the `publish` skill;
+  the admin provides the value). You can check now, or wait until publish time:
+  ```bash
+  test -f ~/.config/diag_ia/secret && echo "publish key present" || echo "ask admin for the publish key"
+  ```
 
-Ask:
+Do **not** set up forks, `gh`, or GitHub auth.
 
-> "Do you have a GitHub account?"
-
-**If YES**: Check if repo is properly forked:
-```bash
-git remote -v
-```
-If `origin` points to `hubvisory-ai-factory/diag_ia` (not their fork), set up the fork:
-```bash
-gh repo fork --remote
-```
-
-**If NO**: Use the `git-setup` skill to create an account and fork the repo.
-
-**If they can't create an account**: The work can still be done locally but won't be published. Someone else will need to push for them.
-
-### Regular Commits
-**Commit frequently** as you work — after each major step. Don't wait until the end.
-
-```bash
-git add clients/<slug>/
-git commit -m "wip(client): <slug> — add data.js skeleton"
-```
+### Working locally — no commits required
+The backend commits for you at publish time, so you don't need to `git add`/`git commit`
+as you go. Just edit files in the cloned repo and verify locally. (You may commit locally
+if you like, but it's optional and never required.)
 
 ---
 
@@ -465,41 +454,27 @@ See **Troubleshooting** section below.
 
 ---
 
-## Phase 6: Push & Create Pull Request
+## Phase 6: Publish (opens a Pull Request via the backend)
 
-Once the consultant confirms everything looks good locally:
+Once the consultant confirms everything looks good locally, hand off to the `publish`
+skill. There is **no Git push, no fork, no `gh`** — the backend creates the branch and PR.
 
-### Final Commit
+### Validate, then publish
 ```bash
-git add .
-git commit -m "feat(client): <slug> — ready for review"
+node --check clients/<slug>/data.js && node scripts/validate-data.js clients/<slug>/data.js
+node scripts/submit.mjs clients/<slug> "add(client): <Client Name>"
 ```
 
-### Push the Branch to Their Fork
-```bash
-git push -u origin client/<slug>
-```
+`submit.mjs` reads the whole `clients/<slug>/` folder, sends it to the submission
+endpoint, and prints the PR URL. The endpoint commits as the `diag-ia-bot` GitHub App
+and opens the PR — notifying @gaspardhassenforder via CODEOWNERS.
 
-### Create Pull Request
-```bash
-gh pr create --title "Add client: <Client Name>" --body "New diagnostic for <Client Name>.
-
-## Checklist
-- [ ] Page renders correctly locally
-- [ ] All data matches diagnostic materials
-- [ ] No TODO placeholders remaining
-
-## Preview
-Once merged, will be live at: https://diag-ia.hubvisory.app/<slug>"
-```
-
-This automatically:
-1. Opens a PR from their fork to the main repo
-2. Notifies @gaspardhassenforder for review (via CODEOWNERS)
-3. Shows the PR URL
+> First publish only: if it prints "No submission secret found", set the shared key once
+> (`~/.config/diag_ia/secret`) — see the `publish` skill — and re-run. See the `publish`
+> skill for the full troubleshooting table.
 
 Tell the user:
-> "Done! Your Pull Request has been created. Gaspard will be notified automatically and will review and merge it. Once merged, your diagnostic will be live within ~1 minute."
+> "Done! Your Pull Request has been opened: <PR URL>. Gaspard is notified automatically and will review and merge it. Once merged, your diagnostic will be live within ~1 minute."
 
 ### After Merge (Automatic)
 Once the PR is merged:
@@ -560,10 +535,12 @@ Goal: the next consultant hits fewer surprises than you did.
 2. **Check `vercel.json`**: Should have the rewrite rule
 3. **File location**: Must be `clients/<slug>/index.html`, not somewhere else
 
-### "Permission Denied" on Git Push
-1. **Pushing to wrong remote**: Check `git remote -v` — `origin` should be their fork, not `hubvisory-ai-factory/diag_ia`
-2. **Not forked yet**: Run `gh repo fork --remote` to set up fork
-3. **Auth expired**: Re-authenticate with `gh auth login` or GitHub Desktop
+### Publish fails
+Publishing uses the backend, not Git push. Common cases:
+1. **"No submission secret found"**: set the publish key once (`~/.config/diag_ia/secret`) — see the `publish` skill.
+2. **401 bad secret**: wrong key — re-paste the correct value from the admin.
+3. **"path outside clients/<slug>/"**: a file is outside the client folder — keep everything under `clients/<slug>/`.
+4. **Network/500**: confirm internet; if it says "server not configured", the admin checks Vercel env vars (`BACKEND_SETUP.md`).
 
 ### Template is Broken
 If `_template/index.html` was accidentally modified:
