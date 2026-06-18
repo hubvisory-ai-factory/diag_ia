@@ -7,6 +7,19 @@ description: Guided workflow to add a new AI diagnostic client case to the porta
 
 You are helping a Hubvisory consultant add a new AI diagnostic client case to the portal. Your job is to gather all the necessary information, structure it as a `CLIENT_DATA` JavaScript object, and generate the client HTML page — without ever fabricating data.
 
+**🗣️ Parle en FRANÇAIS avec le consultant** (l'audience est francophone). Ces instructions
+sont en anglais, mais toute la conversation, les questions et les messages destinés au
+consultant doivent être en français.
+
+**Workflow at a glance** (the order matters):
+1. **Gather everything first** (Phase 2) — get the deck/PDF into the folder (or its path),
+   connect Google Drive / Notion if the sources live there, and pin down the scoring method.
+2. **Ask briefly how they want the report to look** (design, tone, sections) — then build.
+3. **Execute and iterate** with the consultant until the data is right.
+4. **Local preview** — run `npx serve` in the background, give the link, let them confirm.
+5. On confirmation → **post-mortem in the background** (improve docs/skills) → **publish** →
+   **stop the local server**.
+
 **Live site**: https://diag-ia.hubvisory.app/
 
 **Reference files**:
@@ -18,22 +31,13 @@ You are helping a Hubvisory consultant add a new AI diagnostic client case to th
 
 ---
 
-## Phase 0: Git Setup & Access Check
+## Phase 0: Quick readiness check
 
-Before starting any work, ensure the repo is ready:
-
-### Check Git Status
-```bash
-git status
-git branch -a
-```
-
-### Create a Feature Branch
-**ALWAYS work on a branch, never directly on `main`.**
+You only need the repo cloned locally — no branch, no commits (the backend creates the
+`client/<slug>` branch at publish time). Just confirm you're inside the repo:
 
 ```bash
-git checkout -b client/<slug>
-# Example: git checkout -b client/acme-corp
+git rev-parse --show-toplevel   # should print the diag_ia repo path
 ```
 
 ### Publishing prerequisites — no GitHub account needed
@@ -69,12 +73,6 @@ Ask for:
 9. **Client logo** — ask if they have one to place in `clients/<slug>/assets/`; if not, the initial-letter badge is used
 
 Before moving on, confirm the slug doesn't already exist by checking `clients/` for a folder with that name.
-
-**Commit after Phase 1:**
-```bash
-git add .
-git commit -m "wip(client): <slug> — identity collected"
-```
 
 ---
 
@@ -115,16 +113,50 @@ This `context.md` is the brief Claude works from and the audit trail for the pos
   through `formatRichText(...)` / `inlineMd(...)` (helpers ship in `_template/index.html`),
   and strip obvious artifacts. Never inject raw Notion text into a single `<p>`.
 
-### How the consultant provides data
-- **Option A: Source files** — PDF report, PowerPoint, Excel. Place them in `_sources/`.
-- **Option B: Notion (MCP)** — connect the Notion MCP, then extract. For a large, linked
-  set (e.g. N use cases × M solutions across several DBs), use a **Workflow** to fan out
-  the page fetches in parallel and return compact structured JSON, instead of fetching
-  serially into the main context. Verify subagents can reach the Notion MCP first.
-- **Option C: Walk through section by section** — interactive, for scattered notes.
-- **Option D: Pre-filled JSON** matching the agreed `CLIENT_DATA` shape.
+### Get the sources — ask the consultant where they are, then ingest them
 
-Extract all data points, then present a summary for confirmation before writing files.
+Start by asking (in French) **where the diagnostic material lives**, and handle each case.
+**Do not start building until you actually have the content in hand.**
+
+- **Option A — A file on their computer (deck/PDF/PPTX/Excel).** Two easy ways:
+  - They **drop the file into `clients/<slug>/_sources/`** (create the folder first:
+    `mkdir -p clients/<slug>/_sources`), or
+  - They **tell you the full path** (e.g. `~/Downloads/restitution-acme.pdf`) and you copy
+    it in: `cp "<path>" clients/<slug>/_sources/`.
+  Then read it directly (PDFs/images via the Read tool).
+- **Option B — Google Drive.** If the deck/sheet is in Drive and you can't read it locally,
+  ask them to either download it and use Option A, **or** connect the Google Drive
+  connector so you can fetch it:
+  - Check whether a Google Drive tool is already available. If not, guide them:
+    **Claude Code Desktop → Settings → Connectors → add Google Drive** (sign in with their
+    Hubvisory Google account). For Claude.ai connectors, an `authenticate` tool appears —
+    call it and have them complete sign-in.
+  - If a connector truly isn't available, fall back to Option A (download + drop in folder).
+- **Option C — Notion.** Connect the **Notion MCP/connector** the same way (Settings →
+  Connectors → Notion, sign in), then extract. For a large, linked set (e.g. N use cases ×
+  M solutions across several DBs), use a **Workflow** to fan out the page fetches in
+  parallel and return compact structured JSON instead of fetching serially into the main
+  context. Verify subagents can reach the Notion MCP first.
+- **Option D — Scattered notes / no file.** Walk through section by section, interactively.
+- **Option E — Pre-filled JSON** matching the agreed `CLIENT_DATA` shape.
+
+> If a needed connector (Drive/Notion) isn't installed and the consultant doesn't know how,
+> walk them through it patiently, step by step — they may have never added one before.
+
+Once you have everything, **extract all data points into `context.md`** and present a
+summary for confirmation before writing any client files.
+
+### Then: ask how they want the report to look (briefly)
+
+Before building, ask 3–4 quick questions (in French) to set direction — don't over-engineer:
+1. **Branding** — client colors/logo, or keep the Hubvisory default look?
+2. **Sections** — which sections matter (dashboard, métiers, gouvernance, roadmap,
+   glossaire…) and any to drop? Use an existing client (e.g. `clovis`) as a visual reference.
+3. **Tone / emphasis** — executive summary vs. deep detail; anything to highlight.
+4. **Anything unusual** the standard template doesn't cover (new viz, new section).
+
+Note the answers in `context.md`. Then **execute and iterate**: build, preview, adjust with
+the consultant until it's right.
 
 ---
 
@@ -396,22 +428,29 @@ git commit -m "feat(client): <slug> — remove glossary section"
 
 ---
 
-## Phase 5: Local Verification
+## Phase 5: Local Verification (consultant confirms before publishing)
 
-Before pushing, the consultant MUST verify locally:
+The consultant MUST review the page locally and **confirm** before anything is published.
 
-### Preview with Local Server
+### Start the preview server in the BACKGROUND, then give them the link
 
-**Serve the REPO ROOT, never the client subfolder.** Client pages use an absolute
-`<base href="/clients/<slug>/">`, so serving `clients/<slug>` directly makes `data.js`
-and `assets/` 404. Also: `serve@14` removed the `-o` (auto-open) flag.
+Run the server as a **background** process (so it keeps running while they review and you
+can stop it later, after publishing). **Serve the REPO ROOT, never the client subfolder** —
+client pages use an absolute `<base href="/clients/<slug>/">`, so serving `clients/<slug>`
+directly makes `data.js` and `assets/` 404. (`serve@14` also removed the `-o` flag.)
 
 ```bash
-npx serve                     # from the repo root, then open the URL below
-# or: python3 -m http.server 3000
+npx serve            # run with run_in_background: true
 ```
 
-Then open **`http://localhost:3000/clients/<slug>/`** in the browser.
+Then give the consultant this link and ask them to review it (in French):
+**`http://localhost:3000/clients/<slug>/`**
+
+> Keep the server running. You will stop it only **after** publishing (Phase 6). Note the
+> background process so you can kill it then.
+
+Ask explicitly: *« Est-ce que le rapport te convient ? Dis-moi ce qu'il faut ajuster, sinon
+je le publie. »* Iterate on any changes, re-serving as needed, until they confirm.
 
 ### Verify the render yourself (headless, before asking the consultant)
 
@@ -454,12 +493,19 @@ See **Troubleshooting** section below.
 
 ---
 
-## Phase 6: Publish (opens a Pull Request via the backend)
+## Phase 6: On confirmation — post-mortem (background) → publish → stop the server
 
-Once the consultant confirms everything looks good locally, hand off to the `publish`
-skill. There is **no Git push, no fork, no `gh`** — the backend creates the branch and PR.
+Run these **in this exact order** once the consultant has confirmed:
 
-### Validate, then publish
+### Step 1 — Kick off the post-mortem in the BACKGROUND
+Don't make the consultant wait. Launch the post-mortem as a **background subagent**
+(Agent tool with `run_in_background: true`) so it improves the docs/skills while you
+publish. See Phase 7 for exactly what it does. Tell the consultant (in French) that you're
+finalizing, then proceed immediately to publish — don't block on it.
+
+### Step 2 — Validate and publish
+There is **no Git push, no fork, no `gh`** — the backend creates the branch and PR.
+
 ```bash
 node --check clients/<slug>/data.js && node scripts/validate-data.js clients/<slug>/data.js
 node scripts/submit.mjs clients/<slug> "add(client): <Client Name>"
@@ -470,35 +516,46 @@ endpoint, and prints the PR URL. The endpoint commits as the `diag-ia-bot` GitHu
 and opens the PR — notifying @gaspardhassenforder via CODEOWNERS.
 
 > First publish only: if it prints "No submission secret found", set the shared key once
-> (`~/.config/diag_ia/secret`) — see the `publish` skill — and re-run. See the `publish`
-> skill for the full troubleshooting table.
+> (`~/.config/diag_ia/secret`) — see the `publish` skill — and re-run.
+> Note: `_sources/` is git-ignored and not sent; the backend rejects anything outside
+> `clients/<slug>/`, so post-mortem edits to skills/`CLAUDE.md` are NOT published here
+> (see Phase 7 for how those land).
 
-Tell the user:
-> "Done! Your Pull Request has been opened: <PR URL>. Gaspard is notified automatically and will review and merge it. Once merged, your diagnostic will be live within ~1 minute."
+Tell the consultant (in French):
+> « C'est publié ✅ — voici la Pull Request : <PR URL>. Gaspard est notifié
+> automatiquement, il la validera et ton diagnostic sera en ligne ~1 minute après. »
 
-### After Merge (Automatic)
-Once the PR is merged:
-- **Vercel auto-deploys** within ~1 minute
-- The diagnostic goes live at `https://diag-ia.hubvisory.app/<slug>`
+### Step 3 — Stop the local server
+Now that it's published, stop the background `npx serve` process you started in Phase 5
+(kill that background task). Confirm `http://localhost:3000` is no longer serving.
 
-The user doesn't need to do anything else — they'll see it live once Gaspard merges.
+### After merge (automatic)
+Once Gaspard merges the PR, **Vercel auto-deploys** within ~1 minute and the diagnostic
+goes live at `https://diag-ia.hubvisory.app/<slug>`. The consultant does nothing else.
 
 ---
 
-## Phase 7: Post-mortem & skill improvement (MANDATORY)
+## Phase 7: Post-mortem & skill improvement (runs in the BACKGROUND)
 
-This portal is meant to **get better after every use**. The friction you hit on this
-mission is the most valuable signal for the next one — capture it and act on it.
+This portal is meant to **get better after every use**. Triggered at confirmation
+(Phase 6, Step 1) as a background subagent so the consultant isn't blocked.
 
-1. **Log friction as you go.** While building, append to `clients/<slug>/context.md`
+1. **Log friction as you go.** Throughout the build, append to `clients/<slug>/context.md`
    (a `## Frictions` section) every snag, surprise, or manual workaround: stale/wrong
-   docs, an undocumented data quirk, a scoring ambiguity, a source discrepancy, a
-   command that didn't work, a step that was painful. Don't rely on memory at the end.
-2. **At the very end, run a short post-mortem with the consultant:** what worked, what
-   was manual that shouldn't have been, what was missing from the skill/docs.
-3. **Improve the system immediately:** turn each recurring friction into a concrete fix —
-   update this skill, `CLAUDE.md`, `README.md`, the `components/` library or
-   `_template/`, or add a new skill/script. Small, durable edits.
+   docs, an undocumented data quirk, a scoring ambiguity, a source discrepancy, a command
+   that didn't work, a step that was painful. Don't rely on memory at the end.
+2. **Synthesize concrete fixes** into `context.md` under `## Améliorations proposées` —
+   each as a specific edit ("in skill X, change Y to Z because…"). Because `context.md`
+   lives under `clients/<slug>/`, it **is published with the report**, so these proposals
+   reach the maintainer in the PR.
+3. **Apply the edits to the local files too** — this skill, `CLAUDE.md`, `README.md`, the
+   `components/` library, `_template/`, or a new skill/script. Small, durable edits.
+   - **If you are a maintainer** (have push access beyond `clients/`): commit these and
+     open a separate maintainer PR so the improvements actually land in the repo.
+   - **If you are a consultant** (publishing via the backend): the backend only ships
+     `clients/<slug>/`, so your local skill/doc edits won't reach GitHub by themselves —
+     that's fine, they help the rest of this session, and the proposals in `context.md`
+     are what the maintainer folds in on review.
 4. **Save a memory** for cross-session learnings (preferences, gotchas) so future runs
    start ahead.
 
