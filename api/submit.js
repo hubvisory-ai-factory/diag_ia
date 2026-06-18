@@ -1,0 +1,227 @@
+// Diag IA — client-page submission endpoint (GitHub App backend)
+//
+// A consultant's Claude Code session POSTs a built client folder here. This
+// function authenticates as the "diag-ia-bot" GitHub App, creates a branch,
+// commits the files, and opens a Pull Request — so consultants never need a
+// GitHub account, an org invite, a token, gh/brew, SSH, or a fork.
+//
+// Zero npm dependencies: uses only Node built-ins (crypto) + global fetch.
+// Nothing to build — drops straight into the existing static Vercel project.
+//
+// Required Vercel environment variables (see BACKEND_SETUP.md):
+//   GH_APP_ID            App ID of the GitHub App
+//   GH_APP_PRIVATE_KEY   App private key PEM (literal newlines OR \n-escaped)
+//   SUBMIT_SECRET        Shared secret consultants put in DIAG_IA_SECRET
+// Optional:
+//   GH_REPO              owner/repo (default: hubvisory-ai-factory/diag_ia)
+//   GH_BASE_BRANCH       PR base branch (default: main)
+
+const crypto = require('crypto');
+
+const GH_API = 'https://api.github.com';
+const SLUG_RE = /^[a-z0-9][a-z0-9-]*$/;
+const MAX_FILES = 60;
+const MAX_TOTAL_BYTES = 8 * 1024 * 1024; // 8 MB across all files
+
+function httpError(status, message) {
+  const e = new Error(message);
+  e.status = status;
+  return e;
+}
+
+function b64url(input) {
+  return Buffer.from(input)
+    .toString('base64')
+    .replace(/=/g, '')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_');
+}
+
+function safeEqual(a, b) {
+  const ab = Buffer.from(String(a || ''));
+  const bb = Buffer.from(String(b || ''));
+  if (ab.length !== bb.length) return false;
+  return crypto.timingSafeEqual(ab, bb);
+}
+
+// Build a short-lived JWT to authenticate AS the GitHub App.
+function appJWT(appId, privateKey) {
+  const now = Math.floor(Date.now() / 1000);
+  const header = b64url(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
+  const payload = b64url(
+    JSON.stringify({ iat: now - 60, exp: now + 540, iss: String(appId) })
+  );
+  const signingInput = `${header}.${payload}`;
+  const sig = crypto.createSign('RSA-SHA256').update(signingInput).sign(privateKey);
+  return `${signingInput}.${b64url(sig)}`;
+}
+
+async function gh(token, method, path, body) {
+  const res = await fetch(`${GH_API}${path}`, {
+    method,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+      'User-Agent': 'diag-ia-submit',
+      ...(body ? { 'Content-Type': 'application/json' } : {}),
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const text = await res.text();
+  let data;
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch {
+    data = { raw: text };
+  }
+  if (!res.ok) {
+    throw httpError(
+      res.status >= 500 ? 502 : res.status,
+      `GitHub ${method} ${path} -> ${res.status}: ${data.message || text}`
+    );
+  }
+  return data;
+}
+
+// Exchange the App JWT for an installation token scoped to the repo.
+async function installationToken(appId, privateKey, owner, repo) {
+  const jwt = appJWT(appId, privateKey);
+  const inst = await gh(jwt, 'GET', `/repos/${owner}/${repo}/installation`);
+  const tok = await gh(jwt, 'POST', `/app/installations/${inst.id}/access_tokens`, {});
+  return tok.token;
+}
+
+function validate(slug, files) {
+  if (!SLUG_RE.test(String(slug || ''))) {
+    throw httpError(400, `invalid slug "${slug}" (lowercase kebab-case only)`);
+  }
+  if (!Array.isArray(files) || files.length === 0) {
+    throw httpError(400, 'no files provided');
+  }
+  if (files.length > MAX_FILES) {
+    throw httpError(400, `too many files (${files.length} > ${MAX_FILES})`);
+  }
+  const prefix = `clients/${slug}/`;
+  let total = 0;
+  for (const f of files) {
+    if (!f || typeof f.path !== 'string' || typeof f.content !== 'string') {
+      throw httpError(400, 'each file needs string path + content');
+    }
+    if (f.path.includes('..') || f.path.startsWith('/')) {
+      throw httpError(400, `illegal path: ${f.path}`);
+    }
+    // Hard scope: this endpoint may ONLY write inside the client's own folder.
+    // Prevents anyone with the secret from touching vercel.json, workflows, etc.
+    if (!f.path.startsWith(prefix)) {
+      throw httpError(400, `path outside ${prefix}: ${f.path}`);
+    }
+    total += Buffer.byteLength(f.content, 'utf-8');
+  }
+  if (total > MAX_TOTAL_BYTES) {
+    throw httpError(400, `payload too large (${total} bytes > ${MAX_TOTAL_BYTES})`);
+  }
+}
+
+async function commitFiles(token, owner, repo, base, branch, files, message) {
+  const ref = await gh(token, 'GET', `/repos/${owner}/${repo}/git/ref/heads/${base}`);
+  const baseSha = ref.object.sha;
+  const baseCommit = await gh(token, 'GET', `/repos/${owner}/${repo}/git/commits/${baseSha}`);
+
+  const tree = [];
+  for (const f of files) {
+    const blob = await gh(token, 'POST', `/repos/${owner}/${repo}/git/blobs`, {
+      content:
+        f.encoding === 'base64'
+          ? f.content
+          : Buffer.from(f.content, 'utf-8').toString('base64'),
+      encoding: 'base64',
+    });
+    tree.push({ path: f.path, mode: '100644', type: 'blob', sha: blob.sha });
+  }
+
+  const newTree = await gh(token, 'POST', `/repos/${owner}/${repo}/git/trees`, {
+    base_tree: baseCommit.tree.sha,
+    tree,
+  });
+  const commit = await gh(token, 'POST', `/repos/${owner}/${repo}/git/commits`, {
+    message,
+    tree: newTree.sha,
+    parents: [baseSha],
+  });
+
+  // Create the branch ref; on name collision, suffix and retry.
+  let finalBranch = branch;
+  for (let attempt = 0; ; attempt++) {
+    try {
+      await gh(token, 'POST', `/repos/${owner}/${repo}/git/refs`, {
+        ref: `refs/heads/${finalBranch}`,
+        sha: commit.sha,
+      });
+      return finalBranch;
+    } catch (e) {
+      if (e.status === 422 && attempt < 8) {
+        finalBranch = `${branch}-${attempt + 2}`;
+        continue;
+      }
+      throw e;
+    }
+  }
+}
+
+module.exports = async (req, res) => {
+  try {
+    if (req.method !== 'POST') {
+      throw httpError(405, 'POST only');
+    }
+
+    const { GH_APP_ID, GH_APP_PRIVATE_KEY, SUBMIT_SECRET } = process.env;
+    const REPO = process.env.GH_REPO || 'hubvisory-ai-factory/diag_ia';
+    const BASE = process.env.GH_BASE_BRANCH || 'main';
+    if (!GH_APP_ID || !GH_APP_PRIVATE_KEY || !SUBMIT_SECRET) {
+      throw httpError(500, 'server not configured (missing GH_APP_* / SUBMIT_SECRET)');
+    }
+
+    // Vercel parses JSON bodies automatically; fall back to manual parse.
+    let body = req.body;
+    if (typeof body === 'string') {
+      try {
+        body = JSON.parse(body);
+      } catch {
+        throw httpError(400, 'invalid JSON body');
+      }
+    }
+    body = body || {};
+
+    if (!safeEqual(body.secret, SUBMIT_SECRET)) {
+      throw httpError(401, 'bad or missing secret');
+    }
+
+    const slug = body.slug;
+    const files = body.files;
+    validate(slug, files);
+
+    const [owner, repo] = REPO.split('/');
+    const privateKey = GH_APP_PRIVATE_KEY.replace(/\\n/g, '\n');
+    const token = await installationToken(GH_APP_ID, privateKey, owner, repo);
+
+    const branch = body.branch || `client/${slug}`;
+    const message = body.message || `add(client): ${slug}`;
+    const finalBranch = await commitFiles(token, owner, repo, BASE, branch, files, message);
+
+    const attribution = body.author ? `\n\n— Submitted by ${body.author}` : '';
+    const pr = await gh(token, 'POST', `/repos/${owner}/${repo}/pulls`, {
+      title: body.title || message,
+      head: finalBranch,
+      base: BASE,
+      body:
+        (body.prBody || `Automated submission for client \`${slug}\` via Claude Code.`) +
+        attribution,
+    });
+
+    return res.status(200).json({ ok: true, prUrl: pr.html_url, branch: finalBranch });
+  } catch (e) {
+    const status = e.status && e.status >= 400 && e.status < 600 ? e.status : 500;
+    return res.status(status).json({ ok: false, error: String(e.message || e) });
+  }
+};
