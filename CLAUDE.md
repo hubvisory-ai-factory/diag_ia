@@ -88,7 +88,7 @@ The `components/` folder contains **25 documented HTML snippets** — one per vi
 6. Claude copies the template and writes the client's `data.js`
 7. Claude adds a card to `index.html` for the new client
 8. Consultant opens the HTML file directly in a browser to verify
-9. Push to GitHub -> Vercel auto-deploys
+9. Publish via the `publish` skill (`node scripts/submit.mjs clients/<slug> "..."`) -> PR opens -> merge -> Vercel auto-deploys
 
 ### What Claude does during step 4-7
 
@@ -267,8 +267,9 @@ npx serve                       # then open http://localhost:3000/clients/<slug>
 python3 -m http.server 3000     # then open http://localhost:3000/clients/<slug>/
 # Landing page: http://localhost:3000/  · demo/template: /clients/exemple/
 
-# Deploy
-git push origin main    # Vercel auto-deploys
+# Publish (consultants) — opens a PR via the backend, no Git push:
+node scripts/submit.mjs clients/<slug> "add(client): <Name>"
+# Maintainers (template/infra) deploy by merging to main; Vercel auto-deploys.
 ```
 
 ## Deployment
@@ -278,49 +279,51 @@ git push origin main    # Vercel auto-deploys
 - **Deploy trigger**: Push to `main` — auto-deploys within ~1 minute
 - **Routing**: `vercel.json` rewrites `/<slug>` -> `/clients/<slug>/index.html`
 
-### GitHub Account Required (No Special Access Needed)
+### No GitHub Account Needed — Publish via the Backend
 
-To publish changes, consultants need a free GitHub account. **No collaborator access required** — the repo uses a fork & Pull Request workflow.
+Consultants publish through a **submission backend** (the `publish` skill), not by
+pushing with Git. **No GitHub account, org invite, token, fork, `gh`, or SSH key.**
 
 **How it works:**
-1. Fork the repo to your own GitHub account
-2. Push changes to your fork
-3. Open a Pull Request — Gaspard is auto-notified via CODEOWNERS
-4. Once merged, Vercel deploys automatically
+1. Claude runs `node scripts/submit.mjs clients/<slug> "message"`.
+2. The Vercel function `api/submit.js` authenticates as the `diag-ia-bot` GitHub App,
+   commits the client folder to a `client/<slug>` branch, and opens a Pull Request.
+3. Gaspard is auto-notified via CODEOWNERS.
+4. Once merged, Vercel deploys automatically.
 
-**If you don't have a GitHub account**: Use the `git-setup` skill — it walks through:
-1. Installing Git (if needed)
-2. Creating a GitHub account (free, 2 minutes)
-3. Configuring authentication
-4. Forking and cloning the repo
+The only one-time step for a consultant is a shared **publish key** (see the `publish`
+skill), stored at `~/.config/diag_ia/secret` and reused automatically afterward. Git is
+still needed once, only to *clone* the public repo (no auth) — the `git-setup` skill
+covers installing it.
 
-Without a GitHub account, you can still create pages locally, but someone else will need to push for you.
+> The old fork + `gh` + PR workflow is **deprecated**. Backend setup is documented in
+> `BACKEND_SETUP.md` (admin only).
 
-## Git Workflow
+## Publishing Workflow
 
-**Always use branches** — never commit directly to `main`.
-
-### Starting Work
-```bash
-git checkout -b client/<slug>    # New client
-git checkout -b fix/<what>       # Bug fix
-git checkout -b feat/<what>      # New feature
-```
-
-### During Work
-Commit frequently — after each major step:
-```bash
-git add .
-git commit -m "wip(client): <slug> — add metrics section"
-```
+Consultants do **not** push with Git. Publishing goes through the backend via the
+`publish` skill — the backend creates the branch and PR for you.
 
 ### When Done
-1. Consultant verifies locally in browser
-2. Final commit
-3. Push branch to fork: `git push -u origin client/<slug>`
-4. Create Pull Request: `gh pr create`
-5. Gaspard is auto-notified, reviews, and merges
-6. Vercel auto-deploys `main` within ~1 minute
+1. Consultant verifies locally in browser (`npx serve` from the repo root).
+2. Validate the data:
+   ```bash
+   node --check clients/<slug>/data.js && node scripts/validate-data.js clients/<slug>/data.js
+   ```
+3. Publish — one command opens the PR:
+   ```bash
+   node scripts/submit.mjs clients/<slug> "add(client): <Name>"
+   ```
+4. Give the consultant the printed PR URL. Gaspard is auto-notified (CODEOWNERS),
+   reviews, and merges. Vercel auto-deploys `main` within ~1 minute.
+
+> First publish only: if it reports "No submission secret found", set the shared key
+> once — see the `publish` skill. The backend rejects any file outside `clients/<slug>/`.
+
+### Infrastructure / template changes (maintainers only)
+For repo-wide changes (template, components, backend, docs) a maintainer with push
+access still uses normal Git branches + PRs. This does **not** apply to consultants
+adding client pages.
 
 ## Removing Sections
 
@@ -341,7 +344,8 @@ Common issues and solutions (full details in `.claude/skills/add-client.md`):
 | Charts don't render | Wrong data format | Radar needs 6 axes, scores must be numbers |
 | Nav pills don't filter | `idMetier` mismatch | Same ID in `perimetre`, `useCasesList`, `heatmapMatrix` |
 | 404 on live site | Wrong `<base href>` | Must be `/clients/<slug>/` with trailing slash |
-| Can't push | Wrong remote or not forked | Run `gh repo fork --remote` to set up fork |
+| Publish fails: "No submission secret found" | Publish key not set | Set it once — see the `publish` skill |
+| Publish fails: 401 bad secret | Wrong key | Re-paste the correct key into `~/.config/diag_ia/secret` |
 
 ## Current Status
 

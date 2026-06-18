@@ -4,53 +4,58 @@ Bienvenue ! Ce projet permet aux consultants de créer des sites de diagnostic I
 
 **Site en ligne** : https://diag-ia.hubvisory.app/
 
-## 🔑 Prérequis : Compte GitHub (gratuit)
+## 🔑 Prérequis : (presque) rien
 
-Pour publier ton diagnostic, tu as besoin d'un compte GitHub gratuit. **Pas besoin d'accès spécial** — tout le monde peut contribuer via Pull Request.
+- **Claude Code Desktop** installé — c'est tout ce dont tu as besoin.
+- **Git** (pour télécharger le projet) — si tu ne l'as pas, Claude t'aide à l'installer.
+- **Aucun compte GitHub requis**, aucun token, aucun fork, aucune ligne de commande Git à apprendre.
 
-### Si tu as un compte GitHub
-Parfait ! Tu peux commencer directement.
-
-### Si tu n'as pas de compte GitHub
-**Pas de souci !** Claude peut te guider pour en créer un (2 minutes). Dans le prompt, choisis l'option 3 "Configurer Git et GitHub" et suis les étapes.
+> **Comment je publie alors ?** La publication passe par un service interne : Claude
+> envoie ton rapport, qui ouvre automatiquement une Pull Request. Tu n'as jamais à
+> toucher GitHub. La première publication te demandera une **clé de publication**
+> (fournie une seule fois par ton admin) — Claude la mémorise ensuite.
 
 ### Comment ça marche ?
-1. Tu crées ton diagnostic en local avec Claude
-2. Claude pousse vers ta copie (fork) du repo
-3. Claude crée une Pull Request — Gaspard est notifié automatiquement
-4. Une fois validée, ton diagnostic est en ligne !
+1. Tu crées ton diagnostic en local avec Claude.
+2. Quand c'est prêt, Claude le publie en une commande (`scripts/submit.mjs`).
+3. Une Pull Request s'ouvre automatiquement — Gaspard est notifié.
+4. Une fois validée, ton diagnostic est en ligne ! 🎉
 
 ---
 
 ## 🚀 Démarrage rapide
 
-**Tu n'as pas besoin d'ouvrir un terminal.** Ouvre Claude Code Desktop, puis copie-colle le prompt ci-dessous. Claude s'occupe de tout : cloner le repo, lire la doc, et te guider.
+**Tu n'as pas besoin d'ouvrir un terminal.** Ouvre Claude Code Desktop, puis copie-colle le prompt que ton admin t'a envoyé (il met tout en place : cloner le repo, configurer la clé de publication, lire la doc, et te guider).
 
----
+> Tu n'as pas reçu le prompt d'onboarding ? Demande-le à ton admin (Gaspard) — c'est un
+> bloc de texte unique qui te configure entièrement.
+
+À défaut, voici le prompt générique (sans la clé — tu devras la demander à l'admin) :
 
 ## 📋 Prompt à copier-coller dans Claude Code Desktop
 
 ```
 Ce projet est le portail de diagnostics IA d'Hubvisory. Il permet de créer des sites web interactifs pour présenter les résultats de diagnostics IA réalisés pour des clients.
 
-Avant de commencer, vérifie que Git est installé en lançant : git --version
+Vérifie que Git est installé : git --version
+Si Git n'est pas installé, guide-moi pour l'installer (utilise le skill git-setup).
 
-Si Git n'est pas installé ou si j'ai une erreur, guide-moi pour l'installer (utilise le skill git-setup).
-
-Si Git est installé, clone le repo depuis GitHub :
+Clone le repo (dépôt public, aucune authentification nécessaire) puis entre dedans :
 
 git clone https://github.com/hubvisory-ai-factory/diag_ia.git
+cd diag_ia
 
-Ensuite, place-toi dans le dossier diag_ia/ et lis attentivement le fichier CLAUDE.md ainsi que REGISTRY.md pour comprendre la structure du projet, les conventions, et les clients existants.
+Lis attentivement CLAUDE.md et REGISTRY.md pour comprendre la structure du projet, les conventions, et les clients existants.
 
-Une fois que tu as compris le projet, demande-moi ce que je souhaite faire :
+Ensuite, demande-moi ce que je souhaite faire :
 
-1. Ajouter un nouveau diagnostic client — créer un nouveau rapport complet pour un client
-2. Modifier un rapport existant — mettre à jour ou corriger un diagnostic déjà en place
-3. Configurer Git et GitHub — si je n'ai jamais utilisé Git ou si je n'ai pas de compte GitHub
-4. Autre chose — ajouter un composant, modifier le design, mettre à jour la landing page, etc.
+1. Ajouter un nouveau diagnostic client
+2. Modifier un rapport existant
+3. Autre chose (nouveau composant, design, page d'accueil…)
 
-Pose-moi les questions une par une pour collecter les informations nécessaires. Ne suppose jamais les données du diagnostic, demande-moi toujours de les fournir ou de les confirmer.
+Pose-moi les questions une par une. Ne suppose jamais les données du diagnostic : demande-moi toujours de les fournir ou de les confirmer.
+
+Pour publier le rapport quand il est prêt, utilise le skill « publish » (node scripts/submit.mjs clients/<slug> "message"). Si une clé de publication est demandée, je te la fournirai (mon admin me l'a donnée). Pas de fork, pas de gh, pas de PR manuelle.
 ```
 
 ---
@@ -68,18 +73,18 @@ Quand tu dis « je veux ajouter un nouveau client », Claude va :
    - `assets/` — le logo du client
 3. Ajouter une carte sur la page d'accueil (`index.html`)
 4. Lancer un serveur local depuis la **racine** (`npx serve`) et ouvrir `http://localhost:3000/clients/<slug>/`
-5. Prêt à pousser sur GitHub → Vercel déploie automatiquement
+5. Publier (skill « publish ») → une PR s'ouvre → après validation, Vercel déploie automatiquement
 
 ### ✏️ Modifier un diagnostic existant
 
 Quand tu dis « je veux modifier Clovis », Claude va :
 
 1. Lire les données actuelles du client
-2. Vous discuter des changements
+2. Discuter des changements avec toi
 3. Mettre à jour `data.js` (les données)
-4. Optionnellement, ajouter des sections nouvelles en utilisant les composants existants
-5. Tester les changements
-6. Pousser sur GitHub
+4. Optionnellement, ajouter de nouvelles sections en utilisant les composants existants
+5. Tester les changements en local
+6. Publier (skill « publish »)
 
 ### 🎨 Composants disponibles
 
@@ -99,6 +104,8 @@ diag_ia/
 ├── CLAUDE.md                    # Documentation technique (lis-moi)
 ├── REGISTRY.md                  # Liste des templates et clients
 ├── index.html                   # Page d'accueil (tous les diagnostics)
+├── api/submit.js                # Service de publication (ouvre les PR) — ne pas modifier
+├── scripts/submit.mjs           # Outil de publication utilisé par le skill « publish »
 ├── _template/                   # Template à copier pour les nouveaux clients
 │   ├── index.html              # Moteur de rendu (copié tel quel)
 │   └── data.js                 # Données placeholder (structure à suivre)
@@ -110,8 +117,6 @@ diag_ia/
 │   └── <nouveau-client>/        # Chaque nouveau client ici
 ├── components/                  # Bibliothèque de composants HTML
 │   ├── index.html              # Vitrine de tous les composants
-│   ├── radar.html              # Exemple de graphique radar
-│   ├── heatmap.html            # Exemple de heatmap
 │   └── ...                     # 25 fichiers totaux
 └── README.md                   # Ce fichier
 ```
@@ -122,7 +127,7 @@ diag_ia/
 - **Tailwind CSS** (CDN) — pour le design
 - **Chart.js 4** (CDN) — pour les graphiques
 - **SVG inline** — pour les jauges et les heatmaps
-- **Vercel** — déploiement automatique quand tu pousses sur GitHub
+- **Vercel** — déploiement automatique une fois la PR fusionnée
 
 ## ✨ Convention importante
 
@@ -140,23 +145,21 @@ Cela garantit que la bibliothèque de composants reste à jour et réutilisable.
 ```
 1. Ouvre Claude Code Desktop
    ↓
-2. Colle le prompt ci-dessus
+2. Colle le prompt d'onboarding (envoyé par ton admin)
    ↓
-3. Claude clone le repo et lit la documentation
+3. Claude clone le repo, configure la clé de publication et lit la documentation
    ↓
-4. Claude crée une branche de travail (jamais direct sur main)
+4. Réponds aux questions de Claude (nom client, données, etc.)
    ↓
-5. Réponds aux questions de Claude (nom client, données, etc.)
+5. Claude crée les fichiers
    ↓
-6. Claude crée les fichiers, commit régulièrement
+6. Vérifie dans le navigateur — Claude lance `npx serve` (depuis la racine) et te donne l'URL `/clients/<slug>/`
    ↓
-7. Vérifie dans le navigateur — Claude lance `npx serve` (depuis la racine) et te donne l'URL `/clients/<slug>/`
+7. Si tout est bon, Claude publie (skill « publish ») → une PR s'ouvre automatiquement
    ↓
-8. Si tout est bon, Claude pousse la branche et merge dans main
+8. Gaspard valide la PR → Vercel déploie (~1 minute)
    ↓
-9. Vercel déploie automatiquement (~1 minute)
-   ↓
-10. Ton diagnostic est en ligne sur https://diag-ia.hubvisory.app/<slug> ! 🎉
+9. Ton diagnostic est en ligne sur https://diag-ia.hubvisory.app/<slug> ! 🎉
 ```
 
 ## 🛠️ Problèmes courants
@@ -165,8 +168,9 @@ Cela garantit que la bibliothèque de composants reste à jour et réutilisable.
 |----------|----------|
 | Page blanche | Erreur dans `data.js` — ouvre la console (F12) pour voir l'erreur |
 | Graphiques absents | Format de données incorrect — vérifie avec Claude |
-| "Permission denied" au push | Lance `gh repo fork --remote` pour configurer ton fork |
-| La page ne se met pas à jour | Vérifie que tu as bien merge dans `main` |
+| « No submission secret found » à la publication | La clé n'est pas configurée — demande-la à ton admin, Claude l'enregistre une fois |
+| « 401 bad secret » à la publication | La clé est incorrecte — redemande la bonne valeur à ton admin |
+| La page n'apparaît pas en ligne | La PR n'a pas encore été validée/fusionnée par Gaspard |
 
 ## 📞 Besoin d'aide ?
 
@@ -174,7 +178,6 @@ Cela garantit que la bibliothèque de composants reste à jour et réutilisable.
 - **Besoin de connaître les clients existants ?** Lis `REGISTRY.md`
 - **Besoin de voir tous les composants ?** Ouvre `components/index.html` dans un navigateur
 - **Besoin de modifier un diagnostic ?** Demande à Claude avec ce prompt
-- **Pas de compte GitHub ?** Choisis l'option 3 dans le prompt, Claude te guide
 
 ---
 
