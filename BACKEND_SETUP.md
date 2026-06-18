@@ -54,15 +54,15 @@ for **Production** (and Preview if you want PRs from previews):
 |---|---|
 | `GH_APP_ID` | the App ID from Step 1 |
 | `GH_APP_PRIVATE_KEY` | the **entire contents** of the `.pem` file from Step 2 (paste it whole, including the `-----BEGIN/END-----` lines; multi-line is fine) |
-| `SUBMIT_SECRET` | the shared secret (a ready-to-use one is below — or generate your own) |
+| `SUBMIT_SECRET` | a secret you generate — see below. **Never paste a real secret into this file: the repo is public.** |
 
-A freshly generated secret you can use:
+Generate a secret and copy it straight into the Vercel field (do not commit it):
 
 ```
-YNcbWgytnwp1Ftk18LDRjQSL2gO7bzHy
+node -e "console.log(require('crypto').randomBytes(24).toString('base64url'))"
 ```
 
-> To generate a different one: `node -e "console.log(require('crypto').randomBytes(24).toString('base64url'))"`
+Store the value in your team password manager only.
 
 Optional vars (only if you change defaults): `GH_REPO` (default
 `hubvisory-ai-factory/diag_ia`), `GH_BASE_BRANCH` (default `main`).
@@ -78,7 +78,7 @@ as a serverless function.
 From a clone of the repo with the secret exported:
 
 ```bash
-export DIAG_IA_SECRET="YNcbWgytnwp1Ftk18LDRjQSL2gO7bzHy"   # whatever you set
+export DIAG_IA_SECRET="<the value you set in Vercel>"
 node scripts/submit.mjs clients/exemple "test: backend smoke test"
 ```
 
