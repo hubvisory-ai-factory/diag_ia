@@ -517,9 +517,13 @@ and opens the PR — notifying @gaspardhassenforder via CODEOWNERS.
 
 > First publish only: if it prints "No submission secret found", set the shared key once
 > (`~/.config/diag_ia/secret`) — see the `publish` skill — and re-run.
-> Note: `_sources/` is git-ignored and not sent; the backend rejects anything outside
-> `clients/<slug>/`, so post-mortem edits to skills/`CLAUDE.md` are NOT published here
-> (see Phase 7 for how those land).
+> Note: `_sources/` is git-ignored and not sent. If you created a **new component** for
+> this client, include it in the same PR by passing extra paths (the backend now accepts
+> `components/`, `_template/`, `.claude/skills/`, docs — everything except `.github/`,
+> `api/`, and deploy config):
+> ```bash
+> node scripts/submit.mjs clients/<slug> "feat: <Name> + <component>" components/<name>.html components/index.html
+> ```
 
 Tell the consultant (in French):
 > « C'est publié ✅ — voici la Pull Request : <PR URL>. Gaspard est notifié
@@ -545,18 +549,22 @@ This portal is meant to **get better after every use**. Triggered at confirmatio
    docs, an undocumented data quirk, a scoring ambiguity, a source discrepancy, a command
    that didn't work, a step that was painful. Don't rely on memory at the end.
 2. **Synthesize concrete fixes** into `context.md` under `## Améliorations proposées` —
-   each as a specific edit ("in skill X, change Y to Z because…"). Because `context.md`
-   lives under `clients/<slug>/`, it **is published with the report**, so these proposals
-   reach the maintainer in the PR.
-3. **Apply the edits to the local files too** — this skill, `CLAUDE.md`, `README.md`, the
+   each as a specific edit ("in skill X, change Y to Z because…"). This is the rationale
+   /changelog that travels with the report PR.
+3. **Apply the edits to the files** — this skill, `CLAUDE.md`, `README.md`, the
    `components/` library, `_template/`, or a new skill/script. Small, durable edits.
-   - **If you are a maintainer** (have push access beyond `clients/`): commit these and
-     open a separate maintainer PR so the improvements actually land in the repo.
-   - **If you are a consultant** (publishing via the backend): the backend only ships
-     `clients/<slug>/`, so your local skill/doc edits won't reach GitHub by themselves —
-     that's fine, they help the rest of this session, and the proposals in `context.md`
-     are what the maintainer folds in on review.
-4. **Save a memory** for cross-session learnings (preferences, gotchas) so future runs
+4. **Publish the improvements as their OWN PR** (the backend now allows these paths —
+   everything except `.github/`, `api/`, and deploy config). Don't try to bundle them into
+   the client PR (that one is already publishing in parallel — racing it risks a partial
+   commit). When your edits are ready, open a separate improvement PR:
+   ```bash
+   node scripts/submit.mjs clients/<slug> "chore(skills): improvements from <Name> mission" \
+     .claude/skills/add-client.md components/<new>.html components/index.html
+   ```
+   (The first arg just labels the branch; list the actual changed files after the message.)
+   `.github/`, `api/`, and deploy config still need a maintainer Git PR — flag those in
+   `context.md` instead.
+5. **Save a memory** for cross-session learnings (preferences, gotchas) so future runs
    start ahead.
 
 Goal: the next consultant hits fewer surprises than you did.
@@ -596,7 +604,8 @@ Goal: the next consultant hits fewer surprises than you did.
 Publishing uses the backend, not Git push. Common cases:
 1. **"No submission secret found"**: set the publish key once (`~/.config/diag_ia/secret`) — see the `publish` skill.
 2. **401 bad secret**: wrong key — re-paste the correct value from the admin.
-3. **"path outside clients/<slug>/"**: a file is outside the client folder — keep everything under `clients/<slug>/`.
+3. **"path not allowed"**: you tried to write `.github/`, `api/`, or deploy config — those need a maintainer Git PR; drop them from the submission.
+3b. **"payload too large" (413)**: several MB of images in one go — compress/resize them or host on a CDN; text is never the cause.
 4. **Network/500**: confirm internet; if it says "server not configured", the admin checks Vercel env vars (`BACKEND_SETUP.md`).
 
 ### Template is Broken

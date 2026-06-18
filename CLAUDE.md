@@ -318,7 +318,8 @@ Consultants do **not** push with Git. Publishing goes through the backend via th
    reviews, and merges. Vercel auto-deploys `main` within ~1 minute.
 
 > First publish only: if it reports "No submission secret found", set the shared key
-> once — see the `publish` skill. The backend rejects any file outside `clients/<slug>/`.
+> once — see the `publish` skill. The backend accepts files anywhere except `.github/`,
+> `api/`, and deploy config; you can include a new component or skill fix in the same PR.
 
 ### Infrastructure / template changes (maintainers only)
 For repo-wide changes (template, components, backend, docs) a maintainer with push
