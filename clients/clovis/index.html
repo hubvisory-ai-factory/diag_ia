@@ -143,6 +143,13 @@
 
     /* clickable card affordance */
     .clickable-card { cursor: pointer; }
+
+    /* multi-line clamp (solution card descriptions) */
+    .clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+    /* clickable solution chip inside the use-case modal */
+    .sol-chip { cursor: pointer; transition: filter 0.15s, transform 0.1s; }
+    .sol-chip:hover { filter: brightness(0.95); transform: translateY(-1px); }
   </style>
 </head>
 <body>
@@ -170,10 +177,12 @@
         <button class="nav-pill px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap" data-target="view-dashboard" style="background: var(--primary-soft); color: var(--primary);">
           Dashboard
         </button>
+        <button id="nav-metiers-pill" class="nav-pill px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap" data-target="" style="color: var(--muted);">
+          Métiers
+        </button>
         <button class="nav-pill px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap" data-target="view-charte" style="color: var(--muted);">
           Méthodologie
         </button>
-        <!-- Métier pills injected by JS -->
       </nav>
       <div class="nav-fade nav-fade-right absolute right-0 top-0 bottom-0 w-6 z-10 rounded-r-full pointer-events-none opacity-100 transition-opacity" style="background: linear-gradient(to left, #f9fafb, transparent);"></div>
     </div>
@@ -236,11 +245,9 @@
           </div>
           <span class="text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap" style="background: var(--primary-soft); color: var(--primary);" id="solutions-count"></span>
         </div>
-        <div class="flex flex-wrap gap-2 mt-4 mb-3" id="solutions-filters"></div>
-        <div class="flex items-center justify-end mb-5">
-          <button id="solutions-sort-btn" class="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border cursor-pointer transition-colors" style="border-color: var(--border); color: var(--muted); background: var(--surface);">
-            Trier : <span id="solutions-sort-label">VOTAC décroissant</span> <span id="solutions-sort-arrow">↓</span>
-          </button>
+        <div class="flex flex-wrap items-start justify-between gap-x-6 gap-y-3 mt-4 mb-5">
+          <div class="flex flex-wrap gap-2" id="solutions-filters"></div>
+          <div class="flex flex-wrap items-center gap-2 sm:pl-6 sm:border-l" style="border-color: var(--border);" id="solutions-phase-filters"></div>
         </div>
         <p id="solutions-prod-desc" class="text-xs leading-relaxed mb-4 rounded-lg p-3" style="display:none; color: var(--muted); background: var(--bg-alt);"></p>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="solutions-grid"></div>
@@ -452,7 +459,8 @@ const ICONS = {
   'mail': '<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>',
   'tool': '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>',
   'graduation-cap': '<path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c0 1 4 3 6 3s6-2 6-3v-5"/>',
-  'shuffle': '<polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/>'
+  'shuffle': '<polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/>',
+  'arrow-up-right': '<line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/>'
 };
 
 function icon(name, size = 16, color = 'currentColor') {
@@ -576,8 +584,10 @@ function navigateTo(viewId) {
     currentView = viewId;
   }
 
+  const onMetier = viewId.indexOf('view-metier-') === 0;
   document.querySelectorAll('.nav-pill').forEach(pill => {
-    if (pill.dataset.target === viewId) {
+    const active = pill.dataset.target === viewId || (pill.id === 'nav-metiers-pill' && onMetier);
+    if (active) {
       pill.style.background = 'var(--primary-soft)';
       pill.style.color = 'var(--primary)';
     } else {
@@ -591,19 +601,15 @@ function navigateTo(viewId) {
 
 function initNavigation(theme) {
   const nav = document.getElementById('main-nav');
-  if (nav) {
-    (CLIENT_DATA.perimetre || []).forEach(dept => {
-      const btn = document.createElement('button');
-      btn.className = 'nav-pill px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap';
-      btn.dataset.target = 'view-metier-' + dept.id;
-      btn.style.color = 'var(--muted)';
-      btn.textContent = dept.nom;
-      nav.appendChild(btn);
-    });
-  }
+
+  // "Métiers" tab lands on the first métier; the per-métier tab strip at the
+  // top of each métier view handles navigation between métiers.
+  const firstMetier = (CLIENT_DATA.perimetre || [])[0];
+  const metiersPill = document.getElementById('nav-metiers-pill');
+  if (metiersPill && firstMetier) metiersPill.dataset.target = 'view-metier-' + firstMetier.id;
 
   document.querySelectorAll('.nav-pill').forEach(pill => {
-    pill.addEventListener('click', () => navigateTo(pill.dataset.target));
+    pill.addEventListener('click', () => { if (pill.dataset.target) navigateTo(pill.dataset.target); });
   });
 
   document.querySelectorAll('.btn-back').forEach(btn => {
@@ -1124,7 +1130,6 @@ function buildMetierViews(theme) {
 
   perimetre.forEach(dept => {
     const useCases = allUseCases.filter(uc => (uc.idMetiers || []).includes(dept.id));
-    const otherDepts = perimetre.filter(p => p.id !== dept.id);
     const effectifLine = (dept.effectif != null)
       ? `<p class="text-sm" style="color: var(--muted);">${dept.effectif} personne${dept.effectif > 1 ? 's' : ''} auditée${dept.effectif > 1 ? 's' : ''}</p>`
       : '';
@@ -1151,13 +1156,17 @@ function buildMetierViews(theme) {
               </div>
             </div>
           </div>
-          <!-- Switch to other metiers -->
+          <!-- Tab strip: navigate between all métiers (current one highlighted) -->
           <div class="flex flex-wrap gap-2">
-            ${otherDepts.map(od => `
-              <button class="metier-switch-btn px-3 py-1.5 rounded-full text-xs font-medium border" style="border-color: var(--border); color: var(--muted); background: var(--surface);" data-switch-to="view-metier-${od.id}">
-                ${od.nom}
-              </button>
-            `).join('')}
+            ${perimetre.map(p => {
+              const active = p.id === dept.id;
+              const style = active
+                ? `background: var(--primary); color: #fff; border-color: var(--primary);`
+                : `background: var(--surface); color: var(--muted); border-color: var(--border);`;
+              return `<button class="metier-switch-btn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border" style="${style}" data-switch-to="view-metier-${p.id}">
+                ${icon(p.icon, 13, active ? '#fff' : 'var(--muted-soft)')}${p.nom}
+              </button>`;
+            }).join('')}
           </div>
         </div>
       </section>
@@ -1222,7 +1231,7 @@ function formatRichText(raw, mutedColor) {
     const t = line.trim();
     if (!t) { closeList(); return; }
     if (/^[•\-–*]\s+/.test(t)) {
-      if (!listOpen) { html += '<ul class="list-disc pl-5 space-y-1 mb-2">'; listOpen = true; }
+      if (!listOpen) { html += `<ul class="list-disc pl-5 space-y-1 mb-2 text-sm leading-relaxed" style="color: ${mutedColor || 'var(--muted)'};">`; listOpen = true; }
       html += `<li>${inlineMd(t.replace(/^[•\-–*]\s+/, ''))}</li>`;
       return;
     }
@@ -1262,17 +1271,28 @@ function openUseCaseModal(uc, theme) {
     ? `<div class="mb-5"><p class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--muted);">Besoins</p>${formatRichText(uc.besoins, 'var(--muted)')}</div>`
     : '';
 
-  // Solutions associées groupées par produit
+  // Solutions associées — join the catalogue via casUsageLies so each chip is
+  // clickable and opens the full solution modal. Falls back to the use case's
+  // own solutionsRefs (static chips) when no catalogue entry is linked.
   let solutionsBlock = '';
-  const refs = uc.solutionsRefs || [];
-  if (refs.length) {
+  const allSols = CLIENT_DATA.catalogueSolutions || [];
+  const linked = allSols.filter(s => (s.casUsageLies || []).includes(uc.id));
+  const useLinked = linked.length > 0;
+  const entries = useLinked
+    ? linked.map(s => ({ sol: s, produitId: s.produitId, label: s.fonctionnalite }))
+    : (uc.solutionsRefs || []).map(r => ({ sol: null, produitId: r.produitId, label: r.fonctionnalite }));
+
+  if (entries.length) {
     const byProd = {};
-    refs.forEach(r => {
-      const pid = r.produitId || '_autre';
-      (byProd[pid] = byProd[pid] || []).push(r);
+    entries.forEach(e => {
+      const pid = e.produitId || '_autre';
+      (byProd[pid] = byProd[pid] || []).push(e);
     });
+    const hint = useLinked
+      ? `<span class="text-[11px] font-normal normal-case tracking-normal" style="color: var(--muted-soft);"> · cliquez pour le détail</span>`
+      : '';
     solutionsBlock = `<div class="mb-2">
-      <p class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--primary);">Solutions associées</p>
+      <p class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--primary);">Solutions associées${hint}</p>
       <div class="space-y-3">
         ${Object.entries(byProd).map(([pid, list]) => {
           const prod = produitMap[pid];
@@ -1280,7 +1300,10 @@ function openUseCaseModal(uc, theme) {
           return `<div class="rounded-xl border p-3" style="border-color: var(--border); background: var(--bg);">
             <div class="mb-2">${prod ? produitPastille(prod, theme) : `<span class="text-xs font-medium" style="color: var(--muted);">Autre</span>`}</div>
             <div class="flex flex-wrap gap-1.5">
-              ${list.map(r => `<span class="text-xs px-2.5 py-1 rounded-full" style="background: ${hexToSoft(c, 0.1)}; color: ${c};">${r.fonctionnalite || ''}</span>`).join('')}
+              ${list.map(e => e.sol
+                ? `<button class="sol-chip text-xs px-2.5 py-1 rounded-full inline-flex items-center gap-1" data-sol-id="${e.sol.id}" style="background: ${hexToSoft(c, 0.1)}; color: ${c};">${e.label || ''} ${icon('arrow-up-right', 11, c)}</button>`
+                : `<span class="text-xs px-2.5 py-1 rounded-full" style="background: ${hexToSoft(c, 0.1)}; color: ${c};">${e.label || ''}</span>`
+              ).join('')}
             </div>
           </div>`;
         }).join('')}
@@ -1301,6 +1324,14 @@ function openUseCaseModal(uc, theme) {
     ${solutionsBlock}
   `;
   openModal(html);
+  // Wire clickable solution chips → full solution modal, with a back link.
+  const mb = document.getElementById('modal-body');
+  if (mb) {
+    mb.querySelectorAll('[data-sol-id]').forEach(el => {
+      const sol = allSols.find(s => s.id === el.dataset.solId);
+      if (sol) el.addEventListener('click', () => openCatalogueModal(sol, theme, () => openUseCaseModal(uc, theme)));
+    });
+  }
 }
 
 // ===============================================
@@ -1388,6 +1419,23 @@ function votacTotal(votac) {
   return votac.total != null ? votac.total : null;
 }
 
+// Priority phase color (P1/P2/P3) — reads the methodology packages so the
+// dashboard badges match the "couleur" logic defined in the Méthodologie tab
+// (green = Quick Win, amber = valeur/effort, red = dépendance critique).
+function packageColor(code, theme) {
+  if (!code) return theme.muted;
+  const map = { green: theme.heat[4], amber: '#d97706', red: theme.heat[0] };
+  const items = ((CLIENT_DATA.methodologie || {}).packages || {}).items || [];
+  const it = items.find(p => p.code === code);
+  return (it && map[it.couleur]) || theme.muted;
+}
+
+function packageBadge(code, theme) {
+  if (!code) return '';
+  const c = packageColor(code, theme);
+  return `<span class="text-[10px] font-bold px-2 py-0.5 rounded-md" style="background: ${hexToSoft(c, 0.14)}; color: ${c};">${code}</span>`;
+}
+
 // VOTAC mini bars (5 components, each /5)
 function votacMini(votac, theme) {
   if (!votac) return '';
@@ -1431,12 +1479,9 @@ function buildCatalogue(theme) {
   if (countEl) countEl.textContent = `${solutions.length} solutions`;
 
   let activeFilter = 'all';
-  let sortDir = 'desc';
-
-  function packageBadge(pkg) {
-    if (!pkg) return '';
-    return `<span class="text-[10px] font-bold px-2 py-0.5 rounded-md" style="background: var(--bg-alt); color: var(--muted);">${pkg}</span>`;
-  }
+  let activePhase = 'all';
+  const phaseRank = s => { const m = /P(\d+)/.exec(s.package || ''); return m ? +m[1] : 99; };
+  const phases = [...new Set(solutions.map(s => s.package).filter(Boolean))].sort();
 
   function renderFilters() {
     const counts = {};
@@ -1459,7 +1504,27 @@ function buildCatalogue(theme) {
       }).join('')}
     `;
     filtersEl.querySelectorAll('.cat-filter').forEach(btn => {
-      btn.addEventListener('click', () => { activeFilter = btn.dataset.filter; renderFilters(); renderCards(); });
+      btn.addEventListener('click', () => { activeFilter = btn.dataset.filter; renderFilters(); renderPhaseFilters(); renderCards(); });
+    });
+  }
+
+  function renderPhaseFilters() {
+    const el = document.getElementById('solutions-phase-filters');
+    if (!el || !phases.length) return;
+    const base = activeFilter === 'all' ? solutions : solutions.filter(s => s.produitId === activeFilter);
+    const chip = (active, c, label, key) => {
+      const style = active
+        ? `background: ${c}; color: #fff; border-color: ${c};`
+        : `background: var(--surface); color: ${c}; border-color: ${hexToSoft(c, 0.35)};`;
+      return `<button class="phase-filter px-3.5 py-1.5 rounded-full text-xs font-semibold border cursor-pointer transition-colors" data-phase="${key}" style="${style}">${label}</button>`;
+    };
+    el.innerHTML = `
+      <span class="text-xs font-medium mr-0.5" style="color: var(--muted-soft);">Phase</span>
+      ${chip(activePhase === 'all', theme.ink, `Toutes ${base.length}`, 'all')}
+      ${phases.map(p => chip(activePhase === p, packageColor(p, theme), `${p} ${base.filter(s => s.package === p).length}`, p)).join('')}
+    `;
+    el.querySelectorAll('.phase-filter').forEach(btn => {
+      btn.addEventListener('click', () => { activePhase = btn.dataset.phase; renderPhaseFilters(); renderCards(); });
     });
   }
 
@@ -1470,39 +1535,28 @@ function buildCatalogue(theme) {
       descEl.textContent = (p && p.description) ? p.description : '';
       descEl.style.display = descEl.textContent ? 'block' : 'none';
     }
-    const filtered = activeFilter === 'all' ? solutions : solutions.filter(s => s.produitId === activeFilter);
+    let filtered = activeFilter === 'all' ? solutions : solutions.filter(s => s.produitId === activeFilter);
+    if (activePhase !== 'all') filtered = filtered.filter(s => s.package === activePhase);
     if (!filtered.length) {
-      grid.innerHTML = `<p class="text-sm col-span-full" style="color: var(--muted-soft);">Aucune solution pour ce produit.</p>`;
+      grid.innerHTML = `<p class="text-sm col-span-full" style="color: var(--muted-soft);">Aucune solution pour cette sélection.</p>`;
       return;
     }
-    // Sort by VOTAC score; unscored solutions always go last.
-    const sentinel = sortDir === 'desc' ? -Infinity : Infinity;
-    const score = s => { const t = votacTotal(s.votac); return t == null ? sentinel : t; };
-    const rows = filtered.slice().sort((a, b) => sortDir === 'desc' ? score(b) - score(a) : score(a) - score(b));
+    // Sort by phase (P1→P3), best VOTAC first within a phase; unphased last.
+    const v = s => { const t = votacTotal(s.votac); return t == null ? -Infinity : t; };
+    const rows = filtered.slice().sort((a, b) => (phaseRank(a) - phaseRank(b)) || (v(b) - v(a)));
     grid.innerHTML = rows.map((s, i) => {
       const prod = produitMap[s.produitId];
-      const c = (prod && prod.color) || theme.primary;
-      const votac = s.votac || {};
-      const total = votacTotal(votac);
-      const scoreBlock = (total != null)
-        ? `<div class="flex items-baseline gap-1">
-             <span class="font-display text-2xl" style="color: ${c};">${total}</span>
-             <span class="text-xs" style="color: var(--muted-soft);">pts</span>
-           </div>`
-        : `<span class="text-xs font-medium px-2 py-0.5 rounded-full" style="background: var(--bg-alt); color: var(--muted-soft);">VOTAC à scorer</span>`;
+      const descText = s.objectif || s.description || '';
       return `
         <div class="clickable-card rounded-xl border p-4 card-hover flex flex-col" data-cat-idx="${i}" style="border-color: var(--border); background: var(--surface);">
           <div class="flex items-start justify-between gap-2 mb-2">
             ${produitPastille(prod, theme)}
-            ${packageBadge(s.package)}
+            ${packageBadge(s.package, theme)}
           </div>
-          <h4 class="text-sm font-semibold mb-3 flex-1" style="color: var(--ink);">${s.fonctionnalite || ''}</h4>
-          <div class="pt-3 border-t" style="border-color: var(--border);">
-            <div class="flex items-center justify-between mb-2">
-              <span class="text-[10px] font-semibold uppercase tracking-wider" style="color: var(--muted-soft);">Score VOTAC</span>
-              ${scoreBlock}
-            </div>
-            ${total != null ? votacMini(votac, theme) : ''}
+          <h4 class="text-sm font-semibold mb-1.5" style="color: var(--ink);">${s.fonctionnalite || ''}</h4>
+          ${descText ? `<p class="text-xs leading-relaxed clamp-3" style="color: var(--muted);">${descText}</p>` : ''}
+          <div class="mt-auto pt-3 flex items-center gap-1 text-[11px] font-medium" style="color: var(--primary);">
+            Voir le détail ${icon('arrow-right', 12, 'var(--primary)')}
           </div>
         </div>`;
     }).join('');
@@ -1512,27 +1566,12 @@ function buildCatalogue(theme) {
     });
   }
 
-  function renderSort() {
-    const arrow = document.getElementById('solutions-sort-arrow');
-    const label = document.getElementById('solutions-sort-label');
-    if (arrow) arrow.textContent = sortDir === 'desc' ? '↓' : '↑';
-    if (label) label.textContent = sortDir === 'desc' ? 'VOTAC décroissant' : 'VOTAC croissant';
-  }
-  const sortBtn = document.getElementById('solutions-sort-btn');
-  if (sortBtn) {
-    sortBtn.addEventListener('click', () => {
-      sortDir = sortDir === 'desc' ? 'asc' : 'desc';
-      renderSort();
-      renderCards();
-    });
-  }
-
   renderFilters();
-  renderSort();
+  renderPhaseFilters();
   renderCards();
 }
 
-function openCatalogueModal(s, theme) {
+function openCatalogueModal(s, theme, backFn) {
   if (!s) return;
   const prod = getProduitMap()[s.produitId];
   const c = (prod && prod.color) || theme.primary;
@@ -1572,7 +1611,7 @@ function openCatalogueModal(s, theme) {
 
   const outils = (s.outils && s.outils.length)
     ? `<div class="mb-5">
-        <p class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--muted);">Outils</p>
+        <p class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--muted);">Outils pressentis</p>
         <div class="flex flex-wrap gap-1.5">
           ${s.outils.map(o => `<span class="text-xs px-2.5 py-1 rounded-full border" style="border-color: var(--border); color: var(--muted);">${o}</span>`).join('')}
         </div>
@@ -1591,13 +1630,21 @@ function openCatalogueModal(s, theme) {
       </div>`
     : '';
 
+  const pkgColor = packageColor(s.package, theme);
+  const backLink = backFn
+    ? `<button id="cat-modal-back" class="inline-flex items-center gap-1.5 text-xs font-medium mb-4" style="color: var(--primary);">
+        ${icon('arrow-left', 14, 'var(--primary)')} Retour au cas d'usage
+      </button>`
+    : '';
+
   const html = `
+    ${backLink}
     <div class="flex items-start justify-between gap-3 mb-4 pr-8">
       <div>
         <div class="mb-2">${produitPastille(prod, theme)}</div>
         <h3 class="font-display text-2xl" style="color: var(--ink);">${s.fonctionnalite || ''}</h3>
       </div>
-      ${s.package ? `<span class="text-xs font-bold px-2.5 py-1 rounded-md flex-shrink-0" style="background: var(--bg-alt); color: var(--muted);">${s.package}</span>` : ''}
+      ${s.package ? `<span class="text-xs font-bold px-2.5 py-1 rounded-md flex-shrink-0" style="background: ${hexToSoft(pkgColor, 0.14)}; color: ${pkgColor};">${s.package}</span>` : ''}
     </div>
     ${s.objectif ? `<div class="mb-4"><p class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--accent);">Objectif</p><p class="text-sm" style="color: var(--ink);">${s.objectif}</p></div>` : ''}
     ${s.description ? `<div class="mb-5"><p class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--muted);">Description</p><p class="text-sm leading-relaxed" style="color: var(--muted);">${s.description}</p></div>` : ''}
@@ -1606,6 +1653,10 @@ function openCatalogueModal(s, theme) {
     ${prereqs}
   `;
   openModal(html);
+  if (backFn) {
+    const b = document.getElementById('cat-modal-back');
+    if (b) b.addEventListener('click', backFn);
+  }
 }
 
 // ===============================================

@@ -88,7 +88,15 @@ const CLIENT_DATA = {
     { id: "SN13.1", fonctionnalite: "Dashboard impact collaborateur", produitId: "dashboard_pilotage", objectif: `Permettre à chaque collaborateur de visualiser l'impact de ses actions sur les KPIs de la Plateforme et de se situer par rapport à une période de référence.`, description: `Traduit les actions individuelles (relances envoyées, devis traités…) en impact sur les indicateurs clés. Comparaison par période.`, votac: { valeur: 3, occurrence: 3, temps: 3, ia: 5, facilite: 1, total: 135 }, package: "P3", statut: "A valider", outils: ["VM", "Site"], prerequis: [`Modélisation actions → KPI (définir formellement comment chaque action individuelle impacte les KPIs — travail analytique préalable)`], casUsageLies: ["CU-13"] }
   ],
   useCasesList: [
-    { id: "CU-1", titre: "Pilotage temps réel & analyse autonome des déviances", idMetiers: ["resp_plateforme"], grandTheme: "Pilotage & reporting", grandThemeEmoji: "📊", problemeMetier: `Les managers détectent les déviances opérationnelles en fin de mois, lors des extractions manuelles de l'ERP. Entre les extractions, les problèmes s'accumulent ce qui a pour effet que les collaborateurs traitent le sujet une fois qu'il devient urgent. En ce qui concerne la rentabilité des marchés (et autres données), Florent reçoit chaque matin un tableau BI actualisé sur les dernières 24h mais ce tableau ne permet pas d'identifier rapidement la source d'une variation et par conséquent, ne permet pas la mise en place d'actions correctives rapides. Les déviances (rentabilité hors cible, catégorisation erronée, document manquant, visite à risque de pénalité) ne sont donc visibles qu'après qu'il soit trop tard pour agir sereinement.`, besoins: `Visibilité en temps réel : afficher au quotidien les indicateurs clés de la plateforme ; construction autonome par les managers (langage naturel). Détection et analyse des déviances : alerter automatiquement dès qu'un indicateur dérive de la cible ; identification de la source de variation d'un indicateur et proposition d'actions correctives. Prédictibilité : produire des projections sur les indicateurs clés ; signaler en amont les situations à risque avant qu'elles ne deviennent urgentes.`, irritants: [
+    { id: "CU-1", titre: "Pilotage temps réel & analyse autonome des déviances", idMetiers: ["resp_plateforme"], grandTheme: "Pilotage & reporting", grandThemeEmoji: "📊", problemeMetier: `Les managers détectent les déviances opérationnelles en fin de mois, lors des extractions manuelles de l'ERP. Entre les extractions, les problèmes s'accumulent ce qui a pour effet que les collaborateurs traitent le sujet une fois qu'il devient urgent. En ce qui concerne la rentabilité des marchés (et autres données), Florent reçoit chaque matin un tableau BI actualisé sur les dernières 24h mais ce tableau ne permet pas d'identifier rapidement la source d'une variation et par conséquent, ne permet pas la mise en place d'actions correctives rapides. Les déviances (rentabilité hors cible, catégorisation erronée, document manquant, visite à risque de pénalité) ne sont donc visibles qu'après qu'il soit trop tard pour agir sereinement.`, besoins: `**Visibilité en temps réel**
+• Afficher au quotidien les indicateurs clés de la plateforme
+• Construction autonome des tableaux par les managers (langage naturel)
+**Détection & analyse des déviances**
+• Alerter automatiquement dès qu'un indicateur dérive de la cible
+• Identifier la source de variation et proposer des actions correctives
+**Prédictibilité**
+• Produire des projections sur les indicateurs clés
+• Signaler en amont les situations à risque`, irritants: [
         `Absence d'animation de la plateforme en temps réel — Données: 18 personnes sans indicateur temps réel · délai détection → diagnostic : plusieurs jours. Process à date: Aucun tableau de bord en temps réel aujourd'hui. Florent souhaitait des écrans affichant appels, CA, alertes mais n'a pas pu les mettre en place. Points de douleur: Dépendance aux individus, Pilotage réactif, Manque d'autonomie. Outils: Power BI, Genesys, Zadig / Locpro.`,
         `Interprétation des déviances de pilotage dans les tableaux de bord — Données: Plusieurs jours pour diagnostiquer les causes d'une déviance de données de performance. Process à date: Lecture des tableaux Power BI existants. En cas d'anomalie détectée, ticket à Mickaël pour créer une nouvelle vue ou extraction depuis Zadig. Analyse manuelle croisée des données. Délai entre détection et diagnostic : plusieurs jours. Points de douleur: Pilotage réactif, Dépendance aux individus, Manque d'autonomie, Qualité de données. Outils: Power BI, Zadig / Locpro.`,
         `Qualité des données hétérogène dans l'ERP — Données: 7/7 collaborateurs conscients de l'impact des données erronées. Process à date: Saisies hétérogènes par différents utilisateurs dans Zadig. Pas de contrôle à la saisie. Détection des erreurs lors des extractions mensuelles ou lors des contrôles clients. Points de douleur: Absence d'alerte, Qualité de données, Dépendance aux individus, Pilotage réactif. Métiers impactés: Responsable plateforme, Chargé de clientèle, Assistante GP. Outils: Zadig / Locpro, Excel.`
@@ -110,7 +118,13 @@ Priorisation et résumé
         { fonctionnalite: "Résumé journalier", produitId: "boite_mail" },
         { fonctionnalite: "Apprentissage continu", produitId: "boite_mail" }
       ], votac: { total: 11 } },
-    { id: "CU-3", titre: "Génération assistée des rapports EBTS & mails clients", idMetiers: ["gestionnaire_parc", "charge_clientele"], grandTheme: "Communication & flux entrants", grandThemeEmoji: "📧", problemeMetier: `Chaque matin, le Gestionnaire de Parc reçoit par mail les rapports de dépannages réalisés dans la nuit par l'entreprise (EBTS - sous traitant de Clovis pour les dépannages de nuit). Il doit les analyser (cause, ce que couvre le contrat etc) et faire une synthèse par mail à envoyer au client.`, besoins: `Fonction A — Analyse du rapport EBTS : Lire automatiquement chaque rapport EBTS reçu par mail en pièce jointe ; Extraire les informations clés (véhicule concerné, nature de la panne, intervention réalisée, pièces remplacées) ; Qualifier automatiquement ce que couvre le contrat client pour cette intervention. Fonction B — Génération du mail client : Générer le mail de synthèse structuré à destination du client à partir de l'analyse du rapport ; Soumettre le mail au GP pour validation avant envoi — aucun envoi automatique sans approbation.`, irritants: [
+    { id: "CU-3", titre: "Génération assistée des rapports EBTS & mails clients", idMetiers: ["gestionnaire_parc", "charge_clientele"], grandTheme: "Communication & flux entrants", grandThemeEmoji: "📧", problemeMetier: `Chaque matin, le Gestionnaire de Parc reçoit par mail les rapports de dépannages réalisés dans la nuit par l'entreprise (EBTS - sous traitant de Clovis pour les dépannages de nuit). Il doit les analyser (cause, ce que couvre le contrat etc) et faire une synthèse par mail à envoyer au client.`, besoins: `**Analyse du rapport EBTS**
+• Lire automatiquement chaque rapport EBTS reçu en pièce jointe
+• Extraire les informations clés (véhicule, nature de la panne, intervention, pièces remplacées)
+• Qualifier ce que couvre le contrat client pour l'intervention
+**Génération du mail client**
+• Générer le mail de synthèse structuré à partir de l'analyse
+• Soumettre au GP pour validation — aucun envoi automatique`, irritants: [
         `Rédaction et envoi des rapports de dépannage EBTS — Point de douleur : Chronophage. Process à date : Annouar reçoit les rapports BTS dans le néant, analyse chaque intervention (complète ou provisoire ? contrat ou hors contrat ?), puis rédige un rapport client standardisé par copier-coller en changeant les données spécifiques. Données : 10 à 15 rapports en pic le matin · ~800 dépannages/an sur le marché Intermarché. Outils concernés : Outlook, Zadig / Locpro, Genesys.`
       ], chiffresCles: `~800 dépannages/an · ~800 mails/an · pic 10–15 le matin · (mail client structuré à confirmer en base)`, metricsSucces: `100% des rapports sont traités automatiquement`, solutionsRefs: [
         { fonctionnalite: "Rapports EBTS", produitId: "boite_mail" }
@@ -300,27 +314,23 @@ Le process à date: recevoir la demande du militaire par mail, contacter la conc
   • Réduire le temps de traitement par prise de RDV 
   • Réduire le délais de réponse des concessions et clients`, solutionsRefs: [], votac: { total: 13 } },
     // TODO confirmer métier
-    { id: "CU-13", titre: "Pilotage activités des collaborateurs Plateforme", idMetiers: ["organisation"], grandTheme: "", grandThemeEmoji: "", problemeMetier: `Les collaborateurs de la plateforme n'ont aucune visibilité sur l'impact concret de leur travail au quotidien : les données existent dans Zadig et le BI, mais elles sont agrégées au niveau équipe ou marché, jamais restituées à l'échelle individuelle. Sans retour sur leur propre activité, les opérationnels peinent à se situer, à se fixer des repères et à maintenir leur engagement dans la durée.`, besoins: `**Consolidation et calcul des indicateurs individuels**
-Croiser automatiquement les données Zadig et BI pour calculer les indicateurs clés par collaborateur : visites clôturées, CA généré sur son périmètre, RDV planifiés vs réalisés, taux de conformité réglementaire, documents traités
-Actualiser les indicateurs à une fréquence définie (quotidienne ou hebdomadaire) sans action manuelle
-Définir le périmètre de chaque collaborateur (bases, véhicules, marchés affectés) comme filtre de référence pour les calculs
-**Tableau de bord N1 — Vue brute**
-Afficher les indicateurs clés du jour et de la semaine en cours pour chaque collaborateur
-Permettre une comparaison simple avec la période précédente (semaine N-1, mois N-1)
-Rendre le tableau accessible sans formation : lecture immédiate, sans manipulation de données
-**Tableau de bord N2 — Vue contextuelle**
-Situer le collaborateur par rapport à son historique personnel (tendance sur le mois)
-Signaler les indicateurs en décrochage ou en progression notable
-Permettre un drill-down sur un indicateur pour en comprendre la composition (ex : quelles visites clôturées, sur quels véhicules)
-**Tableau de bord N3 — Vue gamifiée**
-Attribuer un score hebdomadaire ou mensuel par collaborateur à partir de ses indicateurs clés
-Afficher une progression individuelle (niveau, streak, objectif atteint) et une comparaison anonymisée ou nominative avec l'équipe selon le choix du management
-Mettre en avant les performances notables (top clôtures de la semaine, zéro retard réglementaire sur le mois) pour créer des moments de reconnaissance informels
+    { id: "CU-13", titre: "Pilotage activités des collaborateurs Plateforme", idMetiers: ["organisation"], grandTheme: "", grandThemeEmoji: "", problemeMetier: `Les collaborateurs de la plateforme n'ont aucune visibilité sur l'impact concret de leur travail au quotidien : les données existent dans Zadig et le BI, mais elles sont agrégées au niveau équipe ou marché, jamais restituées à l'échelle individuelle. Sans retour sur leur propre activité, les opérationnels peinent à se situer, à se fixer des repères et à maintenir leur engagement dans la durée.`, besoins: `**Consolidation des indicateurs individuels**
+• Croiser Zadig et BI pour calculer les indicateurs clés par collaborateur (visites clôturées, CA, RDV planifiés vs réalisés, conformité, documents traités)
+• Actualiser automatiquement à fréquence définie (quotidienne ou hebdomadaire)
+• Définir le périmètre de chaque collaborateur (bases, véhicules, marchés) comme filtre de référence
+**N1 — Vue brute**
+• Afficher les indicateurs du jour et de la semaine, accessibles sans formation
+• Comparer simplement avec la période précédente (N-1)
+**N2 — Vue contextuelle**
+• Situer le collaborateur sur sa tendance personnelle du mois, signaler décrochages et progrès
+• Drill-down sur un indicateur pour en comprendre la composition
+**N3 — Vue gamifiée**
+• Attribuer un score périodique et afficher la progression individuelle (niveau, streak, objectif)
+• Comparer à l'équipe (anonyme ou nominatif selon le management) et valoriser les performances notables
 **Angles morts à valider**
-Les indicateurs individuels sont-ils calculables depuis Zadig tel qu'il est aujourd'hui, ou faut-il un travail de nettoyage/structuration de la donnée en amont ?
-Le périmètre de chaque collaborateur est-il formalisé dans Zadig (affectation bases / véhicules) ou reconstruit manuellement aujourd'hui ?
-Quel est le niveau d'appétence de l'équipe pour la comparaison entre pairs — à valider avec Florent avant de concevoir la couche N3 ?
-Des ajustements sur les indicateurs ou le niveau de détail des besoins ?`, irritants: [], chiffresCles: ``, metricsSucces: ``, solutionsRefs: [
+• Indicateurs calculables depuis Zadig en l'état, ou nettoyage/structuration préalable ?
+• Périmètre collaborateur formalisé dans Zadig ou reconstruit manuellement ?
+• Appétence de l'équipe pour la comparaison entre pairs (à valider avec Florent avant la couche N3)`, irritants: [], chiffresCles: ``, metricsSucces: ``, solutionsRefs: [
         { fonctionnalite: "Dashboard impact collaborateur", produitId: "dashboard_pilotage" }
       ], votac: { total: null } },
     // TODO lien solutions
