@@ -21,6 +21,14 @@ is unavailable.
   `clients/<slug>/data.js` (+ `assets/` if any).
 - The shared submission secret is configured (see "First time" below).
 
+**Confirm locally first.** Never publish before the consultant has reviewed the page in a
+browser and confirmed. Serve the repo root **in the background** and give them the link:
+```bash
+npx serve            # run with run_in_background: true, then share:
+# http://localhost:3000/clients/<slug>/
+```
+Ask them to confirm (in French); iterate until they're happy.
+
 Always validate before publishing:
 ```bash
 node --check clients/<slug>/data.js && node scripts/validate-data.js clients/<slug>/data.js
@@ -36,6 +44,9 @@ node scripts/submit.mjs clients/<slug> "add(client): <Client Name>"
 On success it prints `✓ Pull Request opened: <url>`. Give that URL to the
 consultant and tell them Gaspard is auto-notified (CODEOWNERS) and will review &
 merge; Vercel deploys `main` within ~1 minute of merge.
+
+**After publishing, stop the local preview server** (kill the background `npx serve`
+task from the prerequisites step) so nothing keeps running on `localhost:3000`.
 
 > Note: `_sources/` and other local-only material are skipped automatically, and
 > the backend rejects any file outside `clients/<slug>/`.
