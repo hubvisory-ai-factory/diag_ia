@@ -354,12 +354,6 @@
   <!-- ==================== CHARTE VIEW ==================== -->
   <div data-view="view-charte" id="view-charte" style="display: none;">
 
-    <!-- Back button -->
-    <button class="btn-back flex items-center gap-1.5 text-sm font-medium mb-6" style="color: var(--primary);">
-      <span class="icon-back"></span>
-      Retour au Dashboard Global
-    </button>
-
     <!-- Methodology Guide -->
     <section class="mb-8">
       <h2 class="font-display text-2xl mb-2" style="color: var(--ink);" id="meth-title">Guide méthodologique</h2>
@@ -1136,12 +1130,6 @@ function buildMetierViews(theme) {
 
     const html = `
     <div data-view="view-metier-${dept.id}" id="view-metier-${dept.id}" style="display: none;">
-      <!-- Back button -->
-      <button class="btn-back flex items-center gap-1.5 text-sm font-medium mb-6" style="color: var(--primary);">
-        ${icon('arrow-left', 16, 'var(--primary)')}
-        Retour au Dashboard Global
-      </button>
-
       <!-- Metier header -->
       <section class="mb-8">
         <div class="rounded-2xl p-6 border" style="background: linear-gradient(135deg, var(--primary-soft), var(--bg-alt)); border-color: var(--primary-border);">
@@ -1433,7 +1421,8 @@ function packageColor(code, theme) {
 function packageBadge(code, theme) {
   if (!code) return '';
   const c = packageColor(code, theme);
-  return `<span class="text-[10px] font-bold px-2 py-0.5 rounded-md" style="background: ${hexToSoft(c, 0.14)}; color: ${c};">${code}</span>`;
+  const label = code.replace(/^(P\d)(\d+)$/, '$1-$2');
+  return `<span class="text-[10px] font-bold px-2 py-0.5 rounded-md" style="background: ${hexToSoft(c, 0.14)}; color: ${c};">${label}</span>`;
 }
 
 // VOTAC mini bars (5 components, each /5)
@@ -1521,7 +1510,7 @@ function buildCatalogue(theme) {
     el.innerHTML = `
       <span class="text-xs font-medium mr-0.5" style="color: var(--muted-soft);">Phase</span>
       ${chip(activePhase === 'all', theme.ink, `Toutes ${base.length}`, 'all')}
-      ${phases.map(p => chip(activePhase === p, packageColor(p, theme), `${p} ${base.filter(s => s.package === p).length}`, p)).join('')}
+      ${phases.map(p => chip(activePhase === p, packageColor(p, theme), `${p} -${base.filter(s => s.package === p).length}`, p)).join('')}
     `;
     el.querySelectorAll('.phase-filter').forEach(btn => {
       btn.addEventListener('click', () => { activePhase = btn.dataset.phase; renderPhaseFilters(); renderCards(); });
