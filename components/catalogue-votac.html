@@ -1,0 +1,262 @@
+<!--
+  COMPONENT: Catalogue des solutions (VOTAC variant)
+  SECTION: Dashboard global — Catalogue des solutions identifiées
+  INTRODUCED BY: client "clovis" (diverged from the base solutions-grid.html)
+
+  WHEN TO USE
+    When solutions are scored with a VOTAC grid and packaged into priority
+    phases (P1/P2/P3). This is the text-led variant: cards lead with the
+    feature name + objectif/description, and the VOTAC detail lives in a modal
+    (not on the card face). For the base typology/complexité variant, see
+    solutions-grid.html.
+
+  DATA NEEDED
+    - CLIENT_DATA.produits[] — { id, nom, icon, color, description }
+    - CLIENT_DATA.catalogueSolutions[] — each:
+        { id, fonctionnalite, produitId, objectif, description,
+          votac: { valeur, occurrence, temps, ia, facilite },  // each 1–5
+          package: "P1" | "P2" | "P3",
+          outils: [string],            // shown as "Outils pressentis"
+          prerequis: [string],
+          casUsageLies: ["CU-1", …] }  // links back to useCasesList ids
+    - CLIENT_DATA.methodologie.packages.items[] — { code, nom, couleur } where
+      couleur ∈ {green, amber, red}. Drives the P1/P2/P3 badge colors so the
+      dashboard matches the Méthodologie tab.
+
+  BEHAVIOUR
+    - Two filter groups on one control row, same chip height, visually
+      separated (product filters left, phase filters right with a border-l):
+        · Product filter (Tous + one chip per produit, with counts)
+        · Phase filter   (Toutes + P1/P2/P3, color-coded, with counts)
+      The two filters compose (product AND phase).
+    - Cards are ordered by phase (P1→P3); within a phase, highest VOTAC first
+      (used silently as a tiebreaker — the score is NOT shown on the card).
+    - Clicking a card opens the solution modal (see openCatalogueModal below).
+
+  DEPENDENCIES: Tailwind CSS, icon(), hexToSoft(), a generic openModal(html)
+                modal, votacTotal(), packageColor(), packageBadge()
+-->
+
+<!-- ─── CATALOGUE (VOTAC) — container ─── -->
+<div class="rounded-2xl border p-6" style="background: var(--surface); border-color: var(--border);">
+  <div class="flex items-start justify-between gap-4 mb-1">
+    <div>
+      <div class="flex items-center gap-2 mb-1">
+        <!-- icon('layers', 14, 'var(--accent)') -->
+        <p class="text-[11px] font-semibold uppercase tracking-[0.18em]" style="color: var(--accent);">Catalogue</p>
+      </div>
+      <h3 class="font-display text-xl" style="color: var(--ink);">Catalogue des solutions identifiées</h3>
+      <p class="text-sm mt-1" style="color: var(--muted);">Fonctionnalités évaluées et scorées VOTAC, filtrables par produit</p>
+    </div>
+    <span class="text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap" style="background: var(--primary-soft); color: var(--primary);" id="solutions-count"></span>
+  </div>
+
+  <!-- Control row: product filters (left) + phase filters (right, separated) -->
+  <div class="flex flex-wrap items-start justify-between gap-x-6 gap-y-3 mt-4 mb-5">
+    <div class="flex flex-wrap gap-2" id="solutions-filters"></div>
+    <div class="flex flex-wrap items-center gap-2 sm:pl-6 sm:border-l" style="border-color: var(--border);" id="solutions-phase-filters"></div>
+  </div>
+
+  <!-- Optional product description (shown when a product is selected) -->
+  <p id="solutions-prod-desc" class="text-xs leading-relaxed mb-4 rounded-lg p-3" style="display:none; color: var(--muted); background: var(--bg-alt);"></p>
+
+  <!-- Cards (JS-rendered) -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="solutions-grid"></div>
+</div>
+
+<!-- ─── SINGLE CARD (static reference) — text-led, no VOTAC on the face ─── -->
+<!--
+<div class="clickable-card rounded-xl border p-4 card-hover flex flex-col" style="border-color: var(--border); background: var(--surface);">
+  <div class="flex items-start justify-between gap-2 mb-2">
+    <span class="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full" style="background: rgba(0,51,102,0.12); color: #003366;">
+      <span class="w-2 h-2 rounded-full" style="background: #003366;"></span>Nom du Produit
+    </span>
+    <span class="text-[10px] font-bold px-2 py-0.5 rounded-md" style="background: rgba(16,185,129,0.14); color: #10b981;">P1</span>
+  </div>
+  <h4 class="text-sm font-semibold mb-1.5" style="color: var(--ink);">Nom de la fonctionnalité</h4>
+  <p class="text-xs leading-relaxed clamp-3" style="color: var(--muted);">Objectif de la solution en une phrase claire et orientée bénéfice métier.</p>
+  <div class="mt-auto pt-3 flex items-center gap-1 text-[11px] font-medium" style="color: var(--primary);">
+    Voir le détail (icon arrow-right 12)
+  </div>
+</div>
+-->
+
+<style>
+  /* Required helpers for this component */
+  .clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .clickable-card { cursor: pointer; }
+  .votac-bar-track { background: var(--bg-alt); border-radius: 999px; overflow: hidden; }
+</style>
+
+<script>
+// ════════ SHARED HELPERS ════════
+/*
+// VOTAC score = product of the 5 components (each 1–5). Falls back to a stored
+// total only when components are absent (e.g. a use-case "Somme VOTAC").
+function votacTotal(votac) {
+  if (!votac) return null;
+  const ks = ['valeur', 'occurrence', 'temps', 'ia', 'facilite'];
+  if (ks.every(k => votac[k] != null)) return ks.reduce((p, k) => p * votac[k], 1);
+  return votac.total != null ? votac.total : null;
+}
+
+// Phase color from the méthodologie packages (green / amber / red).
+function packageColor(code, theme) {
+  if (!code) return theme.muted;
+  const map = { green: theme.heat[4], amber: '#d97706', red: theme.heat[0] };
+  const items = ((CLIENT_DATA.methodologie || {}).packages || {}).items || [];
+  const it = items.find(p => p.code === code);
+  return (it && map[it.couleur]) || theme.muted;
+}
+function packageBadge(code, theme) {
+  if (!code) return '';
+  const c = packageColor(code, theme);
+  return `<span class="text-[10px] font-bold px-2 py-0.5 rounded-md" style="background: ${hexToSoft(c, 0.14)}; color: ${c};">${code}</span>`;
+}
+
+// ════════ CATALOGUE BUILDER ════════
+function buildCatalogue(theme) {
+  const grid = document.getElementById('solutions-grid');
+  const filtersEl = document.getElementById('solutions-filters');
+  const countEl = document.getElementById('solutions-count');
+  if (!grid || !filtersEl) return;
+
+  const solutions = CLIENT_DATA.catalogueSolutions || [];
+  const produits = CLIENT_DATA.produits || [];
+  const produitMap = {}; produits.forEach(p => { produitMap[p.id] = p; });
+  if (countEl) countEl.textContent = `${solutions.length} solutions`;
+
+  let activeFilter = 'all';   // produit id or 'all'
+  let activePhase  = 'all';   // 'P1' | 'P2' | 'P3' | 'all'
+  const phaseRank = s => { const m = /P(\d+)/.exec(s.package || ''); return m ? +m[1] : 99; };
+  const phases = [...new Set(solutions.map(s => s.package).filter(Boolean))].sort();
+
+  // ── Product filter pills (with counts) ──
+  function renderFilters() {
+    const counts = {}; produits.forEach(p => { counts[p.id] = solutions.filter(s => s.produitId === p.id).length; });
+    const chip = (active, c) => active
+      ? `style="background: ${c}; color: #fff; border-color: ${c};"`
+      : `style="background: var(--surface); color: ${c}; border-color: ${hexToSoft(c, 0.35)};"`;
+    filtersEl.innerHTML = `
+      <button class="cat-filter px-3.5 py-1.5 rounded-full text-xs font-semibold border cursor-pointer transition-colors" data-filter="all" ${chip(activeFilter === 'all', theme.ink)}>Tous ${solutions.length}</button>
+      ${produits.map(p => { const c = p.color || theme.primary; return `
+        <button class="cat-filter inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium border cursor-pointer transition-colors" data-filter="${p.id}" ${chip(activeFilter === p.id, c)}>
+          <span class="w-2 h-2 rounded-full" style="background: ${activeFilter === p.id ? '#fff' : c};"></span>${p.nom} ${counts[p.id] || 0}
+        </button>`; }).join('')}`;
+    filtersEl.querySelectorAll('.cat-filter').forEach(btn => {
+      btn.addEventListener('click', () => { activeFilter = btn.dataset.filter; renderFilters(); renderPhaseFilters(); renderCards(); });
+    });
+  }
+
+  // ── Phase filter pills (color-coded, counts respect the product filter) ──
+  function renderPhaseFilters() {
+    const el = document.getElementById('solutions-phase-filters');
+    if (!el || !phases.length) return;
+    const base = activeFilter === 'all' ? solutions : solutions.filter(s => s.produitId === activeFilter);
+    const chip = (active, c, label, key) => {
+      const style = active
+        ? `background: ${c}; color: #fff; border-color: ${c};`
+        : `background: var(--surface); color: ${c}; border-color: ${hexToSoft(c, 0.35)};`;
+      return `<button class="phase-filter px-3.5 py-1.5 rounded-full text-xs font-semibold border cursor-pointer transition-colors" data-phase="${key}" style="${style}">${label}</button>`;
+    };
+    el.innerHTML = `
+      <span class="text-xs font-medium mr-0.5" style="color: var(--muted-soft);">Phase</span>
+      ${chip(activePhase === 'all', theme.ink, `Toutes ${base.length}`, 'all')}
+      ${phases.map(p => chip(activePhase === p, packageColor(p, theme), `${p} ${base.filter(s => s.package === p).length}`, p)).join('')}`;
+    el.querySelectorAll('.phase-filter').forEach(btn => {
+      btn.addEventListener('click', () => { activePhase = btn.dataset.phase; renderPhaseFilters(); renderCards(); });
+    });
+  }
+
+  // ── Cards (text-led, ordered by phase then VOTAC) ──
+  function renderCards() {
+    const descEl = document.getElementById('solutions-prod-desc');
+    if (descEl) {
+      const p = activeFilter !== 'all' ? produitMap[activeFilter] : null;
+      descEl.textContent = (p && p.description) ? p.description : '';
+      descEl.style.display = descEl.textContent ? 'block' : 'none';
+    }
+    let filtered = activeFilter === 'all' ? solutions : solutions.filter(s => s.produitId === activeFilter);
+    if (activePhase !== 'all') filtered = filtered.filter(s => s.package === activePhase);
+    if (!filtered.length) { grid.innerHTML = `<p class="text-sm col-span-full" style="color: var(--muted-soft);">Aucune solution pour cette sélection.</p>`; return; }
+
+    const v = s => { const t = votacTotal(s.votac); return t == null ? -Infinity : t; };
+    const rows = filtered.slice().sort((a, b) => (phaseRank(a) - phaseRank(b)) || (v(b) - v(a)));
+    grid.innerHTML = rows.map((s, i) => {
+      const prod = produitMap[s.produitId];
+      const descText = s.objectif || s.description || '';
+      return `
+        <div class="clickable-card rounded-xl border p-4 card-hover flex flex-col" data-cat-idx="${i}" style="border-color: var(--border); background: var(--surface);">
+          <div class="flex items-start justify-between gap-2 mb-2">
+            ${produitPastille(prod, theme)}
+            ${packageBadge(s.package, theme)}
+          </div>
+          <h4 class="text-sm font-semibold mb-1.5" style="color: var(--ink);">${s.fonctionnalite || ''}</h4>
+          ${descText ? `<p class="text-xs leading-relaxed clamp-3" style="color: var(--muted);">${descText}</p>` : ''}
+          <div class="mt-auto pt-3 flex items-center gap-1 text-[11px] font-medium" style="color: var(--primary);">Voir le détail ${icon('arrow-right', 12, 'var(--primary)')}</div>
+        </div>`;
+    }).join('');
+    grid.querySelectorAll('[data-cat-idx]').forEach(card => {
+      card.addEventListener('click', () => openCatalogueModal(rows[+card.dataset.catIdx], theme));
+    });
+  }
+
+  renderFilters();
+  renderPhaseFilters();
+  renderCards();
+}
+
+// Product pastille (colored dot + name)
+function produitPastille(prod, theme) {
+  if (!prod) return '';
+  const c = prod.color || theme.primary;
+  return `<span class="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full" style="background: ${hexToSoft(c, 0.12)}; color: ${c};"><span class="w-2 h-2 rounded-full" style="background: ${c};"></span>${prod.nom || ''}</span>`;
+}
+
+// ════════ SOLUTION MODAL ════════
+// backFn (optional): when opened FROM a use-case modal, prepend a
+// "← Retour au cas d'usage" link that re-opens it. See usecase-modal.html.
+function openCatalogueModal(s, theme, backFn) {
+  if (!s) return;
+  const prod = (CLIENT_DATA.produits || []).find(p => p.id === s.produitId);
+  const c = (prod && prod.color) || theme.primary;
+  const votac = s.votac || {};
+  const rows = [
+    { k: 'valeur', label: 'Valeur' }, { k: 'occurrence', label: 'Occurrence' },
+    { k: 'temps', label: 'Temps gagné' }, { k: 'ia', label: 'Pertinence IA' }, { k: 'facilite', label: 'Facilité' }
+  ];
+  const total = votacTotal(votac);
+  const votacRows = (total != null)
+    ? `<div class="rounded-xl border p-4 mb-5" style="border-color: var(--border); background: var(--bg);">
+        <div class="flex items-center justify-between mb-3"><span class="text-xs font-semibold uppercase tracking-wider" style="color: var(--muted);">Score VOTAC</span>
+          <div class="flex items-baseline gap-1"><span class="font-display text-2xl" style="color: ${c};">${total}</span><span class="text-xs" style="color: var(--muted-soft);">pts</span></div></div>
+        <div class="space-y-2">${rows.map(r => { const val = votac[r.k] != null ? votac[r.k] : 0; const pct = Math.max(0, Math.min(100, (val/5)*100));
+          return `<div class="flex items-center gap-3"><span class="text-xs w-28 flex-shrink-0" style="color: var(--muted);">${r.label}</span><div class="votac-bar-track h-2 flex-1"><div class="h-full rounded-full" style="width: ${pct}%; background: ${c};"></div></div><span class="text-xs font-semibold w-8 text-right" style="color: var(--ink);">${val}/5</span></div>`; }).join('')}</div>
+      </div>`
+    : `<div class="rounded-xl border border-dashed p-4 mb-5 text-center" style="border-color: var(--border);"><span class="text-sm" style="color: var(--muted-soft);">VOTAC à scorer</span></div>`;
+
+  const outils = (s.outils && s.outils.length)
+    ? `<div class="mb-5"><p class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--muted);">Outils pressentis</p>
+        <div class="flex flex-wrap gap-1.5">${s.outils.map(o => `<span class="text-xs px-2.5 py-1 rounded-full border" style="border-color: var(--border); color: var(--muted);">${o}</span>`).join('')}</div></div>` : '';
+  const prereqs = (s.prerequis && s.prerequis.length)
+    ? `<div class="mb-2"><p class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--muted);">Prérequis</p>
+        <ul class="space-y-1.5">${s.prerequis.map(p => `<li class="flex items-start gap-2"><span class="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0" style="background: var(--muted-soft);"></span><span class="text-sm" style="color: var(--muted);">${p}</span></li>`).join('')}</ul></div>` : '';
+
+  const pkgColor = packageColor(s.package, theme);
+  const backLink = backFn
+    ? `<button id="cat-modal-back" class="inline-flex items-center gap-1.5 text-xs font-medium mb-4" style="color: var(--primary);">${icon('arrow-left', 14, 'var(--primary)')} Retour au cas d'usage</button>` : '';
+
+  openModal(`
+    ${backLink}
+    <div class="flex items-start justify-between gap-3 mb-4 pr-8">
+      <div><div class="mb-2">${produitPastille(prod, theme)}</div><h3 class="font-display text-2xl" style="color: var(--ink);">${s.fonctionnalite || ''}</h3></div>
+      ${s.package ? `<span class="text-xs font-bold px-2.5 py-1 rounded-md flex-shrink-0" style="background: ${hexToSoft(pkgColor, 0.14)}; color: ${pkgColor};">${s.package}</span>` : ''}
+    </div>
+    ${s.objectif ? `<div class="mb-4"><p class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--accent);">Objectif</p><p class="text-sm" style="color: var(--ink);">${s.objectif}</p></div>` : ''}
+    ${s.description ? `<div class="mb-5"><p class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--muted);">Description</p><p class="text-sm leading-relaxed" style="color: var(--muted);">${s.description}</p></div>` : ''}
+    ${votacRows}${outils}${prereqs}
+  `);
+  if (backFn) { const b = document.getElementById('cat-modal-back'); if (b) b.addEventListener('click', backFn); }
+}
+*/
+</script>

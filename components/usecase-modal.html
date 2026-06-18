@@ -1,0 +1,137 @@
+<!--
+  COMPONENT: Use-case modal with clickable solutions
+  SECTION: Métier view — click a use-case card → detail modal
+  INTRODUCED BY: client "clovis" (diverged from the base metier-usecases.html
+                 card-grid, which carries typology/complexité/gain pills)
+
+  WHEN TO USE
+    When a use case is described narratively (problème métier, irritants,
+    besoins) and is linked to scored solutions in a separate catalogue. The
+    métier view shows lightweight cards; the full detail — including the
+    associated solutions — lives in this modal. The associated-solution chips
+    are CLICKABLE: they open the full solution modal (openCatalogueModal from
+    catalogue-votac.html) with a "← Retour au cas d'usage" link back.
+
+  DATA NEEDED
+    - useCasesList[] — each:
+        { id: "CU-1", titre, grandTheme, grandThemeEmoji,
+          problemeMetier, besoins,           // rich text (see formatRichText)
+          irritants: [string],
+          solutionsRefs: [{ fonctionnalite, produitId }] }   // fallback only
+    - CLIENT_DATA.catalogueSolutions[] with casUsageLies: ["CU-1", …]
+      → the modal JOINS solutions to the use case via casUsageLies (preferred).
+        It only falls back to solutionsRefs (static, non-clickable chips) when
+        no catalogue entry links to the use case.
+    - CLIENT_DATA.produits[] for the pastille colors.
+
+  KEY POINTS
+    - Font harmony: rich text is rendered with formatRichText() — bullets and
+      paragraphs share text-sm + leading-relaxed + the same muted color. Author
+      besoins with "• " / "- " bullets and "**Bold header**" lines; keep ~2–3
+      bullets per sub-header to stay light.
+    - Modal stack is a single generic modal: clicking a solution chip swaps the
+      body to the solution modal; the back link re-opens this use-case modal.
+
+  DEPENDENCIES: Tailwind CSS, icon(), hexToSoft(), formatRichText(),
+                produitPastille(), openModal(), openCatalogueModal() (with its
+                optional backFn arg)
+-->
+
+<!-- ─── USE-CASE CARD (static reference) — opens the modal on click ─── -->
+<!--
+<div class="clickable-card rounded-xl border p-5 card-hover" data-uc-id="CU-1" style="border-color: var(--border); background: var(--surface);">
+  <div class="flex items-start justify-between gap-2 mb-2">
+    <h4 class="text-sm font-semibold flex-1" style="color: var(--ink);">Titre du cas d'usage</h4>
+  </div>
+  <span class="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full" style="background: var(--bg-alt); color: var(--muted);">
+    📊 Grand thème
+  </span>
+</div>
+-->
+
+<script>
+// ════════ RICH-TEXT (font-harmonized) ════════
+/*
+function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+function inlineMd(s){ return escapeHtml(s).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\*\*/g,''); }
+function formatRichText(raw, mutedColor) {
+  if (!raw) return '';
+  const lines = String(raw).split(/\r?\n/);
+  let html = '', listOpen = false;
+  const closeList = () => { if (listOpen) { html += '</ul>'; listOpen = false; } };
+  lines.forEach(line => {
+    const t = line.trim();
+    if (!t) { closeList(); return; }
+    if (/^[•\-–*]\s+/.test(t)) {
+      // bullets share the SAME size/leading/color as paragraphs (font harmony)
+      if (!listOpen) { html += `<ul class="list-disc pl-5 space-y-1 mb-2 text-sm leading-relaxed" style="color: ${mutedColor || 'var(--muted)'};">`; listOpen = true; }
+      html += `<li>${inlineMd(t.replace(/^[•\-–*]\s+/, ''))}</li>`;
+      return;
+    }
+    closeList();
+    if (/^\*\*/.test(t)) { const txt = t.replace(/^\*\*+\s*/, '').replace(/\s*\*\*+:?$/, '');
+      html += `<p class="text-sm font-semibold mt-3 mb-1" style="color: var(--ink);">${inlineMd(txt)}</p>`;
+    } else {
+      html += `<p class="text-sm leading-relaxed mb-2" style="color: ${mutedColor || 'var(--muted)'};">${inlineMd(t)}</p>`;
+    }
+  });
+  closeList();
+  return html;
+}
+
+// ════════ USE-CASE MODAL ════════
+function openUseCaseModal(uc, theme) {
+  if (!uc) return;
+  const produitMap = {}; (CLIENT_DATA.produits || []).forEach(p => { produitMap[p.id] = p; });
+
+  const irritants = (uc.irritants && uc.irritants.length)
+    ? `<div class="mb-5"><p class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--accent);">Irritants embarqués</p>
+        <ul class="space-y-1.5">${uc.irritants.map(it => `<li class="flex items-start gap-2"><span class="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0" style="background: var(--accent);"></span><span class="text-sm" style="color: var(--muted);">${inlineMd(it)}</span></li>`).join('')}</ul></div>` : '';
+  const probleme = uc.problemeMetier ? `<div class="mb-5"><p class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--muted);">Problème métier</p>${formatRichText(uc.problemeMetier, 'var(--ink)')}</div>` : '';
+  const besoins  = uc.besoins ? `<div class="mb-5"><p class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--muted);">Besoins</p>${formatRichText(uc.besoins, 'var(--muted)')}</div>` : '';
+
+  // Solutions associées — JOIN the catalogue via casUsageLies → clickable chips.
+  // Fall back to uc.solutionsRefs (static chips) only when nothing links.
+  let solutionsBlock = '';
+  const allSols = CLIENT_DATA.catalogueSolutions || [];
+  const linked = allSols.filter(s => (s.casUsageLies || []).includes(uc.id));
+  const useLinked = linked.length > 0;
+  const entries = useLinked
+    ? linked.map(s => ({ sol: s, produitId: s.produitId, label: s.fonctionnalite }))
+    : (uc.solutionsRefs || []).map(r => ({ sol: null, produitId: r.produitId, label: r.fonctionnalite }));
+  if (entries.length) {
+    const byProd = {}; entries.forEach(e => { const pid = e.produitId || '_autre'; (byProd[pid] = byProd[pid] || []).push(e); });
+    const hint = useLinked ? `<span class="text-[11px] font-normal normal-case tracking-normal" style="color: var(--muted-soft);"> · cliquez pour le détail</span>` : '';
+    solutionsBlock = `<div class="mb-2"><p class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--primary);">Solutions associées${hint}</p>
+      <div class="space-y-3">${Object.entries(byProd).map(([pid, list]) => { const prod = produitMap[pid]; const c = (prod && prod.color) || theme.primary;
+        return `<div class="rounded-xl border p-3" style="border-color: var(--border); background: var(--bg);">
+          <div class="mb-2">${prod ? produitPastille(prod, theme) : `<span class="text-xs font-medium" style="color: var(--muted);">Autre</span>`}</div>
+          <div class="flex flex-wrap gap-1.5">${list.map(e => e.sol
+            ? `<button class="sol-chip text-xs px-2.5 py-1 rounded-full inline-flex items-center gap-1" data-sol-id="${e.sol.id}" style="background: ${hexToSoft(c, 0.1)}; color: ${c};">${e.label || ''} ${icon('arrow-up-right', 11, c)}</button>`
+            : `<span class="text-xs px-2.5 py-1 rounded-full" style="background: ${hexToSoft(c, 0.1)}; color: ${c};">${e.label || ''}</span>`).join('')}</div>
+        </div>`; }).join('')}</div></div>`;
+  }
+
+  openModal(`
+    <div class="mb-4 pr-8">
+      ${(uc.grandTheme || uc.grandThemeEmoji) ? `<span class="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full mb-2" style="background: var(--bg-alt); color: var(--muted);">${uc.grandThemeEmoji ? `<span>${uc.grandThemeEmoji}</span>` : ''}${uc.grandTheme || ''}</span>` : ''}
+      <h3 class="font-display text-2xl" style="color: var(--ink);">${uc.titre || ''}</h3>
+    </div>
+    ${irritants}${probleme}${besoins}${solutionsBlock}
+  `);
+
+  // Wire clickable solution chips → full solution modal, with a back link.
+  const mb = document.getElementById('modal-body');
+  if (mb) mb.querySelectorAll('[data-sol-id]').forEach(el => {
+    const sol = allSols.find(s => s.id === el.dataset.solId);
+    if (sol) el.addEventListener('click', () => openCatalogueModal(sol, theme, () => openUseCaseModal(uc, theme)));
+  });
+}
+*/
+</script>
+
+<style>
+  /* clickable solution chip affordance */
+  .sol-chip { cursor: pointer; transition: filter 0.15s, transform 0.1s; }
+  .sol-chip:hover { filter: brightness(0.95); transform: translateY(-1px); }
+</style>

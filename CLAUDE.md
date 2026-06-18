@@ -154,8 +154,10 @@ Components in `components/` (HTML snippets Claude uses as reference when buildin
 - **metier-header.html** — Métier space header card
 - **metier-top3.html** — Top 3 ranked use case cards
 - **metier-quickwins.html** — Quick wins compact grid
-- **metier-usecases.html** — Full use case card catalog
-- **solutions-grid.html** — Filterable solutions grid with typology pills
+- **metier-usecases.html** — Full use case card catalog (base: typology/complexité/gain pills)
+- **solutions-grid.html** — Filterable solutions grid with typology pills (base variant)
+- **catalogue-votac.html** — Catalogue des solutions, VOTAC variant: text-led cards (no score on the face), product + phase (P1/P2/P3) filters, click → solution modal. Introduced by `clovis`.
+- **usecase-modal.html** — Use-case detail modal with **clickable** associated-solution chips (joined via `casUsageLies`) that open the solution modal with a back link; font-harmonized rich text. Introduced by `clovis`.
 - **cartographie-processus.html** — Enhanced process mapping (Avant / Après IA)
 - **espace-partenaire.html** — Hubvisory team section with consultant cards + CTA
 
