@@ -1,6 +1,5 @@
 # Release PR: staging → main (one persistent PR, updated on each staging push).
 # Maintainer gets a review request ONLY when this PR is first created.
-# Merge it to deploy prod — no manual gh pr create needed.
 
 name: Release staging to prod
 
@@ -24,6 +23,19 @@ jobs:
       - name: Ensure release PR exists (staging → main)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_BODY: |
+            ## Promotion staging → prod
+
+            Cette PR regroupe tout ce qui est sur `staging` et pas encore en prod.
+
+            - **Staging** : https://staging.diag-ia.hubvisory.app/
+            - **Prod (apres merge)** : https://diag-ia.hubvisory.app/
+
+            ### Que faire
+            1. Verifie les changements sur staging (URLs client si besoin).
+            2. **Merge** cette PR — deploiement prod automatique (~1 min).
+
+            Les soumissions consultants (PR vers staging) ne creent pas une nouvelle PR vers main — seulement cette PR de release est mise a jour.
         run: |
           set -euo pipefail
 
@@ -45,23 +57,7 @@ jobs:
             --base main \
             --head staging \
             --title "Release: promote staging to prod" \
-            --body "$(cat <<'EOF'
-## Promotion staging → prod
-
-Cette PR regroupe **tout ce qui est sur `staging`** et pas encore en prod.
-
-- **Staging** : https://staging.diag-ia.hubvisory.app/
-- **Prod (après merge)** : https://diag-ia.hubvisory.app/
-
-### Que faire
-1. Vérifie les changements sur staging (URLs client si besoin).
-2. **Merge** cette PR → déploiement prod automatique (~1 min).
-
-Les soumissions consultants (PR → staging) ne créent **pas** de nouvelle PR vers `main` — seulement cette PR de release est mise à jour.
-
-> Les PR consultant → staging sont auto-mergées par CI ; tu n’as pas à les approuver une par une.
-EOF
-)" \
+            --body "$PR_BODY" \
             --reviewer gaspardhassenforder
 
           echo "Release PR created — review requested."
