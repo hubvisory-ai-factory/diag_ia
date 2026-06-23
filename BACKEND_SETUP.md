@@ -186,3 +186,28 @@ git push origin main
 ```
 
 Do this in batch when you are ready — not on every consultant submission.
+
+---
+
+## Release PR (staging → prod) — one click
+
+Workflow [`.github/workflows/promote-staging.yml`](.github/workflows/promote-staging.yml):
+
+- On each push to **`staging`**, if staging is ahead of `main` and no release PR is open,
+  GitHub Actions opens **one** PR `staging` → `main` and requests your review.
+- Further consultant merges only **update** that same PR (no new PR, no new review request).
+- **Merge** that PR → prod deploys.
+
+You should get **one email** when the release PR is created (review requested). Not one
+email per consultant submission.
+
+### Reduce bot email noise (recommended)
+
+**Vercel** — Project → Settings → Git → disable **Pull Request Comments** (stops
+`vercel[bot]` commenting on every staging PR).
+
+**GitHub notifications** — github.com/settings/notifications → uncheck **Pull request
+push** if you only want the initial release PR email, not emails on every staging update.
+
+Consultant PRs → staging no longer trigger CODEOWNERS (see [`.github/CODEOWNERS`](.github/CODEOWNERS)
+— only infra paths).

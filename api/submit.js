@@ -259,26 +259,6 @@ module.exports = async (req, res) => {
 
     const stagingUrl = `https://${STAGING_HOST}/${slug}`;
     const prodUrl = `https://${PROD_HOST}/${slug}`;
-    const commentBody = [
-      '## Soumission Diag IA',
-      '',
-      'Si les **checks CI** passent (~2 min), cette PR sera **auto-mergée sur `staging`**.',
-      '',
-      `**Prévisualisation (staging)** : ${stagingUrl}`,
-      '',
-      `**Production (client final)** : ${prodUrl} — mise en ligne manuelle par un maintainer après validation.`,
-      '',
-      '---',
-      '_Commentaire automatique — diag-ia-bot_',
-    ].join('\n');
-
-    try {
-      await gh(token, 'POST', `/repos/${owner}/${repo}/issues/${pr.number}/comments`, {
-        body: commentBody,
-      });
-    } catch {
-      /* PR still opened — comment is best-effort */
-    }
 
     return res.status(200).json({
       ok: true,

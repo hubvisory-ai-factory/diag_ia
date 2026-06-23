@@ -1,0 +1,67 @@
+# Release PR: staging → main (one persistent PR, updated on each staging push).
+# Maintainer gets a review request ONLY when this PR is first created.
+# Merge it to deploy prod — no manual gh pr create needed.
+
+name: Release staging to prod
+
+on:
+  push:
+    branches: [staging]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: release-staging-to-main
+  cancel-in-progress: false
+
+jobs:
+  open-release-pr:
+    name: open-release-pr
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ensure release PR exists (staging → main)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          AHEAD=$(gh api "repos/${GITHUB_REPOSITORY}/compare/main...staging" --jq '.ahead_by')
+          if [ "$AHEAD" = "0" ]; then
+            echo "staging is even with main — no release PR needed."
+            exit 0
+          fi
+
+          EXISTING=$(gh pr list --repo "$GITHUB_REPOSITORY" \
+            --base main --head staging --state open --json number -q 'length')
+
+          if [ "$EXISTING" != "0" ]; then
+            echo "Release PR already open — it will include new staging commits automatically."
+            exit 0
+          fi
+
+          gh pr create --repo "$GITHUB_REPOSITORY" \
+            --base main \
+            --head staging \
+            --title "Release: promote staging to prod" \
+            --body "$(cat <<'EOF'
+## Promotion staging → prod
+
+Cette PR regroupe **tout ce qui est sur `staging`** et pas encore en prod.
+
+- **Staging** : https://staging.diag-ia.hubvisory.app/
+- **Prod (après merge)** : https://diag-ia.hubvisory.app/
+
+### Que faire
+1. Vérifie les changements sur staging (URLs client si besoin).
+2. **Merge** cette PR → déploiement prod automatique (~1 min).
+
+Les soumissions consultants (PR → staging) ne créent **pas** de nouvelle PR vers `main` — seulement cette PR de release est mise à jour.
+
+> Les PR consultant → staging sont auto-mergées par CI ; tu n’as pas à les approuver une par une.
+EOF
+)" \
+            --reviewer gaspardhassenforder
+
+          echo "Release PR created — review requested."

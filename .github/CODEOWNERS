@@ -1,2 +1,8 @@
-# Automatically request review from Gaspard on all PRs
-* @gaspardhassenforder
+# Code owners — review requested only when PRs touch these paths.
+# Consultant submissions (clients/, components/, skills/) do NOT match → no review spam.
+# The release PR (staging → main) is opened by promote-staging.yml with an explicit review request.
+
+/.github/ @gaspardhassenforder
+/api/ @gaspardhassenforder
+/vercel.json @gaspardhassenforder
+/BACKEND_SETUP.md @gaspardhassenforder

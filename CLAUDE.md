@@ -283,7 +283,7 @@ node scripts/submit.mjs clients/<slug> "add(client): <Name>"
 | Environment | Branch | URL | Trigger |
 |-------------|--------|-----|---------|
 | **Staging** | `staging` | https://staging.diag-ia.hubvisory.app/ | PR merged to `staging` (auto after CI) |
-| **Prod** | `main` | https://diag-ia.hubvisory.app/ | Maintainer merges `staging` → `main` |
+| **Prod** | `main` | https://diag-ia.hubvisory.app/ | Merge the **Release: promote staging to prod** PR |
 
 - **Vercel project**: Static site (no build command needed)
 - **Routing**: `vercel.json` rewrites `/<slug>` → `/clients/<slug>/index.html`
@@ -301,7 +301,7 @@ pushing with Git. **No GitHub account, org invite, token, fork, `gh`, or SSH key
 3. GitHub Actions validates changed files (`node --check` + `validate-data.js`).
 4. If checks pass, the PR is **auto-merged** into `staging`; Vercel deploys staging (~2 min).
 5. Share `https://staging.diag-ia.hubvisory.app/<slug>` for validation.
-6. A **maintainer** promotes `staging` → `main` when ready → prod deploys.
+6. A **maintainer** merges the auto-opened **Release: promote staging to prod** PR when ready → prod deploys.
 
 The only one-time step for a consultant is a shared **publish key** (see the `publish`
 skill), stored at `~/.config/diag_ia/secret` and reused automatically afterward. Git is
@@ -327,7 +327,7 @@ Consultants do **not** push with Git. Publishing goes through the backend via th
    ```
 4. Give the consultant the **staging URL** (`https://staging.diag-ia.hubvisory.app/<slug>`)
    once CI passes (~2 min). They can share it for validation.
-5. A maintainer promotes `staging` → `main` when ready for the client-facing prod URL.
+5. A maintainer **merges the Release PR** (`staging` → `main`, auto-created) when ready for the client-facing prod URL.
 
 > First publish only: if it reports "No submission secret found", set the shared key
 > once — see the `publish` skill. The backend accepts files anywhere except `.github/`,

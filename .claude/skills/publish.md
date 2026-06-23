@@ -115,4 +115,4 @@ the secret to the repo.
 3. GitHub Actions runs `validate` (syntax + `validate-data.js` on changed clients).
 4. If checks pass, the workflow **auto-merges** the PR into `staging`.
 5. Vercel deploys `staging` → `https://staging.diag-ia.hubvisory.app/<slug>`.
-6. A maintainer promotes `staging` → `main` when ready → prod deploys.
+6. A maintainer **merges the Release PR** (`staging` → `main`) when ready → prod deploys.
