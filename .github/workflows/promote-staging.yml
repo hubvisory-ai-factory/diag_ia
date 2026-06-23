@@ -1,5 +1,6 @@
 # Release PR: staging → main (one persistent PR, updated on each staging push).
-# Maintainer gets a review request ONLY when this PR is first created.
+# Uses diag-ia-bot (same GitHub App as submit.js) — add GH_APP_ID + GH_APP_PRIVATE_KEY
+# to repo Secrets (same values as Vercel).
 
 name: Release staging to prod
 
@@ -10,7 +11,6 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write
 
 concurrency:
   group: release-staging-to-main
@@ -21,9 +21,15 @@ jobs:
     name: open-release-pr
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: ${{ secrets.GH_APP_ID }}
+          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+
       - name: Ensure release PR exists (staging → main)
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
           PR_BODY: |
             ## Promotion staging → prod
 
@@ -36,7 +42,7 @@ jobs:
             1. Verifie les changements sur staging (URLs client si besoin).
             2. **Merge** cette PR — deploiement prod automatique (~1 min).
 
-            Les soumissions consultants (PR vers staging) ne creent pas une nouvelle PR vers main — seulement cette PR de release est mise a jour.
+            Les soumissions consultants ne creent pas une nouvelle PR vers main — seulement cette PR de release est mise a jour.
         run: |
           set -euo pipefail
 

@@ -210,4 +210,18 @@ email per consultant submission.
 push** if you only want the initial release PR email, not emails on every staging update.
 
 Consultant PRs → staging no longer trigger CODEOWNERS (see [`.github/CODEOWNERS`](.github/CODEOWNERS)
-— only infra paths).
+— only infra paths). The submit backend no longer comments on consultant PRs.
+
+### GitHub Actions secrets (for auto release PR)
+
+The release workflow uses **diag-ia-bot** (same App as `api/submit.js`). Add these
+**Repository secrets** (Settings → Secrets → Actions) — same values as Vercel:
+
+| Secret | Value |
+|--------|-------|
+| `GH_APP_ID` | App ID (e.g. `4085014`) |
+| `GH_APP_PRIVATE_KEY` | Full `.pem` contents |
+
+Without these, the workflow cannot open the release PR automatically (org policy
+blocks `GITHUB_TOKEN` from creating PRs). You can still open it manually once; the
+open PR then updates automatically when `staging` moves.
