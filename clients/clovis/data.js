@@ -59,7 +59,7 @@ const CLIENT_DATA = {
   ],
   catalogueSolutions: [
     { id: "SN1.1", fonctionnalite: "Analyste IA & créateur de dashboard", produitId: "dashboard_pilotage", objectif: `Permettre aux managers de construire et consulter leurs tableaux de bord en langage naturel, sans dépendance technique.`, description: `Une IA text-to-SQL connectée à l'ERP : le manager pose sa question en langage naturel, l'IA génère l'analyse et le visuel. Dashboards à la demande, sans intervention IT.`, votac: { valeur: 4, occurrence: 4, temps: 5, ia: 5, facilite: 3, total: 1200 }, package: "P1", statut: "A valider", outils: ["VM", "Site"], prerequis: [`Indicateurs à définir (aligner les managers sur les KPIs à suivre)`, `Accès données de l'extraction de l'ERP (connecter l'IA à Zadig)`, `Hébergement On-Premise vs Azure (arbitrage architecture — impact coût et sécurité)`], casUsageLies: ["CU-1"] },
-    { id: "SN1.2", fonctionnalite: "Détection & analyse des dérives", produitId: "dashboard_pilotage", objectif: `Alerter automatiquement les managers dès qu'un indicateur clé dévie de ses seuils, et en expliquer la cause, pour réagir sans attendre l'extraction mensuelle.`, description: `Un agent surveille les KPI en continu, détecte les dérives vs seuils, en identifie la cause (mode data analyst) et pousse l'alerte sur Teams ou le dashboard.`, votac: { valeur: 4, occurrence: 5, temps: 3, ia: 5, facilite: 2, total: 600 }, package: "P3", statut: "A valider", outils: ["VM", "Site"], prerequis: [`Flux réception alerte (définir si l'alerte arrive sur Teams, dans le dashboard, ou les deux)`, `Seuils d'alerte (formaliser les seuils de dérive par indicateur avec les managers)`], casUsageLies: ["CU-1"] },
+    { id: "SN1.2", fonctionnalite: "Détection & analyse des dérives", produitId: "dashboard_pilotage", objectif: `Alerter automatiquement les managers dès qu'un indicateur clé dévie de ses seuils, et en expliquer la cause, pour réagir sans attendre l'extraction mensuelle.`, description: `Un agent surveille les KPI en continu, détecte les dérives vs seuils, en identifie la cause (mode data analyst) et pousse l'alerte sur Teams ou le dashboard.`, votac: { valeur: 4, occurrence: 5, temps: 3, ia: 5, facilite: 2, total: 600 }, package: "P2", statut: "A valider", outils: ["VM", "Site"], prerequis: [`Flux réception alerte (définir si l'alerte arrive sur Teams, dans le dashboard, ou les deux)`, `Seuils d'alerte (formaliser les seuils de dérive par indicateur avec les managers)`], casUsageLies: ["CU-1"] },
     { id: "SN1.3", fonctionnalite: "Prévision & anticipation des dérives", produitId: "dashboard_pilotage", objectif: `Doter les managers d'une capacité prédictive sur les données du parc pour anticiper les dérives avant qu'elles n'impactent les contrats.`, description: `Un agent IA de code exécute du Python (stats, forecasting) sur les données ERP pour projeter les indicateurs et anticiper les dérives de parc.`, votac: { valeur: 4, occurrence: 3, temps: 3, ia: 5, facilite: 1, total: 180 }, package: "P3", statut: "A valider", outils: ["VM", "Site", "Agent Coding"], prerequis: [`Historique données ERP (volume d'historique suffisant pour calibrer le modèle prédictif — à vérifier)`, `Définition des types d'analyses`], casUsageLies: ["CU-1"] },
     { id: "SN2.1", fonctionnalite: "Tri & Qualification", produitId: "boite_mail", objectif: `Router chaque mail entrant vers le bon collaborateur sans intervention manuelle dans la boîte commune.`, description: `L'IA lit chaque mail entrant et applique les règles de routage (immatriculation, émetteur, objet). Le mail arrive directement dans la boîte du bon gestionnaire.`, votac: { valeur: 5, occurrence: 5, temps: 5, ia: 3, facilite: 5, total: 1875 }, package: "P1", statut: "A valider", outils: ["N8N", "API Outlook"], prerequis: [`Définir les règles de routage (identifier les critères permettant un routage optimal des emails entrants)`, `On-Premise ou cloud ? (définir la solution d'hébergement de la VM)`], casUsageLies: ["CU-2"] },
     { id: "SN2.2", fonctionnalite: "Résumé journalier", produitId: "boite_mail", objectif: `Offrir un résumé quotidien de l'activité mail pour reprendre la main sans relire chaque échange.`, description: `Chaque mail entrant est conservé dans une base de données ou récupéré via l'API Outlook. L'IA produit un résumé journalier consolidé de toute l'activité de la boîte.`, votac: { valeur: 3, occurrence: 5, temps: 4, ia: 5, facilite: 4, total: 1200 }, package: "P1", statut: "A valider", outils: ["N8N", "API Outlook"], prerequis: [`Définir les règles de résumé (objectif du résumé, destinataires, ton, structure, etc.)`], casUsageLies: ["CU-2"] },
@@ -70,7 +70,7 @@ const CLIENT_DATA = {
     { id: "SN10.3-CU4", fonctionnalite: "Analyse & Intégration ERP (CU-4 Planification ITM)", produitId: "moteur_relance", objectif: `Automatiser la complétude et l'actualisation du fichier de planification ITM.`, description: `L'agent synthétise les retours des concessions suite aux relances par mail et intègre ces informations dans le fichier de planification croisé. Nécessite API Zadig écriture.`, votac: { valeur: 5, occurrence: 3, temps: 5, ia: 5, facilite: 2, total: 750 }, package: "P3", statut: "A valider", outils: ["N8N", "API Outlook", "Excel", "API ZADIG ECRITURE"], prerequis: [`API Zadig en écriture — prérequis bloquant partagé, validation formelle avec l'éditeur + process rollback`, `Règles d'extraction définies (ce que l'agent doit extraire de la réponse selon le contexte d'usage)`], casUsageLies: ["CU-4"] },
     { id: "SN5.1", fonctionnalite: "Assistant équipe Plateforme (bot Teams + SharePoint)", produitId: "assistant_plateforme", objectif: `Permettre à chaque collaborateur d'interroger instantanément la base documentaire (serveur S, SharePoint) en langage naturel, sans solliciter un manager.`, description: `Un bot Teams / portail SharePoint répond aux questions des collaborateurs sur les procédures, contrats, barèmes. Accès au serveur S et SharePoint via recherche sémantique.`, votac: { valeur: 5, occurrence: 5, temps: 3, ia: 5, facilite: 4, total: 1500 }, package: "P1", statut: "A valider", outils: ["VM", "Sharepoint", "Compte MS basic"], prerequis: [`Qualité doc SharePoint (documentation structurée et à jour — référentiel de l'assistant)`, `Choix du modèle LLM (coût, confidentialité des données, précision)`, `Process MAJ corpus (définir qui met à jour la base lors d'un changement de contrat ou de tarif)`, `Escalade non-réponse (définir à qui escalader quand l'assistant ne trouve pas la réponse)`, `Compte Microsoft dédié (abonnement licence MS pour ces activités)`], casUsageLies: ["CU-5"] },
     { id: "SN5.2", fonctionnalite: "Accès Force Réseau", produitId: "assistant_plateforme", objectif: `Permettre l'interrogation de la base Force Réseau (régiments, contacts terrain) sans navigation manuelle dans le site.`, description: `Extension de l'assistant permettant d'interroger la base Force Réseau (régiments, concessions, contacts) en langage naturel pour trouver un contact ou une information terrain rapidement.`, votac: { valeur: 5, occurrence: 5, temps: 3, ia: 5, facilite: 3, total: 1125 }, package: "P2", statut: "A valider", outils: ["VM", "Site"], prerequis: [`Compte Force Réseau dédié (compte d'accès au portail nécessaire pour l'agent)`, `Conformité scraping (valider que le scraping automatisé est conforme aux CGU du portail Force Réseau)`, `SN5.1 déployé (hérité — l'assistant de base doit être en production)`], casUsageLies: ["CU-5"] },
-    { id: "SN6.1", fonctionnalite: "Analyse de devis", produitId: "agent_devis", objectif: `Permettre aux gestionnaires de vérifier la conformité d'un devis (tarifs, références, contrat) via un portail dédié, sans recherche manuelle.`, description: `Site web sur lequel les collaborateurs uploadent le devis. L'IA analyse la cohérence avec le contrat et les barèmes. Output : texte listant les corrections à apporter, prêt à copier-coller.`, votac: { valeur: 5, occurrence: 5, temps: 5, ia: 5, facilite: 3, total: 1875 }, package: "P2", statut: "A valider", outils: ["VM", "Outils de lecture de PDF"], prerequis: [`Capacité serveur (vérifier que le serveur peut héberger un site web de ce type)`, `Choix VM (définir la VM à utiliser pour l'hébergement du portail)`, `Choix LLM (sélectionner le modèle d'analyse — coût vs précision sur la lecture de devis)`, `Référentiel conformité (structurer contrats, barèmes et tarifs en base accessible — condition sine qua non de l'analyse)`], casUsageLies: ["CU-6"] },
+    { id: "SN6.1", fonctionnalite: "Analyse de devis", produitId: "agent_devis", objectif: `Permettre aux gestionnaires de vérifier la conformité d'un devis (tarifs, références, contrat) via un portail dédié, sans recherche manuelle.`, description: `Site web sur lequel les collaborateurs uploadent le devis. L'IA analyse la cohérence avec le contrat et les barèmes. Output : texte listant les corrections à apporter, prêt à copier-coller.`, votac: { valeur: 5, occurrence: 5, temps: 5, ia: 5, facilite: 3, total: 1875 }, package: "P1", statut: "A valider", outils: ["VM", "Outils de lecture de PDF"], prerequis: [`Capacité serveur (vérifier que le serveur peut héberger un site web de ce type)`, `Choix VM (définir la VM à utiliser pour l'hébergement du portail)`, `Choix LLM (sélectionner le modèle d'analyse — coût vs précision sur la lecture de devis)`, `Référentiel conformité (structurer contrats, barèmes et tarifs en base accessible — condition sine qua non de l'analyse)`], casUsageLies: ["CU-6"] },
     { id: "SN6.2", fonctionnalite: "Mail de correction", produitId: "agent_devis", objectif: `Analyser les devis reçus par mail et générer un brouillon de mail de correction prêt à envoyer au garage, sans saisie manuelle.`, description: `Le portail liste les devis détectés dans la boîte mail. L'utilisateur lance l'analyse : l'outil rédige le mail de correction prêt à valider. Adhérence SN2.1 requise.`, votac: { valeur: 4, occurrence: 4, temps: 5, ia: 5, facilite: 2, total: 800 }, package: "P3", statut: "A valider", outils: ["VM", "Outils de lecture de PDF", "API Outlook"], prerequis: [`Accès boîte mail (accès à la boîte mail commune — adhérence directe avec SN2.1)`, `Règle détection devis (identification des devis dans le flux mail — émetteur, objet, PJ ?)`, `VM + LLM (hérité — hérite des prérequis d'hébergement et de modèle de SN6.1)`], casUsageLies: ["CU-6"] },
     { id: "SN7.1", fonctionnalite: "Renommage des factures", produitId: "agent_facture", objectif: `Renommer automatiquement chaque facture déposée sur SharePoint selon le critère d'identification ERP, pour accélérer le rapprochement documentaire.`, description: `L'agent détecte chaque nouveau document sur SharePoint, analyse le PDF, extrait le critère d'identification et renomme le fichier selon la convention ERP.`, votac: { valeur: 5, occurrence: 5, temps: 5, ia: 5, facilite: 4, total: 2500 }, package: "P1", statut: "A valider", outils: ["N8N", "Sharepoint", "Outils de lecture de PDF"], prerequis: [`Critère de renommage (définir quel critère lier au nom de fichier pour retrouver la visite dans Zadig — numéro de visite, immat, date ?)`, `Accès SharePoint dépôt (accès en lecture et écriture au dossier SharePoint de dépôt des factures)`], casUsageLies: ["CU-7"] },
     { id: "SN7.2", fonctionnalite: "Upload GED (Zadig)", produitId: "agent_facture", objectif: `Renommer et uploader automatiquement les factures dans l'ERP après identification de la visite concernée, supprimant la séquence de clics manuels.`, description: `Une fois renommée, l'agent lit le nom de la facture, ouvre la visite correspondante dans Zadig via l'API en écriture, uploade le document et valide. Zéro intervention manuelle.`, votac: { valeur: 5, occurrence: 5, temps: 5, ia: 5, facilite: 2, total: 1250 }, package: "P2", statut: "A valider", outils: ["N8N", "Sharepoint", "Outils de lecture de PDF", "API ZADIG ECRITURE"], prerequis: [`API Zadig en écriture — prérequis bloquant, validation formelle nécessaire avec l'éditeur`, `Process métier précis (l'agent doit-il s'arrêter à l'upload de la facture ou agir sur le statut de la visite ?)`, `SN7.1 déployé (hérité — SN7.2 s'appuie sur le renommage de SN7.1, doit être en production avant)`], casUsageLies: ["CU-7"] },
@@ -339,6 +339,140 @@ Le process à date: recevoir la demande du militaire par mail, contacter la conc
       ], chiffresCles: `0 politique sécurité · 0 licence centralisée · prérequis, non scoré comme un CU à ROI · (irritant 'usages IA sans cadre' absent de la base — à créer)`, metricsSucces: ``, solutionsRefs: [], votac: { total: null } }
   ],
   risques: [],
+  roadmapPackages: {
+    weekPrefix: "S",
+    phaseStyles: {
+      cadrage: { label: "Cadrage", color: "#dbeafe", text: "#1e40af" },
+      construction: { label: "Construction", color: "#fef9c3", text: "#854d0e" },
+      deploiement: { label: "Déploiement", color: "#dcfce7", text: "#166534" },
+      acculturation: { label: "Acculturation", color: "#ffedd5", text: "#9a3412" },
+      stabilisation: { label: "Stabilisation & Généralisation", color: "#c7d2e4", text: "#334155" }
+    },
+    packages: [
+      {
+        code: "P1",
+        title: "Package 1 — Installer l'IA dans votre environnement quotidien",
+        subtitle: "Impact métier élevé et complexité faible pour maximiser l'adoption des premières solutions IA",
+        maxWeek: 14,
+        lines: [
+          { produitId: "boite_mail", gono: 8, segments: [
+            { phase: "cadrage", start: 1, end: 5 },
+            { phase: "construction", start: 5, end: 8 },
+            { phase: "deploiement", start: 8, end: 9.5 },
+            { phase: "acculturation", start: 9.5, end: 10.5 },
+            { phase: "stabilisation", start: 10.5, end: 11.5 }
+          ]},
+          { produitId: "moteur_relance", gono: 10, segments: [
+            { phase: "cadrage", start: 1, end: 5 },
+            { phase: "construction", start: 5, end: 10 },
+            { phase: "deploiement", start: 10, end: 11 },
+            { phase: "acculturation", start: 11, end: 12 },
+            { phase: "stabilisation", start: 12, end: 13 }
+          ]},
+          { produitId: "dashboard_pilotage", gono: 11.5, segments: [
+            { phase: "cadrage", start: 1, end: 5 },
+            { phase: "construction", start: 7.5, end: 11.5 },
+            { phase: "deploiement", start: 11.5, end: 13 },
+            { phase: "acculturation", start: 13, end: 13.5 },
+            { phase: "stabilisation", start: 13.5, end: 15 }
+          ]},
+          { produitId: "agent_devis", gono: 8, segments: [
+            { phase: "cadrage", start: 1, end: 5 },
+            { phase: "construction", start: 5, end: 8 },
+            { phase: "deploiement", start: 8, end: 9.5 },
+            { phase: "acculturation", start: 9.5, end: 10 },
+            { phase: "stabilisation", start: 10, end: 11.5 }
+          ]},
+          { produitId: "agent_facture", gono: 7.5, segments: [
+            { phase: "cadrage", start: 1, end: 5 },
+            { phase: "construction", start: 5, end: 7.5 },
+            { phase: "deploiement", start: 7.5, end: 8 },
+            { phase: "acculturation", start: 8, end: 8.5 },
+            { phase: "stabilisation", start: 8.5, end: 9.5 }
+          ]},
+          { produitId: "assistant_plateforme", gono: 12, segments: [
+            { phase: "cadrage", start: 1, end: 5 },
+            { phase: "construction", start: 8.5, end: 12 },
+            { phase: "deploiement", start: 12, end: 13 },
+            { phase: "acculturation", start: 13, end: 13.5 },
+            { phase: "stabilisation", start: 13.5, end: 15 }
+          ]}
+        ]
+      },
+      {
+        code: "P2",
+        title: "Package 2 — Étendre l'automatisation dans vos process",
+        subtitle: "Effort de construction et d'adoption plus élevés",
+        maxWeek: 11,
+        lines: [
+          { produitId: "boite_mail", gono: 7.5, segments: [
+            { phase: "cadrage", start: 1, end: 4 },
+            { phase: "construction", start: 4, end: 7.5 },
+            { phase: "deploiement", start: 7.5, end: 8.5 },
+            { phase: "acculturation", start: 8.5, end: 9 },
+            { phase: "stabilisation", start: 9, end: 10 }
+          ]},
+          { produitId: "moteur_relance", gono: 7.5, segments: [
+            { phase: "cadrage", start: 1, end: 4 },
+            { phase: "construction", start: 4, end: 7.5 },
+            { phase: "deploiement", start: 7.5, end: 8.5 },
+            { phase: "acculturation", start: 8.5, end: 9.5 },
+            { phase: "stabilisation", start: 9.5, end: 11 }
+          ]},
+          { produitId: "agent_facture", gono: 7, segments: [
+            { phase: "cadrage", start: 1, end: 4 },
+            { phase: "construction", start: 4, end: 7 },
+            { phase: "deploiement", start: 7, end: 8 },
+            { phase: "acculturation", start: 8, end: 8.5 },
+            { phase: "stabilisation", start: 8.5, end: 9.5 }
+          ]},
+          { produitId: "dashboard_pilotage", gono: 9.5, segments: [
+            { phase: "cadrage", start: 1, end: 4 },
+            { phase: "construction", start: 5.5, end: 9.5 },
+            { phase: "deploiement", start: 9.5, end: 10 },
+            { phase: "acculturation", start: 10, end: 11 },
+            { phase: "stabilisation", start: 11, end: 12 }
+          ]},
+          { produitId: "assistant_plateforme", gono: 9, segments: [
+            { phase: "cadrage", start: 1, end: 4 },
+            { phase: "construction", start: 6, end: 9 },
+            { phase: "deploiement", start: 9, end: 9.5 },
+            { phase: "acculturation", start: 9.5, end: 10 },
+            { phase: "stabilisation", start: 10, end: 10.5 }
+          ]}
+        ]
+      },
+      {
+        code: "P3",
+        title: "Package 3 — Pilotage prédictif et automatisation bout-en-bout",
+        subtitle: "Solutions à fort impact organisationnel",
+        maxWeek: 11,
+        lines: [
+          { produitId: "moteur_relance", gono: 8, segments: [
+            { phase: "cadrage", start: 1, end: 4 },
+            { phase: "construction", start: 4, end: 8 },
+            { phase: "deploiement", start: 8, end: 9 },
+            { phase: "acculturation", start: 9, end: 9.5 },
+            { phase: "stabilisation", start: 9.5, end: 11 }
+          ]},
+          { produitId: "dashboard_pilotage", gono: 8, segments: [
+            { phase: "cadrage", start: 1, end: 4 },
+            { phase: "construction", start: 4, end: 8 },
+            { phase: "deploiement", start: 8, end: 9 },
+            { phase: "acculturation", start: 9, end: 10 },
+            { phase: "stabilisation", start: 10, end: 11.5 }
+          ]},
+          { produitId: "agent_devis", gono: 5.5, segments: [
+            { phase: "cadrage", start: 1, end: 4 },
+            { phase: "construction", start: 4, end: 5.5 },
+            { phase: "deploiement", start: 5.5, end: 6.5 },
+            { phase: "acculturation", start: 6.5, end: 7 },
+            { phase: "stabilisation", start: 7, end: 8 }
+          ]}
+        ]
+      }
+    ]
+  },
   roadmap: [],
   principesDirecteurs: [],
   glossaire: [
@@ -482,8 +616,8 @@ Le process à date: recevoir la demande du militaire par mail, contacter la conc
       ucModalClose: "Fermer",
       catalogueTitle: "Catalogue des solutions",
       catalogueSubtitle: "Solutions à valider — scoring VOTAC & packaging P1/P2/P3",
+      roadmapTitle: "Roadmap de déploiement",
       risquesTitle: "Principes directeurs — Charte IA",
-      roadmapTitle: "Feuille de route IA",
       glossaireTitle: "Glossaire IA",
       methodoTitle: "Guide méthodologique : Typologies & Complexité",
       methodoSubtitle: "Comprendre les critères d'évaluation de l'audit IA",
