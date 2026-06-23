@@ -15,6 +15,17 @@ shared secret.
 publishing. That old flow (`git-setup` skill) is a fallback only if this backend
 is unavailable.
 
+## Environments
+
+| Environnement | URL | Comment y arrive-t-on |
+|---|---|---|
+| **Local** | `http://localhost:3000/clients/<slug>/` | `npx serve` depuis la racine du repo |
+| **Staging** | `https://staging.diag-ia.hubvisory.app/<slug>` | PR soumise → CI OK → auto-merge sur `staging` (~2 min) |
+| **Prod** | `https://diag-ia.hubvisory.app/<slug>` | Un **maintainer** promeut `staging` → `main` manuellement |
+
+Le consultant partage l'URL **staging** pour validation. La prod est réservée à la
+version client finale.
+
 ## Prerequisites
 
 - The client folder is built and validated: `clients/<slug>/index.html` +
@@ -36,14 +47,22 @@ node --check clients/<slug>/data.js && node scripts/validate-data.js clients/<sl
 
 ## Publish
 
-One command — it reads the whole folder, opens a PR, and prints the link:
+One command — it reads the whole folder, opens a PR, and prints the links:
 ```bash
 node scripts/submit.mjs clients/<slug> "add(client): <Client Name>"
 ```
 
-On success it prints `✓ Pull Request opened: <url>`. Give that URL to the
-consultant and tell them Gaspard is auto-notified (CODEOWNERS) and will review &
-merge; Vercel deploys `main` within ~1 minute of merge.
+On success it prints:
+- `✓ Pull Request opened: <url>`
+- `staging (après CI ~2 min): https://staging.diag-ia.hubvisory.app/<slug>`
+- `prod (après promotion maintainer): https://diag-ia.hubvisory.app/<slug>`
+
+Tell the consultant (in French):
+
+> « C'est soumis ✅. Si les vérifications passent (~2 min), ton rapport sera visible sur
+> **staging.diag-ia.hubvisory.app/\<slug\>**. Partage ce lien pour validation.
+> La version client finale sur diag-ia.hubvisory.app sera mise en ligne par un admin
+> quand tout est validé. »
 
 **After publishing, stop the local preview server** (kill the background `npx serve`
 task from the prerequisites step) so nothing keeps running on `localhost:3000`.
@@ -60,9 +79,6 @@ and deploy config (`vercel.json`, `package.json`, lockfiles, `.gitignore`) — t
 through a normal maintainer Git PR. Per the project convention, any genuinely new component
 should also be added to `components/index.html` + a `components/<name>.html` snippet, so
 include those too.
-
-> Note: `_sources/` and other local-only material are skipped automatically, and
-> the backend rejects any file outside `clients/<slug>/`.
 
 ## First time only — the shared secret
 
@@ -87,11 +103,16 @@ the secret to the repo.
 | `payload too large` (413) | Several MB of images in one submission | Compress/resize images, or host them on a CDN — text is never the cause |
 | `HTTP 500: server not configured` | Backend env vars missing | Tell the admin (see `BACKEND_SETUP.md`) |
 | Network error / 404 | Endpoint unreachable | Confirm internet; admin checks the Vercel deploy |
+| Visible on staging but not prod | Normal — prod not promoted yet | Tell admin to merge `staging` → `main` |
+| PR checks failed | CI validation error | Fix locally, re-run validate-data.js, re-submit |
 
 ## What happens under the hood
 
 1. `scripts/submit.mjs` reads the folder and POSTs the files + secret to
    `https://diag-ia.hubvisory.app/api/submit`.
 2. The function verifies the secret, mints a short-lived GitHub App token,
-   commits the files to a new `client/<slug>` branch, and opens a PR to `main`.
-3. CODEOWNERS pings Gaspard; merge triggers the Vercel deploy.
+   commits the files to a new `client/<slug>` branch, and opens a PR to **`staging`**.
+3. GitHub Actions runs `validate` (syntax + `validate-data.js` on changed clients).
+4. If checks pass, the workflow **auto-merges** the PR into `staging`.
+5. Vercel deploys `staging` → `https://staging.diag-ia.hubvisory.app/<slug>`.
+6. A maintainer promotes `staging` → `main` when ready → prod deploys.

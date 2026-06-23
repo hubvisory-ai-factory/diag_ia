@@ -14,7 +14,9 @@
 //   SUBMIT_SECRET        Shared secret consultants put in DIAG_IA_SECRET
 // Optional:
 //   GH_REPO              owner/repo (default: hubvisory-ai-factory/diag_ia)
-//   GH_BASE_BRANCH       PR base branch (default: main)
+//   GH_BASE_BRANCH       PR base branch (default: staging)
+//   STAGING_HOST         hostname for preview URLs (default: staging.diag-ia.hubvisory.app)
+//   PROD_HOST            production hostname (default: diag-ia.hubvisory.app)
 
 const crypto = require('crypto');
 
@@ -209,7 +211,9 @@ module.exports = async (req, res) => {
 
     const { GH_APP_ID, GH_APP_PRIVATE_KEY, SUBMIT_SECRET } = process.env;
     const REPO = process.env.GH_REPO || 'hubvisory-ai-factory/diag_ia';
-    const BASE = process.env.GH_BASE_BRANCH || 'main';
+    const BASE = process.env.GH_BASE_BRANCH || 'staging';
+    const STAGING_HOST = process.env.STAGING_HOST || 'staging.diag-ia.hubvisory.app';
+    const PROD_HOST = process.env.PROD_HOST || 'diag-ia.hubvisory.app';
     if (!GH_APP_ID || !GH_APP_PRIVATE_KEY || !SUBMIT_SECRET) {
       throw httpError(500, 'server not configured (missing GH_APP_* / SUBMIT_SECRET)');
     }
@@ -242,16 +246,47 @@ module.exports = async (req, res) => {
     const finalBranch = await commitFiles(token, owner, repo, BASE, branch, files, message);
 
     const attribution = body.author ? `\n\n— Submitted by ${body.author}` : '';
+    const prBody =
+      (body.prBody || `Automated submission for client \`${slug}\` via Claude Code.`) +
+      attribution;
+
     const pr = await gh(token, 'POST', `/repos/${owner}/${repo}/pulls`, {
       title: body.title || message,
       head: finalBranch,
       base: BASE,
-      body:
-        (body.prBody || `Automated submission for client \`${slug}\` via Claude Code.`) +
-        attribution,
+      body: prBody,
     });
 
-    return res.status(200).json({ ok: true, prUrl: pr.html_url, branch: finalBranch });
+    const stagingUrl = `https://${STAGING_HOST}/${slug}`;
+    const prodUrl = `https://${PROD_HOST}/${slug}`;
+    const commentBody = [
+      '## Soumission Diag IA',
+      '',
+      'Si les **checks CI** passent (~2 min), cette PR sera **auto-mergée sur `staging`**.',
+      '',
+      `**Prévisualisation (staging)** : ${stagingUrl}`,
+      '',
+      `**Production (client final)** : ${prodUrl} — mise en ligne manuelle par un maintainer après validation.`,
+      '',
+      '---',
+      '_Commentaire automatique — diag-ia-bot_',
+    ].join('\n');
+
+    try {
+      await gh(token, 'POST', `/repos/${owner}/${repo}/issues/${pr.number}/comments`, {
+        body: commentBody,
+      });
+    } catch {
+      /* PR still opened — comment is best-effort */
+    }
+
+    return res.status(200).json({
+      ok: true,
+      prUrl: pr.html_url,
+      branch: finalBranch,
+      stagingUrl,
+      prodUrl,
+    });
   } catch (e) {
     const status = e.status && e.status >= 400 && e.status < 600 ? e.status : 500;
     return res.status(status).json({ ok: false, error: String(e.message || e) });

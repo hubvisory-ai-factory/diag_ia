@@ -4,7 +4,9 @@
 
 This repo hosts all client-facing AI diagnostic websites for Hubvisory's consulting practice. Each client engagement produces a rich, interactive website deployed at `https://diag-ia.hubvisory.app/<client-slug>`. Consultants add new client cases by having a guided conversation with Claude Code — no frontend experience required.
 
-**Live site**: https://diag-ia.hubvisory.app/
+**Live site (prod)** : https://diag-ia.hubvisory.app/
+
+**Staging (pre-prod)** : https://staging.diag-ia.hubvisory.app/
 
 **Delivery pipeline**: Diagnostic engagement -> PDF + PowerPoint + **this website**
 
@@ -16,7 +18,7 @@ This repo hosts all client-facing AI diagnostic websites for Hubvisory's consult
 - Chart.js plugins: `chartjs-plugin-datalabels`, `chartjs-plugin-annotation`
 - Inline SVG for gauge + heatmap
 - Google Fonts: Inter (body) + DM Serif Display (headings)
-- Deploy: Vercel, auto-deploy on push to `main`
+- Deploy: Vercel — `staging` branch → staging URL; `main` → prod
 
 ## Repo Structure
 
@@ -88,7 +90,7 @@ The `components/` folder contains **25 documented HTML snippets** — one per vi
 6. Claude copies the template and writes the client's `data.js`
 7. Claude adds a card to `index.html` for the new client
 8. Consultant opens the HTML file directly in a browser to verify
-9. Publish via the `publish` skill (`node scripts/submit.mjs clients/<slug> "..."`) -> PR opens -> merge -> Vercel auto-deploys
+9. Publish via the `publish` skill (`node scripts/submit.mjs clients/<slug> "..."`) → PR → CI → auto-merge `staging` → share staging URL → maintainer promotes to prod
 
 ### What Claude does during step 4-7
 
@@ -144,6 +146,7 @@ Components in `components/` (HTML snippets Claude uses as reference when buildin
 - **cta-banner.html** — Gradient call-to-action banner
 - **risks.html** — Risk register with severity bars
 - **roadmap.html** — Phased roadmap (3 horizons)
+- **roadmap-gantt.html** — Dependency-free CSS Gantt sequenced by package (P1/P2/P3 toggles, default P1). One row per produit, phases drawn as coloured bars over a week grid (`start`/`end` are 1-based week *boundaries*, halves allowed), with a Go/no-Go marker at the Construction↔Déploiement boundary and a per-package `maxWeek` that truncates the axis. Clicking a row opens a modal listing the catalogue solutions for that produit + package (joined to `catalogue-votac.html` via `produitId`/`package`). Introduced by `clovis`. Data: `CLIENT_DATA.roadmapPackages`.
 - **navigation.html** — Sticky header with nav pills
 - **footer.html** — Page footer
 - **gouvernance.html** — Governance deep-dive 3-column grid
@@ -245,8 +248,10 @@ All visual tokens live in `CLIENT_DATA.branding` and flow through `buildTheme()`
 
 ### Branching
 
-- `main` for client additions (isolated by folder, safe to push directly)
-- Feature branches for template or infrastructure changes
+- `client/<slug>` — created by the submission backend at publish time
+- `staging` — pre-prod; consultant PRs auto-merge here when CI passes
+- `main` — production; promoted manually by a maintainer from `staging`
+- Feature branches for template or infrastructure changes (maintainers)
 
 ## Commands
 
@@ -269,15 +274,20 @@ python3 -m http.server 3000     # then open http://localhost:3000/clients/<slug>
 
 # Publish (consultants) — opens a PR via the backend, no Git push:
 node scripts/submit.mjs clients/<slug> "add(client): <Name>"
-# Maintainers (template/infra) deploy by merging to main; Vercel auto-deploys.
+# CI auto-merges to staging → https://staging.diag-ia.hubvisory.app/<slug>
+# Maintainers promote staging → main for prod.
 ```
 
 ## Deployment
 
-- **Live URL**: https://diag-ia.hubvisory.app/
+| Environment | Branch | URL | Trigger |
+|-------------|--------|-----|---------|
+| **Staging** | `staging` | https://staging.diag-ia.hubvisory.app/ | PR merged to `staging` (auto after CI) |
+| **Prod** | `main` | https://diag-ia.hubvisory.app/ | Maintainer merges `staging` → `main` |
+
 - **Vercel project**: Static site (no build command needed)
-- **Deploy trigger**: Push to `main` — auto-deploys within ~1 minute
-- **Routing**: `vercel.json` rewrites `/<slug>` -> `/clients/<slug>/index.html`
+- **Routing**: `vercel.json` rewrites `/<slug>` → `/clients/<slug>/index.html`
+- **Staging banner**: `staging-banner.js` shows a warning on `staging.*` hostnames
 
 ### No GitHub Account Needed — Publish via the Backend
 
@@ -287,17 +297,18 @@ pushing with Git. **No GitHub account, org invite, token, fork, `gh`, or SSH key
 **How it works:**
 1. Claude runs `node scripts/submit.mjs clients/<slug> "message"`.
 2. The Vercel function `api/submit.js` authenticates as the `diag-ia-bot` GitHub App,
-   commits the client folder to a `client/<slug>` branch, and opens a Pull Request.
-3. Gaspard is auto-notified via CODEOWNERS.
-4. Once merged, Vercel deploys automatically.
+   commits the client folder to a `client/<slug>` branch, and opens a Pull Request to **`staging`**.
+3. GitHub Actions validates changed files (`node --check` + `validate-data.js`).
+4. If checks pass, the PR is **auto-merged** into `staging`; Vercel deploys staging (~2 min).
+5. Share `https://staging.diag-ia.hubvisory.app/<slug>` for validation.
+6. A **maintainer** promotes `staging` → `main` when ready → prod deploys.
 
 The only one-time step for a consultant is a shared **publish key** (see the `publish`
 skill), stored at `~/.config/diag_ia/secret` and reused automatically afterward. Git is
 still needed once, only to *clone* the public repo (no auth) — the `git-setup` skill
 covers installing it.
 
-> The old fork + `gh` + PR workflow is **deprecated**. Backend setup is documented in
-> `BACKEND_SETUP.md` (admin only).
+> Backend + staging setup: `BACKEND_SETUP.md` (admin only).
 
 ## Publishing Workflow
 
@@ -314,17 +325,18 @@ Consultants do **not** push with Git. Publishing goes through the backend via th
    ```bash
    node scripts/submit.mjs clients/<slug> "add(client): <Name>"
    ```
-4. Give the consultant the printed PR URL. Gaspard is auto-notified (CODEOWNERS),
-   reviews, and merges. Vercel auto-deploys `main` within ~1 minute.
+4. Give the consultant the **staging URL** (`https://staging.diag-ia.hubvisory.app/<slug>`)
+   once CI passes (~2 min). They can share it for validation.
+5. A maintainer promotes `staging` → `main` when ready for the client-facing prod URL.
 
 > First publish only: if it reports "No submission secret found", set the shared key
 > once — see the `publish` skill. The backend accepts files anywhere except `.github/`,
 > `api/`, and deploy config; you can include a new component or skill fix in the same PR.
 
 ### Infrastructure / template changes (maintainers only)
-For repo-wide changes (template, components, backend, docs) a maintainer with push
-access still uses normal Git branches + PRs. This does **not** apply to consultants
-adding client pages.
+For repo-wide changes (template, components, backend, CI, docs) a maintainer with push
+access uses normal Git branches + PRs (often directly to `staging` or `main`). This does
+**not** apply to consultants adding client pages via the backend.
 
 ## Removing Sections
 
@@ -347,6 +359,8 @@ Common issues and solutions (full details in `.claude/skills/add-client.md`):
 | 404 on live site | Wrong `<base href>` | Must be `/clients/<slug>/` with trailing slash |
 | Publish fails: "No submission secret found" | Publish key not set | Set it once — see the `publish` skill |
 | Publish fails: 401 bad secret | Wrong key | Re-paste the correct key into `~/.config/diag_ia/secret` |
+| Visible on staging, not prod | Prod not promoted yet | Normal — maintainer merges `staging` → `main` |
+| PR checks failed | CI validation error | Fix data.js locally, re-validate, re-submit |
 
 ## Current Status
 

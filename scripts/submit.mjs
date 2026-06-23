@@ -157,4 +157,12 @@ if (!res.ok || !data.ok) {
 
 console.log(`✓ Pull Request opened: ${data.prUrl}`);
 console.log(`  branch: ${data.branch}`);
-console.log('  Gaspard is notified automatically and will review & merge.');
+if (data.stagingUrl) {
+  console.log(`  staging (après CI ~2 min): ${data.stagingUrl}`);
+}
+if (data.prodUrl) {
+  console.log(`  prod (après promotion maintainer): ${data.prodUrl}`);
+}
+console.log(
+  '  Les checks CI auto-mergent la PR sur staging si tout passe. La prod nécessite un maintainer.'
+);

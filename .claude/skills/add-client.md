@@ -20,7 +20,9 @@ consultant doivent être en français.
 5. On confirmation → **post-mortem in the background** (improve docs/skills) → **publish** →
    **stop the local server**.
 
-**Live site**: https://diag-ia.hubvisory.app/
+**Live site (prod)** : https://diag-ia.hubvisory.app/
+
+**Staging (pre-prod)** : https://staging.diag-ia.hubvisory.app/
 
 **Reference files**:
 - `REGISTRY.md` — lists available templates and existing client layouts (read this first)
@@ -513,7 +515,7 @@ node scripts/submit.mjs clients/<slug> "add(client): <Client Name>"
 
 `submit.mjs` reads the whole `clients/<slug>/` folder, sends it to the submission
 endpoint, and prints the PR URL. The endpoint commits as the `diag-ia-bot` GitHub App
-and opens the PR — notifying @gaspardhassenforder via CODEOWNERS.
+and opens the PR to `staging` — CI auto-merges if checks pass.
 
 > First publish only: if it prints "No submission secret found", set the shared key once
 > (`~/.config/diag_ia/secret`) — see the `publish` skill — and re-run.
@@ -526,16 +528,23 @@ and opens the PR — notifying @gaspardhassenforder via CODEOWNERS.
 > ```
 
 Tell the consultant (in French):
-> « C'est publié ✅ — voici la Pull Request : <PR URL>. Gaspard est notifié
-> automatiquement, il la validera et ton diagnostic sera en ligne ~1 minute après. »
+> « C'est soumis ✅ — voici la Pull Request : <PR URL>.
+> Si les vérifications passent (~2 min), ton rapport sera visible sur
+> **staging.diag-ia.hubvisory.app/\<slug\>**. Partage ce lien pour validation.
+> La version client finale sur diag-ia.hubvisory.app sera mise en ligne par un admin
+> quand tout est validé. »
 
 ### Step 3 — Stop the local server
 Now that it's published, stop the background `npx serve` process you started in Phase 5
 (kill that background task). Confirm `http://localhost:3000` is no longer serving.
 
-### After merge (automatic)
-Once Gaspard merges the PR, **Vercel auto-deploys** within ~1 minute and the diagnostic
-goes live at `https://diag-ia.hubvisory.app/<slug>`. The consultant does nothing else.
+### After CI auto-merge to staging (automatic)
+Once CI passes, the PR is auto-merged into `staging` and Vercel deploys within ~2 min.
+The diagnostic is visible at `https://staging.diag-ia.hubvisory.app/<slug>`.
+
+### After promotion to prod (maintainer only)
+A maintainer merges `staging` → `main` when ready. Then the client-facing URL is
+`https://diag-ia.hubvisory.app/<slug>`.
 
 ---
 
@@ -639,5 +648,5 @@ git checkout main -- _template/index.html
 - **Update REGISTRY.md.** Every new client must be added to the registry with template used, date, and any structural changes.
 - **Keep `idMetier` consistent.** The same id must be used across `perimetre`, `useCasesList`, `heatmapMatrix`, and `stackByMetier`.
 - **Add cards at end of grid.** Minimizes merge conflicts when multiple people work in parallel.
-- **Only merge after local verification.** The consultant must confirm the page works before merging to `main`.
+- **Only publish after local verification.** The consultant must confirm the page works before running the `publish` skill (staging deploy).
 - **Replace placeholders.** `promptsBanque` templates use `{{client}}` — replace with actual client name.

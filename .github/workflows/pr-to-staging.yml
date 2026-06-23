@@ -1,0 +1,89 @@
+# Validate consultant PRs targeting staging, then auto-merge if checks pass.
+# Staging deploys automatically on Vercel (staging.diag-ia.hubvisory.app).
+# Production (main) is promoted manually by a maintainer.
+
+name: PR to staging
+
+on:
+  pull_request:
+    branches: [staging]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: pr-staging-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run checks on changed files
+        run: |
+          set -euo pipefail
+          BASE="${{ github.event.pull_request.base.sha }}"
+          HEAD="${{ github.event.pull_request.head.sha }}"
+          mapfile -t CHANGED < <(git diff --name-only "$BASE" "$HEAD")
+
+          if [ "${#CHANGED[@]}" -eq 0 ]; then
+            echo "No changed files."
+            exit 0
+          fi
+
+          echo "Changed files:"
+          printf '  %s\n' "${CHANGED[@]}"
+
+          DATA_FILES=()
+          JS_FILES=()
+          for f in "${CHANGED[@]}"; do
+            [[ "$f" =~ ^clients/[^/]+/data\.js$ ]] && DATA_FILES+=("$f")
+            [[ "$f" =~ \.(js|mjs)$ ]] && JS_FILES+=("$f")
+          done
+
+          if [ "${#DATA_FILES[@]}" -gt 0 ]; then
+            for f in "${DATA_FILES[@]}"; do
+              echo "→ node --check $f"
+              node --check "$f"
+              echo "→ node scripts/validate-data.js $f"
+              node scripts/validate-data.js "$f"
+            done
+          fi
+
+          if [ "${#JS_FILES[@]}" -gt 0 ]; then
+            for f in "${JS_FILES[@]}"; do
+              # data.js already checked above
+              [[ "$f" =~ ^clients/[^/]+/data\.js$ ]] && continue
+              echo "→ node --check $f"
+              node --check "$f"
+            done
+          fi
+
+          echo "All checks passed."
+
+  auto-merge:
+    name: auto-merge
+    needs: validate
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Squash merge into staging
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          gh pr merge "$PR_NUMBER" --squash --delete-branch
+          echo "Merged PR #$PR_NUMBER into staging."

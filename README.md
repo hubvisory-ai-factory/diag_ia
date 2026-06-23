@@ -2,7 +2,9 @@
 
 Bienvenue ! Ce projet permet aux consultants de créer des sites de diagnostic IA pour les clients, **sans besoin d'expérience en programmation**.
 
-**Site en ligne** : https://diag-ia.hubvisory.app/
+**Site prod** : https://diag-ia.hubvisory.app/
+
+**Staging (pré-prod)** : https://staging.diag-ia.hubvisory.app/
 
 ## 🔑 Prérequis : (presque) rien
 
@@ -11,15 +13,16 @@ Bienvenue ! Ce projet permet aux consultants de créer des sites de diagnostic I
 - **Aucun compte GitHub requis**, aucun token, aucun fork, aucune ligne de commande Git à apprendre.
 
 > **Comment je publie alors ?** La publication passe par un service interne : Claude
-> envoie ton rapport, qui ouvre automatiquement une Pull Request. Tu n'as jamais à
-> toucher GitHub. La première publication te demandera une **clé de publication**
-> (fournie une seule fois par ton admin) — Claude la mémorise ensuite.
+> envoie ton rapport → une Pull Request s'ouvre → si les vérifications passent, déploiement
+> automatique sur **staging**. Partage `staging.diag-ia.hubvisory.app/<slug>` pour validation.
+> Un admin met en prod (`diag-ia.hubvisory.app`) quand c'est validé.
 
 ### Comment ça marche ?
 1. Tu crées ton diagnostic en local avec Claude.
 2. Quand c'est prêt, Claude le publie en une commande (`scripts/submit.mjs`).
-3. Une Pull Request s'ouvre automatiquement — Gaspard est notifié.
-4. Une fois validée, ton diagnostic est en ligne ! 🎉
+3. Si les checks CI passent (~2 min), ton diagnostic est sur **staging**.
+4. Tu partages `https://staging.diag-ia.hubvisory.app/<slug>` pour validation.
+5. Un admin promeut en prod quand tout est OK → `https://diag-ia.hubvisory.app/<slug>` 🎉
 
 ---
 
@@ -73,7 +76,8 @@ Quand tu dis « je veux ajouter un nouveau client », Claude va :
    - `assets/` — le logo du client
 3. Ajouter une carte sur la page d'accueil (`index.html`)
 4. Lancer un serveur local depuis la **racine** (`npx serve`) et ouvrir `http://localhost:3000/clients/<slug>/`
-5. Publier (skill « publish ») → une PR s'ouvre → après validation, Vercel déploie automatiquement
+5. Publier (skill « publish ») → staging auto (~2 min) → partager l'URL staging
+6. Un admin promeut en prod quand validé
 
 ### ✏️ Modifier un diagnostic existant
 
@@ -155,11 +159,13 @@ Cela garantit que la bibliothèque de composants reste à jour et réutilisable.
    ↓
 6. Vérifie dans le navigateur — Claude lance `npx serve` (depuis la racine) et te donne l'URL `/clients/<slug>/`
    ↓
-7. Si tout est bon, Claude publie (skill « publish ») → une PR s'ouvre automatiquement
+7. Si tout est bon, Claude publie (skill « publish ») → staging auto (~2 min)
    ↓
-8. Gaspard valide la PR → Vercel déploie (~1 minute)
+8. Partage l'URL staging pour validation : staging.diag-ia.hubvisory.app/<slug>
    ↓
-9. Ton diagnostic est en ligne sur https://diag-ia.hubvisory.app/<slug> ! 🎉
+9. Admin promeut staging → prod
+   ↓
+10. Ton diagnostic client est en ligne sur https://diag-ia.hubvisory.app/<slug> ! 🎉
 ```
 
 ## 🛠️ Problèmes courants
@@ -170,7 +176,8 @@ Cela garantit que la bibliothèque de composants reste à jour et réutilisable.
 | Graphiques absents | Format de données incorrect — vérifie avec Claude |
 | « No submission secret found » à la publication | La clé n'est pas configurée — demande-la à ton admin, Claude l'enregistre une fois |
 | « 401 bad secret » à la publication | La clé est incorrecte — redemande la bonne valeur à ton admin |
-| La page n'apparaît pas en ligne | La PR n'a pas encore été validée/fusionnée par Gaspard |
+| La page n'apparaît pas en prod | Normal si pas encore promu — vérifie sur staging.diag-ia.hubvisory.app |
+| Checks CI échoués sur la PR | Erreur dans data.js — corrige localement et re-publie |
 
 ## 📞 Besoin d'aide ?
 

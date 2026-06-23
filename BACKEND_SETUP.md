@@ -64,16 +64,59 @@ node -e "console.log(require('crypto').randomBytes(24).toString('base64url'))"
 
 Store the value in your team password manager only.
 
-Optional vars (only if you change defaults): `GH_REPO` (default
-`hubvisory-ai-factory/diag_ia`), `GH_BASE_BRANCH` (default `main`).
+Optional vars (only if you change defaults):
 
-## Step 5 — Deploy
+| Name | Default |
+|---|---|
+| `GH_REPO` | `hubvisory-ai-factory/diag_ia` |
+| `GH_BASE_BRANCH` | `staging` |
+| `STAGING_HOST` | `staging.diag-ia.hubvisory.app` |
+| `PROD_HOST` | `diag-ia.hubvisory.app` |
+
+## Step 5 — Staging environment (browser)
+
+### 5a — Create the `staging` branch
+
+From an up-to-date `main`:
+
+```bash
+git checkout main && git pull
+git checkout -b staging && git push -u origin staging
+```
+
+### 5b — Vercel domains
+
+In the `diag_ia` Vercel project:
+
+- **Production branch** : `main` → `diag-ia.hubvisory.app`
+- **Staging domain** : add `staging.diag-ia.hubvisory.app`, assign it to Git branch **`staging`**
+
+Ensure `GH_BASE_BRANCH=staging` is set in Vercel env vars (Step 4).
+
+### 5c — GitHub branch protection
+
+**Branch `staging`** :
+
+- Require a pull request before merging
+- Require status check: **`validate`** (from `.github/workflows/pr-to-staging.yml`)
+- Do **not** require Code Owners review (consultant PRs auto-merge after CI)
+
+**Branch `main`** :
+
+- Require a pull request before merging
+- Require review from Code Owners (or at least one maintainer approval)
+- Optionally restrict merge source to `staging`
+
+Consultant submissions never merge directly to `main`. Only maintainers promote
+`staging` → `main` for the client-facing prod site.
+
+## Step 6 — Deploy
 
 Push this branch and merge to `main` (or redeploy in Vercel) so `api/submit.js`
-goes live. Adding `api/` doesn't change the static build — Vercel just picks it up
-as a serverless function.
+and `.github/workflows/pr-to-staging.yml` go live. Adding `api/` doesn't change the
+static build — Vercel just picks it up as a serverless function.
 
-## Step 6 — Smoke test
+## Step 7 — Smoke test
 
 From a clone of the repo with the secret exported:
 
@@ -82,13 +125,14 @@ export DIAG_IA_SECRET="<the value you set in Vercel>"
 node scripts/submit.mjs clients/exemple "test: backend smoke test"
 ```
 
-Expect `✓ Pull Request opened: …`. Open the URL, confirm the PR exists with the
-files under `clients/exemple/`, then close it without merging. Done.
+Expect `✓ Pull Request opened: …` and a staging URL in the output. Open the PR URL,
+confirm it targets **`staging`** (not `main`), wait for CI (~2 min), then check
+`https://staging.diag-ia.hubvisory.app/exemple`. Close or revert the test PR if needed.
 
 > Tip: test against an existing demo folder like `clients/exemple/` (or any throwaway
 > `clients/<slug>/` you create locally) so you don't pollute real clients.
 
-## Step 7 — Distribute the shared secret to consultants
+## Step 8 — Distribute the shared secret to consultants
 
 Put the `SUBMIT_SECRET` value in your team password manager (or onboarding doc).
 The first time a consultant publishes, Claude will ask for it and store it at
@@ -107,10 +151,9 @@ The first time a consultant publishes, Claude will ask for it and store it at
   (`vercel.json`, `package.json`, lockfiles, `.gitignore`, `.vercelignore`). This lets
   the component library and skills grow with users while keeping the dangerous surface
   off-limits.
-- **Everything is PR-gated.** The shared secret gates **opening PRs**, not merging — merge
-  still requires you (CODEOWNERS + branch protection). Your review is the real safety gate;
-  the denylist only blocks what could act before that review. Worst case from a leaked
-  secret is a junk PR you decline — not a breach. Rotate the secret in Vercel if needed.
+- **Everything is PR-gated to `staging`.** The shared secret gates **opening PRs**, not
+  merging to prod. Staging merges are automatic when CI passes. Prod (`main`) requires a
+  maintainer review and manual promotion from `staging`.
 - **Payload size:** one submission is a single HTTP POST, capped at ~4 MB (Vercel limits
   request bodies to ~4.5 MB). Text (HTML/JS/components/skills) is tiny; only several MB of
   images can hit it. If a client ever needs heavy imagery, switch the transport to chunked
@@ -124,3 +167,22 @@ The first time a consultant publishes, Claude will ask for it and store it at
 1. Generate a new value (command above).
 2. Update `SUBMIT_SECRET` in Vercel → redeploy.
 3. Share the new value; consultants update `~/.config/diag_ia/secret` once.
+
+---
+
+## Promoting staging → prod (maintainer)
+
+When staging is validated and ready for clients:
+
+**Option A — PR (recommended):** open a PR `staging` → `main` on GitHub, review, merge.
+Vercel deploys prod in ~1 minute.
+
+**Option B — CLI:**
+
+```bash
+git checkout main && git pull
+git merge origin/staging --no-ff -m "release: promote staging to prod"
+git push origin main
+```
+
+Do this in batch when you are ready — not on every consultant submission.
