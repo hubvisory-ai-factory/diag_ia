@@ -6,6 +6,7 @@ name: Release staging to prod
 on:
   push:
     branches: [staging]
+  workflow_dispatch:
 
 permissions:
   contents: read
