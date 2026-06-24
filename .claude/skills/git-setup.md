@@ -53,8 +53,9 @@ No login is requested — it's a public repository.
 
 ## Done
 
-Continue the main flow: read `CLAUDE.md` + `REGISTRY.md`, then ask the user what they
-want to do. When they're ready to publish, use the `publish` skill.
+Continue: read `CLAUDE.md` + `REGISTRY.md`, then ask what the user wants to do.
+When ready to publish, use the **`publish`** skill (staging — no GitHub account).
+Mise en ligne du site client = contacter un **AI engineer Hubvisory**.
 
 ---
 

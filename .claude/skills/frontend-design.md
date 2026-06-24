@@ -115,3 +115,30 @@ When asked to create or refine components for the portal:
 4 = #84cc16 (lime)
 5 = #10b981 (emerald)
 ```
+
+### Theming via CLIENT_DATA.branding
+
+All visual tokens live in `CLIENT_DATA.branding` and flow through `buildTheme()` into the
+CSS custom properties above. Components read `var(--primary)`, `var(--font-body)`, etc. —
+**never hardcode** colors or fonts.
+
+- **`primaryColor`** / **`secondaryColor`** — main brand colors. `buildTheme()` derives the
+  soft (`0.08` alpha) and border (`0.22` alpha) variants automatically.
+- **`neutrals`** (optional, has defaults) — `ink`, `muted`, `mutedSoft`, `border`,
+  `surface`, `bg`, `bgAlt`. Override any subset for a custom neutral palette.
+- **`fonts`** (optional, has defaults) — `body`, `display` (CSS font stacks) +
+  `googleFontsUrl` (the `<link>` href). `buildTheme()` swaps the Google Fonts link and sets
+  `--font-body` / `--font-display`.
+- **`logoUrl`** — path to the client logo in `assets/`.
+
+Defaults = Hubvisory design language: primary `#003366` (navy), accent `#E30613` (red),
+Inter (body) + DM Serif Display (headings). Risk colors: rouge `#dc2626`, orange
+`#f59e0b`, vert `#10b981`. Cards: white, `1px solid var(--border)`, `rounded-lg`. Layout:
+`max-w-screen-xl` (1280px), responsive grid.
+
+### Keeping the component library in sync
+
+When a client page needs a component absent from `components/index.html`, add it there
+first (with self-descriptive placeholder data), create the `components/<name>.html`
+snippet, use it, then log it in `components/CATALOG.md`. See that file for the full rule
+and the self-descriptive text convention.

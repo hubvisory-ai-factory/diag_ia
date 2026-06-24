@@ -23,7 +23,9 @@
       "Bash(git log*)",
       "Bash(git diff*)",
       "Bash(git stash*)",
-      "Bash(npx serve*)"
+      "Bash(npx serve*)",
+      "Bash(node --check*)",
+      "Bash(node scripts/*)"
     ]
   }
 }

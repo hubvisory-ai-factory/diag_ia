@@ -46,10 +46,10 @@ git rev-parse --show-toplevel   # should print the diag_ia repo path
 Publishing goes through the backend (the `publish` skill): **no GitHub account, invite,
 token, fork, `gh`, or SSH.** The only requirements:
 - The repo is cloned locally (Git installed — see `git-setup` if `git --version` fails).
-- A one-time **publish key** at `~/.config/diag_ia/secret` (see the `publish` skill;
-  the admin provides the value). You can check now, or wait until publish time:
+- A one-time **publish key** at `~/.config/diag_ia/secret` (provided via the onboarding
+  prompt / by an admin — see the `publish` skill). Check:
   ```bash
-  test -f ~/.config/diag_ia/secret && echo "publish key present" || echo "ask admin for the publish key"
+  test -f ~/.config/diag_ia/secret && echo "publish key present" || echo "demander la clé à l'admin"
   ```
 
 Do **not** set up forks, `gh`, or GitHub auth.
@@ -528,23 +528,23 @@ and opens the PR to `staging` — CI auto-merges if checks pass.
 > ```
 
 Tell the consultant (in French):
-> « C'est soumis ✅ — voici la Pull Request : <PR URL>.
-> Si les vérifications passent (~2 min), ton rapport sera visible sur
-> **staging.diag-ia.hubvisory.app/\<slug\>**. Partage ce lien pour validation.
-> La version client finale sur diag-ia.hubvisory.app sera mise en ligne par un admin
-> quand tout est validé. »
+> « C'est publié ✅. Dans ~2 minutes, ton **lien de validation** sera prêt :
+> **staging.diag-ia.hubvisory.app/\<slug\>** — partage-le pour confirmation (le client ne
+> le voit pas). Pour mettre le **site client** en ligne une fois validé, contacte un
+> AI engineer Hubvisory. »
 
 ### Step 3 — Stop the local server
 Now that it's published, stop the background `npx serve` process you started in Phase 5
 (kill that background task). Confirm `http://localhost:3000` is no longer serving.
 
-### After CI auto-merge to staging (automatic)
-Once CI passes, the PR is auto-merged into `staging` and Vercel deploys within ~2 min.
-The diagnostic is visible at `https://staging.diag-ia.hubvisory.app/<slug>`.
+### Lien de validation (automatique)
+Après les vérifications (~2 min), le lien de validation est actif :
+`https://staging.diag-ia.hubvisory.app/<slug>` (bandeau orange = pas la version client).
 
-### After promotion to prod (maintainer only)
-A maintainer merges `staging` → `main` when ready. Then the client-facing URL is
-`https://diag-ia.hubvisory.app/<slug>`.
+### Site client (un AI engineer Hubvisory — pas l'agent)
+La mise en ligne du **site client** (`https://diag-ia.hubvisory.app/<slug>`) est faite par
+un **AI engineer Hubvisory** (ex. Gaspard). Ne promets pas de délai — dis au consultant de
+le contacter quand le lien de validation est validé.
 
 ---
 

@@ -1,191 +1,57 @@
-# Diag IA — Portail de Diagnostic IA Hubvisory
+# Diag IA — Portail de diagnostics IA Hubvisory
 
-Bienvenue ! Ce projet permet aux consultants de créer des sites de diagnostic IA pour les clients, **sans besoin d'expérience en programmation**.
+Crée des sites web interactifs pour présenter les résultats de tes diagnostics IA clients,
+**sans coder et sans compte GitHub**. Tout se fait en discutant avec Claude Code.
 
-**Site prod** : https://diag-ia.hubvisory.app/
+**Site en ligne** : https://diag-ia.hubvisory.app/
 
-**Staging (pré-prod)** : https://staging.diag-ia.hubvisory.app/
+## Ce qu'il te faut
 
-## 🔑 Prérequis : (presque) rien
+- **Claude Code Desktop** installé. C'est tout.
+- (Git est utile pour télécharger le projet ; si tu ne l'as pas, Claude t'aide à l'installer.)
 
-- **Claude Code Desktop** installé — c'est tout ce dont tu as besoin.
-- **Git** (pour télécharger le projet) — si tu ne l'as pas, Claude t'aide à l'installer.
-- **Aucun compte GitHub requis**, aucun token, aucun fork, aucune ligne de commande Git à apprendre.
+## Comment l'utiliser
 
-> **Comment je publie alors ?** La publication passe par un service interne : Claude
-> envoie ton rapport → une Pull Request s'ouvre → si les vérifications passent, déploiement
-> automatique sur **staging**. Partage `staging.diag-ia.hubvisory.app/<slug>` pour validation.
-> Un admin met en prod (`diag-ia.hubvisory.app`) quand c'est validé.
+1. Ouvre **Claude Code Desktop**.
+2. Copie-colle le **prompt ci-dessous**.
+3. Laisse-toi guider : décris ce que tu veux, fournis tes fichiers de contexte, regarde
+   le résultat en local et itère.
+4. Quand c'est prêt, dis simplement « **publie** » → tu reçois un **lien de validation** à
+   partager (le client ne le voit pas encore).
+5. Quand tout est validé et que tu veux que **le client** voie le site, contacte un
+   **AI engineer Hubvisory** (ex. Gaspard) : il le met en ligne.
 
-### Comment ça marche ?
-1. Tu crées ton diagnostic en local avec Claude.
-2. Quand c'est prêt, Claude le publie en une commande (`scripts/submit.mjs`).
-3. Si les checks CI passent (~2 min), ton diagnostic est sur **staging**.
-4. Tu partages `https://staging.diag-ia.hubvisory.app/<slug>` pour validation.
-5. Un admin promeut en prod quand tout est OK → `https://diag-ia.hubvisory.app/<slug>` 🎉
-
----
-
-## 🚀 Démarrage rapide
-
-**Tu n'as pas besoin d'ouvrir un terminal.** Ouvre Claude Code Desktop, puis copie-colle le prompt que ton admin t'a envoyé (il met tout en place : cloner le repo, configurer la clé de publication, lire la doc, et te guider).
-
-> Tu n'as pas reçu le prompt d'onboarding ? Demande-le à ton admin (Gaspard) — c'est un
-> bloc de texte unique qui te configure entièrement.
-
-À défaut, voici le prompt générique (sans la clé — tu devras la demander à l'admin) :
-
-## 📋 Prompt à copier-coller dans Claude Code Desktop
+## Prompt à copier-coller dans Claude Code
 
 ```
-Ce projet est le portail de diagnostics IA d'Hubvisory. Il permet de créer des sites web interactifs pour présenter les résultats de diagnostics IA réalisés pour des clients.
+Tu vas m'aider à créer ou modifier un diagnostic IA Hubvisory.
 
-Vérifie que Git est installé : git --version
-Si Git n'est pas installé, guide-moi pour l'installer (utilise le skill git-setup).
+1. Configure la clé de publication (une seule fois) :
+   mkdir -p ~/.config/diag_ia && printf '%s' "[COLLER_LA_CLÉ_ICI]" > ~/.config/diag_ia/secret
 
-Clone le repo (dépôt public, aucune authentification nécessaire) puis entre dedans :
+2. Vérifie que Git est installé (git --version). S'il manque, guide-moi pour l'installer.
 
-git clone https://github.com/hubvisory-ai-factory/diag_ia.git
-cd diag_ia
+3. Clone le projet (dépôt public, aucun login) et entre dedans :
+   git clone https://github.com/hubvisory-ai-factory/diag_ia.git
+   cd diag_ia
 
-Lis attentivement CLAUDE.md et REGISTRY.md pour comprendre la structure du projet, les conventions, et les clients existants.
+4. Lis CLAUDE.md et REGISTRY.md pour comprendre le projet et les conventions.
 
-Ensuite, demande-moi ce que je souhaite faire :
+5. Demande-moi ce que je veux faire (nouveau diagnostic, modifier un existant, autre).
+   Pose les questions une par une. Ne suppose jamais les données du diagnostic :
+   demande-moi toujours de les fournir ou de les confirmer.
 
-1. Ajouter un nouveau diagnostic client
-2. Modifier un rapport existant
-3. Autre chose (nouveau composant, design, page d'accueil…)
-
-Pose-moi les questions une par une. Ne suppose jamais les données du diagnostic : demande-moi toujours de les fournir ou de les confirmer.
-
-Pour publier le rapport quand il est prêt, utilise le skill « publish » (node scripts/submit.mjs clients/<slug> "message"). Si une clé de publication est demandée, je te la fournirai (mon admin me l'a donnée). Pas de fork, pas de gh, pas de PR manuelle.
+Quand je dis « publie », mets en ligne un aperçu de validation et donne-moi le lien
+à partager. Ne publie jamais le site client final toi-même : c'est un AI engineer
+Hubvisory qui s'en charge.
 ```
 
----
+> La `[COLLER_LA_CLÉ_ICI]` est fournie par ton admin (elle permet de publier sans compte
+> GitHub). Claude la mémorise après la première fois.
 
-## 📖 Comprendre ce que tu vas faire
+## Besoin d'aide ?
 
-### ✅ Ajouter un nouveau diagnostic
-
-Quand tu dis « je veux ajouter un nouveau client », Claude va :
-
-1. Te poser des questions sur le client (nom, logo, données)
-2. Créer un dossier `clients/<slug>/` avec :
-   - `index.html` — la page complète (copiée du template)
-   - `data.js` — les données du diagnostic (le seul fichier que Claude écrit)
-   - `assets/` — le logo du client
-3. Ajouter une carte sur la page d'accueil (`index.html`)
-4. Lancer un serveur local depuis la **racine** (`npx serve`) et ouvrir `http://localhost:3000/clients/<slug>/`
-5. Publier (skill « publish ») → staging auto (~2 min) → partager l'URL staging
-6. Un admin promeut en prod quand validé
-
-### ✏️ Modifier un diagnostic existant
-
-Quand tu dis « je veux modifier Clovis », Claude va :
-
-1. Lire les données actuelles du client
-2. Discuter des changements avec toi
-3. Mettre à jour `data.js` (les données)
-4. Optionnellement, ajouter de nouvelles sections en utilisant les composants existants
-5. Tester les changements en local
-6. Publier (skill « publish »)
-
-### 🎨 Composants disponibles
-
-Le dossier `components/` contient 25 blocs HTML réutilisables :
-
-- **Graphiques** : radar (6 axes), heatmap (tableau), barres, scatter, jauge
-- **Cartes** : cas d'usage, risques, quick wins, gouvernance
-- **Sections** : héro, CTA, navigation, footer, glossaire, roadmap
-- **Spécialisées** : cartographie de processus, espace partenaire, santé des données
-
-Ouvre `components/index.html` dans un navigateur pour voir tous les composants en action.
-
-### 📁 Structure du repo
-
-```
-diag_ia/
-├── CLAUDE.md                    # Documentation technique (lis-moi)
-├── REGISTRY.md                  # Liste des templates et clients
-├── index.html                   # Page d'accueil (tous les diagnostics)
-├── api/submit.js                # Service de publication (ouvre les PR) — ne pas modifier
-├── scripts/submit.mjs           # Outil de publication utilisé par le skill « publish »
-├── _template/                   # Template à copier pour les nouveaux clients
-│   ├── index.html              # Moteur de rendu (copié tel quel)
-│   └── data.js                 # Données placeholder (structure à suivre)
-├── clients/
-│   ├── clovis/                 # Exemple : diagnostic Clovis
-│   │   ├── index.html          # Page (rarement modifiée)
-│   │   ├── data.js             # ← Ici les données du client
-│   │   └── assets/             # Logo et images du client
-│   └── <nouveau-client>/        # Chaque nouveau client ici
-├── components/                  # Bibliothèque de composants HTML
-│   ├── index.html              # Vitrine de tous les composants
-│   └── ...                     # 25 fichiers totaux
-└── README.md                   # Ce fichier
-```
-
-## 🛠️ Technos (pas besoin de connaître)
-
-- **HTML, CSS, JavaScript** — pas de framework ni de build
-- **Tailwind CSS** (CDN) — pour le design
-- **Chart.js 4** (CDN) — pour les graphiques
-- **SVG inline** — pour les jauges et les heatmaps
-- **Vercel** — déploiement automatique une fois la PR fusionnée
-
-## ✨ Convention importante
-
-**Quand Claude ajoute un nouveau composant :**
-
-1. D'abord, il l'ajoute à `components/index.html` avec des données d'exemple
-2. Ensuite, il crée un fichier snippet `components/<nom>.html`
-3. Puis, il l'utilise sur la page client
-4. Enfin, il met à jour la liste dans CLAUDE.md
-
-Cela garantit que la bibliothèque de composants reste à jour et réutilisable.
-
-## 🚀 Workflow complet
-
-```
-1. Ouvre Claude Code Desktop
-   ↓
-2. Colle le prompt d'onboarding (envoyé par ton admin)
-   ↓
-3. Claude clone le repo, configure la clé de publication et lit la documentation
-   ↓
-4. Réponds aux questions de Claude (nom client, données, etc.)
-   ↓
-5. Claude crée les fichiers
-   ↓
-6. Vérifie dans le navigateur — Claude lance `npx serve` (depuis la racine) et te donne l'URL `/clients/<slug>/`
-   ↓
-7. Si tout est bon, Claude publie (skill « publish ») → staging auto (~2 min)
-   ↓
-8. Partage l'URL staging pour validation : staging.diag-ia.hubvisory.app/<slug>
-   ↓
-9. Admin promeut staging → prod
-   ↓
-10. Ton diagnostic client est en ligne sur https://diag-ia.hubvisory.app/<slug> ! 🎉
-```
-
-## 🛠️ Problèmes courants
-
-| Problème | Solution |
-|----------|----------|
-| Page blanche | Erreur dans `data.js` — ouvre la console (F12) pour voir l'erreur |
-| Graphiques absents | Format de données incorrect — vérifie avec Claude |
-| « No submission secret found » à la publication | La clé n'est pas configurée — demande-la à ton admin, Claude l'enregistre une fois |
-| « 401 bad secret » à la publication | La clé est incorrecte — redemande la bonne valeur à ton admin |
-| La page n'apparaît pas en prod | Normal si pas encore promu — vérifie sur staging.diag-ia.hubvisory.app |
-| Checks CI échoués sur la PR | Erreur dans data.js — corrige localement et re-publie |
-
-## 📞 Besoin d'aide ?
-
-- **Problème technique ?** Lis `CLAUDE.md` (documentation technique)
-- **Besoin de connaître les clients existants ?** Lis `REGISTRY.md`
-- **Besoin de voir tous les composants ?** Ouvre `components/index.html` dans un navigateur
-- **Besoin de modifier un diagnostic ?** Demande à Claude avec ce prompt
-
----
-
-**Note** : Ce projet grandit avec toi. À chaque nouveau diagnostic ajouté, la documentation et les composants s'enrichissent. N'hésite pas à utiliser les diagnostics existants comme inspiration ! 🚀
+- **Doc technique (agents)** : `CLAUDE.md`
+- **Clients existants** : `REGISTRY.md`
+- **Tous les composants** : ouvre `components/index.html` dans un navigateur
+- **Mise en ligne pour le client** : contacte un AI engineer Hubvisory
