@@ -103,6 +103,21 @@
     .modal-overlay.open .modal-card { transform: translateY(0) scale(1); }
     .modal-close { position: absolute; top: 1rem; right: 1rem; z-index: 2; width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border); background: var(--surface); color: var(--muted); cursor: pointer; }
     .modal-close:hover { background: var(--bg-alt); color: var(--ink); }
+
+    /* Roadmap Gantt (roadmap-gantt.html) */
+    .roadmap-gantt-wrap { min-width: 0; width: 100%; }
+    .roadmap-gantt-header,
+    .roadmap-gantt-row { display: grid; grid-template-columns: 11rem repeat(var(--roadmap-weeks, 14), minmax(2rem, 1fr)); align-items: stretch; }
+    .roadmap-gantt-row { cursor: pointer; }
+    .roadmap-gantt-row:hover .roadmap-line-label { color: var(--primary); }
+    .roadmap-week-cell { text-align: center; font-size: 10px; font-weight: 600; color: var(--muted-soft); padding: 0.35rem 0; border-bottom: 1px solid var(--border); }
+    .roadmap-week-cell:not(:first-child)::before { content: 'Sem. '; font-weight: 500; font-size: 9px; opacity: 0.65; }
+    .roadmap-line-label { font-size: 11px; font-weight: 600; color: var(--ink); padding: 0.65rem 0.75rem 0.65rem 0; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 0.5rem; transition: color 0.15s; }
+    .roadmap-track { position: relative; min-height: 2.75rem; border-bottom: 1px solid var(--border); background: repeating-linear-gradient(to right, transparent, transparent calc(100% / var(--roadmap-weeks, 14) - 1px), var(--border) calc(100% / var(--roadmap-weeks, 14) - 1px), var(--border) calc(100% / var(--roadmap-weeks, 14))); }
+    .roadmap-segment { position: absolute; top: 0.5rem; bottom: 0.5rem; border-radius: 4px; }
+    .roadmap-gono { position: absolute; top: 50%; transform: translate(-50%, -50%); width: 0.625rem; height: 0.625rem; border-radius: 9999px; background: var(--surface); border: 1.5px solid var(--primary); z-index: 2; box-shadow: 0 0 0 1px rgba(255,255,255,0.9); }
+    .roadmap-gono-legend { width: 0.625rem; height: 0.625rem; border-radius: 9999px; background: var(--surface); border: 1.5px solid var(--primary); flex-shrink: 0; }
+    .clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   </style>
 </head>
 <body>
@@ -287,6 +302,39 @@ const CLIENT_DATA = {
     { type: "Structurel", horizon: "3-12 mois", titre: "Transformation structurelle", items: ["Action structurelle n°1", "Action structurelle n°2"], impact: "Très fort", complexite: "Moyenne" },
     { type: "Strategique", horizon: "12+ mois", titre: "Vision long terme", items: ["Action stratégique n°1", "Action stratégique n°2"], impact: "Transformant", complexite: "Élevée" }
   ],
+  roadmapPackages: {
+    weekPrefix: "S",
+    phaseStyles: {
+      cadrage:       { label: "Cadrage", color: "#dbeafe" },
+      construction:  { label: "Construction", color: "#fef9c3" },
+      deploiement:   { label: "Déploiement", color: "#dcfce7" },
+      acculturation: { label: "Acculturation", color: "#ffedd5" },
+      stabilisation: { label: "Stabilisation & Généralisation", color: "#c7d2e4" }
+    },
+    packages: [
+      {
+        code: "P1", title: "Package 1 — Premier lot de solutions", subtitle: "Impact élevé et complexité faible pour maximiser l'adoption.", maxWeek: 12,
+        lines: [
+          { produitId: "produit_a", gono: 6, segments: [ { phase: "cadrage", start: 1, end: 4 }, { phase: "construction", start: 4, end: 6 }, { phase: "deploiement", start: 6, end: 7.5 }, { phase: "acculturation", start: 7.5, end: 8.5 }, { phase: "stabilisation", start: 8.5, end: 10 } ] },
+          { produitId: "produit_b", gono: 8, segments: [ { phase: "cadrage", start: 2, end: 5 }, { phase: "construction", start: 5, end: 8 }, { phase: "deploiement", start: 8, end: 9.5 }, { phase: "acculturation", start: 9.5, end: 10.5 }, { phase: "stabilisation", start: 10.5, end: 12 } ] },
+          { produitId: "produit_c", gono: 7, segments: [ { phase: "cadrage", start: 1, end: 5 }, { phase: "construction", start: 5, end: 7 }, { phase: "deploiement", start: 7, end: 8.5 }, { phase: "stabilisation", start: 8.5, end: 11 } ] }
+        ]
+      },
+      {
+        code: "P2", title: "Package 2 — Deuxième lot de solutions", subtitle: "Effort de construction et d'adoption plus élevés.", maxWeek: 10,
+        lines: [
+          { produitId: "produit_a", gono: 6, segments: [ { phase: "cadrage", start: 1, end: 4 }, { phase: "construction", start: 4, end: 6 }, { phase: "deploiement", start: 6, end: 7.5 }, { phase: "stabilisation", start: 7.5, end: 9 } ] },
+          { produitId: "produit_c", gono: 7, segments: [ { phase: "cadrage", start: 2, end: 5 }, { phase: "construction", start: 5, end: 7 }, { phase: "deploiement", start: 7, end: 8.5 }, { phase: "acculturation", start: 8.5, end: 10 } ] }
+        ]
+      },
+      {
+        code: "P3", title: "Package 3 — Troisième lot de solutions", subtitle: "Solutions à fort impact organisationnel.", maxWeek: 10,
+        lines: [
+          { produitId: "produit_b", gono: 6, segments: [ { phase: "cadrage", start: 1, end: 4 }, { phase: "construction", start: 4, end: 6 }, { phase: "deploiement", start: 6, end: 8 }, { phase: "stabilisation", start: 8, end: 10 } ] }
+        ]
+      }
+    ]
+  },
   glossaire: [
     { terme: "Intelligence Artificielle", definition: "Ensemble de théories et techniques visant à simuler l'intelligence humaine par une machine." },
     { terme: "Machine Learning", definition: "Sous-domaine de l'IA permettant aux machines d'apprendre à partir de données sans être explicitement programmées." },
@@ -447,6 +495,7 @@ const CLIENT_DATA = {
       <a href="#sec-icons">3. Icônes</a>
       <a href="#sec-charts">4. Graphiques</a>
       <a href="#sec-dashboard">5. Sections Dashboard</a>
+      <a href="#sec-roadmap-gantt">5b. Roadmap Gantt</a>
       <a href="#sec-solutions">6. Solutions & Filtres</a>
       <a href="#sec-catalogue-votac">6b. Catalogue VOTAC</a>
       <a href="#sec-processmap">7. Cartographie Processus</a>
@@ -1007,6 +1056,32 @@ const CLIENT_DATA = {
             <p class="text-xs" style="color: var(--muted-soft);">&copy; 2026 Hubvisory — Confidentiel</p>
           </div>
         </footer>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <!-- 5b. ROADMAP GANTT (PACKAGES)                                  -->
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <section id="sec-roadmap-gantt">
+      <div class="comp-header">
+        <p class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--accent);">Composant : roadmap-gantt.html</p>
+        <p class="text-sm font-semibold" style="color: var(--ink);">Roadmap Gantt — packages P1/P2/P3, vue semaine, lignes cliquables</p>
+        <p class="text-xs" style="color: var(--muted);">Sous le Catalogue des solutions · Données : roadmapPackages, produits, catalogueSolutions</p>
+      </div>
+
+      <div class="rounded-2xl border p-6" style="background: var(--surface); border-color: var(--border);">
+        <div class="flex items-center gap-2 mb-1">
+          <span id="lib-icon-roadmap-gantt"></span>
+          <p class="text-[11px] font-semibold uppercase tracking-[0.18em]" style="color: var(--accent);">Roadmap</p>
+        </div>
+        <h3 class="font-display text-xl" style="color: var(--ink);" id="roadmap-title">Roadmap de déploiement</h3>
+
+        <div class="flex flex-wrap gap-2 mt-4 mb-4" id="roadmap-package-toggles"></div>
+        <div id="roadmap-package-header" class="mb-3"></div>
+        <div class="overflow-x-auto rounded-xl border" style="border-color: var(--border);">
+          <div id="roadmap-gantt" class="roadmap-gantt-wrap p-3" style="background: var(--bg);"></div>
+        </div>
+        <div id="roadmap-legend" class="flex flex-wrap items-center gap-x-4 gap-y-2 mt-4 pt-4 border-t" style="border-color: var(--border);"></div>
       </div>
     </section>
 
@@ -1990,6 +2065,96 @@ function buildRoadmap(containerId, theme) {
   `).join('');
 }
 
+// ── Roadmap Gantt (roadmap-gantt.html) ──
+function buildRoadmapGantt(theme) {
+  const pkgData = CLIENT_DATA.roadmapPackages;
+  const ganttEl = document.getElementById('roadmap-gantt');
+  const togglesEl = document.getElementById('roadmap-package-toggles');
+  const headerEl = document.getElementById('roadmap-package-header');
+  const legendEl = document.getElementById('roadmap-legend');
+  if (!pkgData || !ganttEl || !togglesEl) return;
+
+  const weekPrefix = pkgData.weekPrefix || 'S';
+  const phaseStyles = pkgData.phaseStyles || {};
+  const packages = pkgData.packages || [];
+  const produitMap = {};
+  (CLIENT_DATA.produits || []).forEach(p => { produitMap[p.id] = p; });
+  let activeCode = (packages.find(p => p.code === 'P1') || packages[0] || {}).code;
+
+  const weeksOf = pkg => pkg.maxWeek || Math.ceil(Math.max(1, ...(pkg.lines || []).flatMap(l => (l.segments || []).map(s => (s.end || 1) - 1))));
+  const pos = (start, end, w) => ({ left: `${((start - 1) / w) * 100}%`, width: `${Math.max(((end - start) / w) * 100, 0.6)}%` });
+
+  function renderGantt(pkg) {
+    if (!pkg) return;
+    const w = weeksOf(pkg);
+    ganttEl.style.setProperty('--roadmap-weeks', w);
+    const weeks = Array.from({ length: w }, (_, i) => `<div class="roadmap-week-cell">${weekPrefix}${i + 1}</div>`).join('');
+    const rows = (pkg.lines || []).map(line => {
+      const prod = produitMap[line.produitId];
+      const color = (prod && prod.color) || theme.primary;
+      const segs = (line.segments || []).map(s => {
+        const st = phaseStyles[s.phase] || { label: s.phase, color: theme.bgAlt };
+        const p = pos(s.start, s.end, w);
+        return `<span class="roadmap-segment" style="left:${p.left};width:${p.width};background:${st.color};" title="${st.label}"></span>`;
+      }).join('');
+      const gono = line.gono != null ? `<span class="roadmap-gono" style="left:${((line.gono - 1) / w) * 100}%;" title="Décision Go / no Go"></span>` : '';
+      return `<div class="roadmap-gantt-row roadmap-line" data-produit-id="${line.produitId}" data-package-code="${pkg.code}">
+          <div class="roadmap-line-label"><span class="w-2 h-2 rounded-full flex-shrink-0" style="background:${color};"></span><span>${prod ? prod.nom : line.produitId}</span></div>
+          <div class="roadmap-track" style="grid-column:2 / -1;">${segs}${gono}</div>
+        </div>`;
+    }).join('');
+    ganttEl.innerHTML = `<div class="roadmap-gantt-header"><div class="roadmap-week-cell text-left" style="color:var(--muted);font-size:10px;">Produit</div>${weeks}</div>${rows}`;
+    ganttEl.querySelectorAll('.roadmap-line').forEach(row => row.addEventListener('click', () => openRoadmapLineModal(row.dataset.produitId, row.dataset.packageCode, theme)));
+  }
+  function renderHeader(pkg) {
+    if (!headerEl || !pkg) return;
+    headerEl.innerHTML = `<h4 class="font-display text-lg" style="color:var(--ink);">${pkg.title || pkg.code}</h4>${pkg.subtitle ? `<p class="text-sm mt-0.5" style="color:var(--muted);">${pkg.subtitle}</p>` : ''}`;
+  }
+  function renderLegend() {
+    if (!legendEl) return;
+    legendEl.innerHTML = Object.values(phaseStyles).map(st => `<span class="inline-flex items-center gap-1.5 text-[11px]" style="color:var(--muted);"><span class="w-3 h-3 rounded-sm flex-shrink-0" style="background:${st.color};"></span>${st.label}</span>`).join('') + `<span class="inline-flex items-center gap-1.5 text-[11px]" style="color:var(--muted);"><span class="roadmap-gono-legend"></span>Décision Go / no Go</span>`;
+  }
+  function renderToggles() {
+    togglesEl.innerHTML = packages.map(pkg => {
+      const active = pkg.code === activeCode;
+      const c = packageColor(pkg.code, theme);
+      const style = active ? `background:${c};color:#fff;border-color:${c};` : `background:var(--surface);color:${c};border-color:${hexToSoft(c, 0.35)};`;
+      return `<button type="button" class="roadmap-pkg-toggle px-4 py-1.5 rounded-full text-xs font-semibold border cursor-pointer transition-colors" data-code="${pkg.code}" style="${style}">${pkg.code}</button>`;
+    }).join('');
+    togglesEl.querySelectorAll('.roadmap-pkg-toggle').forEach(btn => btn.addEventListener('click', () => {
+      activeCode = btn.dataset.code; renderToggles();
+      const pkg = packages.find(p => p.code === activeCode); renderHeader(pkg); renderGantt(pkg);
+    }));
+  }
+  renderToggles(); renderLegend();
+  const initial = packages.find(p => p.code === activeCode) || packages[0];
+  renderHeader(initial); renderGantt(initial);
+}
+
+function openRoadmapLineModal(produitId, packageCode, theme) {
+  const produitMap = {};
+  (CLIENT_DATA.produits || []).forEach(p => { produitMap[p.id] = p; });
+  const prod = produitMap[produitId];
+  const c = (prod && prod.color) || theme.primary;
+  const sols = (CLIENT_DATA.catalogueSolutions || []).filter(s => s.produitId === produitId && s.package === packageCode).sort((a, b) => (votacTotal(b.votac) || 0) - (votacTotal(a.votac) || 0));
+  const pkgMeta = ((CLIENT_DATA.roadmapPackages || {}).packages || []).find(p => p.code === packageCode);
+  const list = sols.length ? sols.map(s => {
+    const vt = votacTotal(s.votac);
+    return `<button type="button" class="roadmap-sol-chip w-full text-left rounded-xl border p-4 transition-colors clickable-card" data-sol-id="${s.id}" style="border-color:var(--border);background:var(--surface);">
+        <div class="flex items-start justify-between gap-2 mb-1"><span class="text-xs font-mono" style="color:var(--muted-soft);">${s.id}</span>${vt != null ? `<span class="text-xs font-semibold" style="color:${c};">${vt} pts</span>` : ''}</div>
+        <h4 class="text-sm font-semibold" style="color:var(--ink);">${s.fonctionnalite || ''}</h4>
+        ${s.objectif ? `<p class="text-xs mt-1.5 leading-relaxed clamp-2" style="color:var(--muted);">${s.objectif}</p>` : ''}
+      </button>`;
+  }).join('') : `<p class="text-sm rounded-xl border border-dashed p-4" style="color:var(--muted);border-color:var(--border);">Aucune solution ${packageCode} pour ce produit dans le catalogue.</p>`;
+  openModal(`<h3 class="font-display text-2xl mb-1" style="color:var(--ink);">${prod ? prod.nom : produitId}</h3>
+    <p class="text-sm mb-5" style="color:var(--muted);">${pkgMeta ? pkgMeta.title : packageCode} — ${sols.length} solution${sols.length !== 1 ? 's' : ''}</p>
+    <div class="space-y-3">${list}</div>`);
+  document.querySelectorAll('.roadmap-sol-chip').forEach(btn => btn.addEventListener('click', () => {
+    const sol = (CLIENT_DATA.catalogueSolutions || []).find(s => s.id === btn.dataset.solId);
+    if (sol) openCatalogueModalLib(sol, theme, () => openRoadmapLineModal(produitId, packageCode, theme));
+  }));
+}
+
 function buildGouvernance(theme) {
   const risksEl = document.getElementById('lib-gouv-risks');
   if (risksEl) {
@@ -2570,6 +2735,11 @@ document.addEventListener('DOMContentLoaded', () => {
   safe('risksList', () => buildRisksList('lib-risks-list', THEME));
   safe('iconRoadmap', () => { const el = document.getElementById('lib-icon-roadmap'); if (el) el.innerHTML = icon('map', 16, 'var(--primary)'); });
   safe('roadmap', () => buildRoadmap('lib-roadmap-grid', THEME));
+
+  // 5b. Roadmap Gantt
+  safe('iconRoadmapGantt', () => { const el = document.getElementById('lib-icon-roadmap-gantt'); if (el) el.innerHTML = icon('map', 16, 'var(--primary)'); });
+  safe('modalRg', () => initLibModal());
+  safe('roadmapGantt', () => buildRoadmapGantt(THEME));
 
   // 6. Solutions grid
   safe('iconSolutions', () => { const el = document.getElementById('lib-icon-solutions'); if (el) el.innerHTML = icon('layers', 16, 'var(--accent)'); });

@@ -8,7 +8,7 @@ const CLIENT_DATA = {
     missionTitle: "Audit de maturité IA",
     missionSubtitle: "Cap flotte connectée 2027",
     auditor: "Cabinet Conseil IA",
-    period: "T2 2026",
+    period: "T2 2026 — test staging",
     primaryColor: "#003366",
     secondaryColor: "#E30613",
     logoUrl: "",
